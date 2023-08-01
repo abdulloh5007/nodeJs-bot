@@ -1,4 +1,7 @@
 const { dayBonusOption } = require("../../options");
+require('dotenv').config();
+const adminIdInt = parseInt(process.env.ADMIN_ID_INT)
+const adminIdStr = process.env.ADMIN_ID
 
 async function userBalance(msg, collection, bot) {
     const chatId = msg.chat.id;
@@ -9,10 +12,12 @@ async function userBalance(msg, collection, bot) {
     if (['б', 'баланс', 'счёт'].includes(text.toLowerCase())) {
         const balance = user.balance;
         const name = user.userName;
-        await bot.sendMessage(chatId, `
+        const txt = `
 игрок ${name}
 вот ваш баланс ${balance}
-                `, { parse_mode: 'HTML', ...dayBonusOption, reply_to_message_id: msg.message_id });
+        `
+        
+        await bot.sendPhoto(chatId, `https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSrpLxzWuUEiluZkzdPI7HGYY-ZT9ahl7EGoQ&usqp=CAU`, { parse_mode: 'HTML', ...dayBonusOption, reply_to_message_id: msg.message_id, caption: txt });
     }
 }
 
@@ -26,7 +31,7 @@ async function userEditGameId(msg, bot, collection) {
     if (match && match[1]) {
         const newId = match[1].toUpperCase();
         if (newId.length === 8) {
-            if (userId === adminId) {
+            if (userId === adminIdInt) {
                 await bot.sendMessage(chatId, `Вы сменили айди на "${newId}"`, { reply_to_message_id: msg.message_id });
                 collection.updateOne({ id: userId }, { $set: { gameId: newId } });
             } else {
@@ -69,7 +74,6 @@ async function userGameInfo(msg, bot, collection) {
     const user = await collection.findOne({ id: userId });
 
     if (['инфо', 'профиль'].includes(text.toLowerCase())) {
-        const altCoinIdx = 107.7;
         const userGameId = user.gameId;
         const userGameName = user.userName;
         const register_time = user.registerTime;
@@ -77,15 +81,35 @@ async function userGameInfo(msg, bot, collection) {
         const ratesAll = user.rates.map((e) => e.all);
         const ratesWin = user.rates.map((e) => e.wins);
         const ratesLose = user.rates.map((e) => e.loses);
+        const userBankCard = user.bankCard[0].cardNumber
+        const cryptoCurAlt = user.crypto[0].altcoinidx
 
-        await bot.sendMessage(chatId, `
+        if (chatId == userId) {
+            await bot.sendMessage(chatId, `
 <b>Игровой 🆔:</b> ${userGameId}
 <b>Ник 👨:</b> <a href='tg://user?id=${userId}'>${userGameName}</a>
 <b>Баланс 💸: ${userGameBalance}$</b>
+<b>Карта: |<code>${userBankCard}</code>|</b>
+<b>Криптовалюты ↓</b>
+   <b>Alt Coin IDX:</b> ${cryptoCurAlt}
 
 <b>Сыграно игр: ${ratesAll} \n    Выигрыши: ${ratesWin} \n    Проигрыши: ${ratesLose}</b>
 <b>Время регистрации 📆:</b> ${register_time}
-            `, { parse_mode: 'HTML', reply_to_message_id: msg.message_id });
+        `, { parse_mode: 'HTML', reply_to_message_id: msg.message_id });
+        }
+        else {
+            await bot.sendMessage(chatId, `
+<b>Игровой 🆔:</b> ${userGameId}
+<b>Ник 👨:</b> <a href='tg://user?id=${userId}'>${userGameName}</a>
+<b>Баланс 💸: ${userGameBalance}$</b>
+<b>Карта: |<code>5444 **** **** ****</code>|</b>
+<b>Криптовалюты ↓</b>
+   <b>Alt Coin IDX:</b> ${cryptoCurAlt}
+
+<b>Сыграно игр: ${ratesAll} \n    Выигрыши: ${ratesWin} \n    Проигрыши: ${ratesLose}</b>
+<b>Время регистрации 📆:</b> ${register_time}
+        `, { parse_mode: 'HTML', reply_to_message_id: msg.message_id });
+        }
     }
 }
 

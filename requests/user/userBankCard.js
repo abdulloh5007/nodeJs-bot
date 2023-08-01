@@ -2,6 +2,7 @@ async function generateCardNumber(msg, bot, collection) {
     const text = msg.text
     const userId = msg.from.id
     const chatId = msg.chat.id
+    const replyId = msg.message_id
 
     const user = await collection.findOne({ id: userId })
 
@@ -26,15 +27,50 @@ async function generateCardNumber(msg, bot, collection) {
             }
             collection.updateOne({ id: userId }, { $set: { "bankCard.0.cardHave": true } })
             collection.updateOne({ id: userId }, { $set: { "bankCard.0.cardNumber": cardNumber } })
-            collection.updateOne({ id: userId }, { $set: { "bankCard.0.cardName": "MasterCard" } })
+            collection.updateOne({ id: userId }, { $set: { "bankCard.0.cardName": "mastercard" } })
             collection.updateOne({ id: userId }, { $set: { "bankCard.0.cardOwner": userName } })
             collection.updateOne({ id: userId }, { $set: { "bankCard.0.cardValue": 0 } })
             collection.updateOne({ id: userId }, { $set: { "bankCard.0.cardPassword": 0 } })
             collection.updateOne({ id: userId }, { $set: { "bankCard.0.cardOwnerId": userId } })
         }
         else {
-            bot.sendMessage(chatId, `У вас уже есть пластик карта \nВведите команду <code>карта инфо</code> чтобы узнать инрформацию о своей карты`, { parse_mode: 'HTML' });
+            bot.sendMessage(chatId, `У вас уже есть пластик карта \nВведите команду <code>карта инфо</code> чтобы узнать инрформацию о своей карты`, { parse_mode: 'HTML', reply_to_message_id: replyId });
         }
+    }
+}
+
+async function infoAboutCards(msg, bot, collection) {
+    const text = msg.text
+    const userId = msg.from.id
+    const chatId = msg.chat.id
+    const replyId = msg.message_id
+
+    const user = await collection.findOne({ id: userId })
+
+    if(text == 'инфо карта'){
+        const userName = user.userName
+        bot.sendMessage(chatId, `
+Игрок <a href='tg://user?id=${userId}'>${userName}</a> вот информация о картах
+
+<b>Напишите:</b> <i><code>карта создать</code></i> (чтобы, иметь
+Банковскую карту Master Card)
+
+<b>Напишите:</b> <i><code>моя карта</code></i> (чтобы, узнать ифнормацию
+своей карты)
+
+<b>Напишите:</b> <i><code>+карта пароль (4-значное число)</code></i> (чтобы, 
+Поставить пароль в карту p.s только цыфры)
+
+<b>Напишите:</b> <i><code>карта положить (сумму)</code></i> (чтобы, положить
+деньги в карту конечно если у вас есть они в балансе)
+
+<b>Напишите:</b> <i><code>мкарта снять (сумму)</code></i> (чтобы, снять только со своей карты
+напишите только в личке бота. ПОчему мкарта снять ? потому что мкарта это означает моя карта)
+
+<b>Напишите:</b> <i><code>карта снять (номер карты) (пароль карты если она есть) (сумму)
+</code></i> (чтобы снять с чужой карты обратите внимание это пример как вывести деньги с
+другой карты <i>карта снять (номер1234 5678 1234 5678) (пароль1111) (сумма который вы хотите снять)</i> Напишите без скобок и без слов номер и пароль)
+        `, { parse_mode: 'HTML', reply_to_message_id: replyId })
     }
 }
 
@@ -42,9 +78,11 @@ async function cardInfo(msg, bot, collection) {
     const text = msg.text
     const userId = msg.from.id
     const chatId = msg.chat.id
+    const replyId = msg.message_id
+
     const user = await collection.findOne({ id: userId })
 
-    if (text.toLowerCase() === 'карта инфо') {
+    if (text.toLowerCase() === 'моя карта') {
         const userCardHave = user.bankCard[0].cardHave
         if (userCardHave === true) {
             const userCardNumber = user.bankCard[0].cardNumber
@@ -57,38 +95,38 @@ async function cardInfo(msg, bot, collection) {
                 if (userCardPassword !== 0) {
                     bot.sendMessage(chatId, `Игрок: вот ваши данные о карте\n
 <b>Номер карты:</b> |<code>${userCardNumber}</code>|\n
-<b>Имя карты:</b> ${userCardName}
-<b>Владелец карты:</b> ${userCardOwner}
-<b>Деньги:</b> ${userCardValue}
-<b>Пароль карты:</b> ${userCardPassword}
-                    `, { parse_mode: 'HTML' })
+<b>Имя карты:</b> <i>${userCardName}</i>
+<b>Владелец карты:</b> <i>${userCardOwner}</i>
+<b>Деньги:</b> <i>${userCardValue}</i>
+<b>Пароль карты:</b> <i>${userCardPassword}</i>
+                    `, { parse_mode: 'HTML', reply_to_message_id: replyId })
                 }
                 else {
                     bot.sendMessage(chatId, `Игрок: вот ваши данные о карте\n
 <b>Номер карты:</b> |<code>${userCardNumber}</code>|\n
-<b>Имя карты:</b> ${userCardName}
-<b>Владелец карты:</b> ${userCardOwner}
-<b>Деньги:</b> ${userCardValue}
-<b>Пароль карты:</b> Вы еще не ставили пароль
+<b>Имя карты:</b> <i>${userCardName}</i>
+<b>Владелец карты:</b> <i>${userCardOwner}</i>
+<b>Деньги:</b> <i>${userCardValue}</i>
+<b>Пароль карты:</b> <i>Вы еще не ставили пароль</i>
 
 <b>Рекомендация поставьте пароль с командой <code>+карта пароль (4-значная цифра)</code></b>
-                    `, { parse_mode: 'HTML' })
+                    `, { parse_mode: 'HTML', reply_to_message_id: replyId })
                 }
             }
             else {
                 bot.sendMessage(chatId, `Игрок: вот ваши данные о карте\n
 <b>Номер карты:</b> |5444 **** **** ****|\n
-<b>Имя карты:</b> ${userCardName}
-<b>Владелец карты:</b> ${userCardOwner}
-<b>Деньги:</b> ${userCardValue}
+<b>Имя карты:</b> <i>${userCardName}</i>
+<b>Владелец карты:</b> <i>${userCardOwner}</i>
+<b>Деньги:</b> <i>${userCardValue}</i>
 <b>Пароль карты:</b> ****
 
 <b>Напишите в лс бота чтобы узнать свои данные</b>
-                `, { parse_mode: 'HTML' })
+                `, { parse_mode: 'HTML', reply_to_message_id: replyId })
             }
         }
         else {
-            bot.sendMessage(chatId, `Сперва создайте карту с командой <code>карта создать</code>`, { parse_mode: 'HTML' })
+            bot.sendMessage(chatId, `Сперва создайте карту с командой <code>карта создать</code>`, { parse_mode: 'HTML', reply_to_message_id: replyId })
         }
     }
 }
@@ -101,22 +139,41 @@ async function createUpdateCardPassword(msg, bot, collection) {
 
     const parts = text.split(' ')
 
+    const user = await collection.findOne({ id: userId })
+
     if (text.toLowerCase().startsWith('+карта пароль')) {
         const newCardPassword = parts[2]
         if (chatId === userId) {
             if (parts.length === 3 && newCardPassword.length == 4) {
-                bot.sendMessage(chatId, `
+                const cardPs = parseInt(parts[2])
+                if (!isNaN(cardPs)) {
+                    const oldPassword = user.bankCard[0].cardPassword
+                    if (cardPs !== oldPassword) {
+                        bot.sendMessage(chatId, `
 Игрок вы успешно сменили свой пароль от карты
 Новый пароль <code>${newCardPassword}</code>
-                `, { parse_mode: 'HTML' })
-                collection.updateOne({ id: userId }, { $set: { "bankCard.0.cardPassword": parseInt(newCardPassword) } })
+                        `, { parse_mode: 'HTML' })
+                        collection.updateOne({ id: userId }, { $set: { "bankCard.0.cardPassword": parseInt(newCardPassword) } })
+                    }
+                    else {
+                        bot.sendMessage(chatId, 'Пароль не должен совпадать со старым паролём', { parse_mode: 'HTML', reply_to_message_id: replyId })
+                    }
+                }
+                else {
+                    bot.sendMessage(chatId, `<b>Рекомендация поставьте пароль с командой <code>+карта пароль (4-значная цифра)</code> \nТолько цифры!</b>`, { parse_mode: 'HTML', reply_to_message_id: replyId })
+                }
             }
             else {
                 bot.sendMessage(chatId, `<b>Рекомендация поставьте пароль с командой <code>+карта пароль (4-значная цифра)</code></b>`, { parse_mode: 'HTML', reply_to_message_id: replyId })
             }
         }
         else {
-            bot.sendMessage(chatId, `Этот пароль который вы поставили в чате не будет использован как новый пароль\n<b>Рекомендация поставьте пароль с командой <code>+карта пароль (4-значная цифра)</code></b> только в лс боте а то ваш пароль не будет безопасен`, { parse_mode: 'HTML', reply_to_message_id: replyId })
+            bot.sendMessage(chatId, `
+Этот пароль который вы поставили в чате, не будет использован как новый пароль
+<b>Рекомендация поставьте пароль с командой <code>+карта пароль (4-значная цифра)</code></b> 
+
+<b>Только в лс боте поставьте пароль, а то ваш пароль не будет безопасен</b>
+            `, { parse_mode: 'HTML', reply_to_message_id: replyId })
         }
     }
 }
@@ -125,6 +182,7 @@ async function getMoneyFromCard(msg, bot, collection) {
     const chatId = msg.chat.id
     const userId = msg.from.id
     const text = msg.text
+    const messageId = msg.message_id
 
     const parts = text.split(' ')
 
@@ -138,61 +196,78 @@ async function getMoneyFromCard(msg, bot, collection) {
         const ovr = num1 + ' ' + num2 + ' ' + num3 + ' ' + num4
 
         const userCardOwner = await collection.findOne({ "bankCard.0.cardNumber": ovr })
-        const userCardNumber = userCardOwner.bankCard[0].cardNumber
-        const userCardPassword = userCardOwner.bankCard[0].cardPassword
-        const userCardValue = userCardOwner.bankCard[0].cardValue
-        const userCardOwnerId = userCardOwner.bankCard[0].cardOwnerId
+        let userCardNumber;
 
-        // if(ovr == null){
-        if (ovr.length == 19 && ovr == userCardNumber) {
-            if (parts[6] == 0 && userCardPassword == 0) {
-                if(parts[7] <= userCardValue){
-                    bot.sendMessage(chatId, `
-Вы успешно сняли денег с карты: ${userCardNumber}
-Сумму: ${parts[7]}
-                    `)
-    
-                    collection.updateOne({ "bankCard.0.cardOwnerId": userCardOwnerId }, { $inc: { "bankCard.0.cardValue": -parseInt(parts[7]) } })
-                    collection.updateOne({ id: userId }, { $inc: { balance: parseInt(parts[7]) } })
-                }
-                else{
-                    bot.sendMessage(chatId, 'Вы неможете снять больще денег чем денег в карте')
-                }
-            }
-            else{
-                if (userCardPassword != 0 && parts[6] == 0) {
-                    if (parts[6] == userCardPassword) {
-                        if (parts[7] <= userCardValue) {
+        if (userCardOwner != null) {
+            userCardNumber = userCardOwner.bankCard[0].cardNumber
+        }
+        else {
+            userCardNumber = null
+        }
+
+        if (chatId == userId) {
+            if (ovr.length == 19 && ovr == userCardNumber && userCardNumber != null) {
+
+                const userCardPassword = userCardOwner.bankCard[0].cardPassword
+                const userCardValue = userCardOwner.bankCard[0].cardValue
+                const userCardOwnerId = userCardOwner.bankCard[0].cardOwnerId
+
+                if (userCardPassword == 0) {
+                    if (parts[7] <= userCardValue && parts[6] == 0) {
+                        if (parts[7] > 0) {
                             bot.sendMessage(chatId, `
 Вы успешно сняли денег с карты: ${userCardNumber}
 Сумму: ${parts[7]}
-                                    `)
+                            `)
+
                             collection.updateOne({ "bankCard.0.cardOwnerId": userCardOwnerId }, { $inc: { "bankCard.0.cardValue": -parseInt(parts[7]) } })
                             collection.updateOne({ id: userId }, { $inc: { balance: parseInt(parts[7]) } })
                         }
                         else {
-                            bot.sendMessage(chatId, 'Вы неможете снять больще денег чем денег в карте')
+                            bot.sendMessage(chatId, 'Вы неможете снять отрицательное или 0 количество денег')
                         }
                     }
                     else {
-                        bot.sendMessage(chatId, 'Пароль карты не верный')
+                        bot.sendMessage(chatId, 'Вы неможете снять больше денег чем денег в карте')
                     }
                 }
                 else {
-                    bot.sendMessage(chatId, 'У этой карты пароля нету можете использовать 0 вместе пароля')
+                    if (userCardPassword != 0) {
+                        if (parts[6] == userCardPassword) {
+                            if (parts[7] <= userCardValue) {
+                                if (parts[7] > 0) {
+                                    bot.sendMessage(chatId, `
+Вы успешно сняли денег с карты: ${userCardNumber}
+Сумму: ${parts[7]}
+                                `)
+                                    collection.updateOne({ "bankCard.0.cardOwnerId": userCardOwnerId }, { $inc: { "bankCard.0.cardValue": -parseInt(parts[7]) } })
+                                    collection.updateOne({ id: userId }, { $inc: { balance: parseInt(parts[7]) } })
+                                }
+                                else {
+                                    bot.sendMessage(chatId, 'Вы неможете снять отрицательное или 0 количество денег')
+                                }
+                            }
+                            else {
+                                bot.sendMessage(chatId, 'Вы неможете снять больше денег чем денег в карте')
+                            }
+                        }
+                        else {
+                            bot.sendMessage(chatId, `Пароль карты не верный напишите <code>инфо карта</code> чтобы узнать как снимать деньги`, { parse_mode: 'HTML' })
+                        }
+                    }
+                    else {
+                        bot.sendMessage(chatId, `У этой карты пароля нету можете использовать 0 вместе пароля напишите <code>инфо карта</code> чтобы узнать как снимать деньги`, { parse_mode: 'HTML' })
+                    }
                 }
-                
+            }
+            else {
+                bot.sendMessage(chatId, `Такой карты несуществует напишите <code>инфо карта</code> чтобы узнать как снимать деньги`, { parse_mode: 'HTML' })
             }
         }
-
-
+        else {
+            bot.sendMessage(chatId, `С другой карты можно снять только в лс боте напишите <code>инфо карта</code> чтобы узнать как снимать деньги`, { parse_mode: 'HTML', reply_to_message_id: messageId })
+        }
     }
-    //     else{
-    //         bot.sendMessage(chatId, 'Такой карты несуществует')
-    //     }
-
-    // }
-
 }
 
 async function getMoneyFromOwnCard(msg, bot, collection) {
@@ -287,4 +362,5 @@ module.exports = {
     setMoneyToCard,
     getMoneyFromOwnCard,
     getMoneyFromCard,
+    infoAboutCards,
 }

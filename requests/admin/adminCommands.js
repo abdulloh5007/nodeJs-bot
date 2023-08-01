@@ -30,6 +30,9 @@ async function extraditeMoney(msg, collection, bot) {
                 bot.sendMessage(chatId, 'Ответь сообщением <code>выдать сумма</code> кому бы хотели выдать денег', { parse_mode: 'HTML' })
             }
         }
+        else {
+            bot.sendMessage(chatId, 'Вы не являетесь администратором бота')
+        }
     }
 }
 
@@ -65,8 +68,11 @@ async function takeMoney(msg, collection, bot) {
                 }
             }
             else {
-                bot.sendMessage(chatId, 'Ответь сообщением <code>выдать сумма</code> кому бы хотели выдать денег', { parse_mode: 'HTML' })
+                bot.sendMessage(chatId, 'Ответь сообщением <code>выдать сумма</code> кому бы хотели выдать денег', { parse_mode: 'HTML', reply_to_message_id: messageId })
             }
+        }
+        else {
+            bot.sendMessage(chatId, 'Вы не являетесь администратором бота', { reply_to_message_id: messageId })
         }
     }
     await new Promise(resolve => setTimeout(resolve, 1000));

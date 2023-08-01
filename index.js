@@ -8,24 +8,29 @@ const { MongoClient, ObjectId } = require('mongodb');
 const client = new MongoClient(mongoDbUrl);
 
 const { kazino } = require('./requests/games/games');
-const { commandStart, commandHelp, commandHelpAsBtn, commandHelpInChats, userMsg, deleteAllUsers } = require('./requests/commands/commands');
+const { commandStart, commandHelp, commandHelpAsBtn, commandHelpInChats, userMsg, deleteAllUsers, userInfoReplyToMessage } = require('./requests/commands/commands');
 const { userBalance, userEditGameId, userGameInfo, userEditGameName, myId } = require('./requests/user/userInfo');
 const { userMute, userUnMute, userUnMuteAll, userMuteId } = require('./requests/violations/userMute');
-const { botInfo, botInfo2, deleteMessageBot, isJoinNotification, handleJoinLeaveMessages } = require('./requests/botInfo/botInfos');
+const { botInfo, botInfo2, deleteMessageBot, isJoinNotification, handleJoinLeaveMessages, botVersionChange } = require('./requests/botInfo/botInfos');
 const { giveMoney } = require('./requests/user/giveMoney');
 const { extraditeMoney, takeMoney } = require('./requests/admin/adminCommands');
-const { generateCardNumber, cardInfo, createUpdateCardPassword, setMoneyToCard, getMoneyFromOwnCard, getMoneyFromCard } = require('./requests/user/userBankCard');
+const { generateCardNumber, cardInfo, createUpdateCardPassword, setMoneyToCard, getMoneyFromOwnCard, getMoneyFromCard, infoAboutCards } = require('./requests/user/userBankCard');
+const { cryptoCurrenceLaunch, updateCryptoToUp, updateCryptoToDown, cryptoStatus } = require('./requests/crypto/cryptoCurrence');
+const { cryptoShop, buyCryptoCurrence, buyCryptoCurrenceBtn } = require('./requests/shop/cryptoShop');
 
 client.connect()
 const db = client.db('bot');
 const collection = db.collection('users');
 const collectionBot = db.collection('botInfo')
+const collectionCrypto = db.collection('crypto')
 
 const bot = new TelegramBot(botToken, { polling: true });
 
 function log(e) {
     console.log(e)
 }
+
+const userStates = {};
 
 const date = new Date()
 const year = date.getFullYear()
@@ -41,18 +46,6 @@ function start() {
             command: '/help', description: 'Помощь'
         },
     ])
-
-    bot.on('new_chat_members', async msg => {
-        if (msg.new_chat_members && msg.new_chat_members.length > 0) {
-            const chatId = msg.chat.id;
-            const messageType = msg.new_chat_members ? 'join' : msg.left_chat_member ? 'leave' : null;
-
-            if (messageType === 'join' || messageType === 'leave') {
-                // Удаляем сообщение о добавлении или удалении участника
-                await bot.deleteMessage(chatId, msg.message_id);
-            }
-        }
-    })
 
     // Обработчик события оповещения о входе нового участника
     bot.on('new_chat_members', async (msg) => {
@@ -95,10 +88,11 @@ function start() {
         const new_chat_members = msg.new_chat_members
         const new_chat_photo = msg.new_chat_photo
         const left_chat_member = msg.left_chat_member
+        const sendedPhoto = msg.photo
 
         const user = await collection.findOne({ id: userId });
 
-        if (pinned_message || new_chat_members || new_chat_title || new_chat_photo || left_chat_member) {
+        if (pinned_message || new_chat_members || new_chat_title || new_chat_photo || left_chat_member || sendedPhoto) {
             return
         }
 
@@ -109,6 +103,14 @@ function start() {
         }
 
         else if (!!user) {
+            // crypto currencies
+            cryptoCurrenceLaunch(msg, bot, collectionCrypto)
+            updateCryptoToUp(msg, bot, collectionCrypto)
+            cryptoShop(msg, bot, collectionCrypto)
+            updateCryptoToDown(msg, bot, collectionCrypto)
+            cryptoStatus(msg, bot, collectionCrypto)
+            buyCryptoCurrence(msg, bot, collection, collectionCrypto)
+            
             // help
             commandHelp(msg, collection, bot)
 
@@ -136,6 +138,7 @@ function start() {
             //Bot Info
             botInfo(msg, collectionBot, bot, collection)
             botInfo2(msg, collectionBot, bot, collection)
+            botVersionChange(msg, bot, collectionBot)
 
             // Give Money
             giveMoney(msg, bot, collection)
@@ -149,6 +152,9 @@ function start() {
             //my ID
             myId(msg, bot, collection)
 
+            //info ID
+            userInfoReplyToMessage(msg, bot, collection)
+
             //Выдача денег
             extraditeMoney(msg, collection, bot)
             takeMoney(msg, collection, bot)
@@ -160,7 +166,8 @@ function start() {
             setMoneyToCard(msg, bot, collection)
             getMoneyFromOwnCard(msg, bot, collection)
             getMoneyFromCard(msg, bot, collection)
-            
+            infoAboutCards(msg, bot, collection)
+
         }
         else {
             await bot.sendMessage(chatId, `
@@ -178,7 +185,8 @@ function start() {
 
         if (!!user) {
             const userGameName = user.userName
-            commandHelpAsBtn(msg, userGameName, bot)
+            commandHelpAsBtn(msg, bot, userGameName)
+            buyCryptoCurrenceBtn(msg, bot, collection)
 
             if (data === 'dayBonusCollect') {
                 bot.answerCallbackQuery(msg.id, { text: "Вы нажали на кнопку! пока что в разработке", show_alert: true });
@@ -199,8 +207,10 @@ function start() {
         const user = await collection.findOne({ id: userId })
 
         if (!!user) {
-            const userGameName = user.userName
-            commandHelpInChats(msg, userGameName, bot)
+            if (chatId != userId) {
+                const userGameName = user.userName
+                commandHelpInChats(msg, userGameName, bot)
+            }
         }
         else {
             bot.sendMessage(chatId, `
@@ -208,54 +218,6 @@ function start() {
             `)
         }
     })
-
-
-
-    // Обработчик всех входящих сообщений
-
-    // bot.getMe().then((me) => {
-    //     const botUserId = me.id;
-
-    //     bot.on('new_chat_members', async (msg) => {
-    //         const chatId = msg.chat.id;
-    //         const newMembers = msg.new_chat_members;
-    //         if (newMembers.some(member => member.id === botUserId)) {
-    //             const instructionMessage = `Привет! Пожалуйста, сделайте меня администратором чата, чтобы я мог отправлять сообщения и выполнять свои функции. Для этого перейдите в настройки чата, найдите раздел "Администраторы" и добавьте меня в список администраторов. Спасибо!`;
-    //             await bot.sendMessage(chatId, instructionMessage);
-    //         }
-    //     });
-    // })
-    // bot.onText(/.*/, async (msg) => {
-    //     const chatId = msg.chat.id;
-    //     const botInfo = await bot.getMe();
-    //     const botId = botInfo.id;
-
-    //     // Проверяем, является ли бот администратором в чате
-    //     const admins = await bot.getChatAdministrators(chatId);
-    //     const isBotAdmin = admins.some(admin => admin.user.id === botId);
-
-    //     if (!isBotAdmin) {
-    //         // Если бот не администратор, отправляем сообщение с просьбой назначить его администратором
-    //         bot.sendMessage(chatId, 'Пожалуйста, назначьте меня администратором, чтобы я мог выполнять свои функции.');
-    //     }
-    // });
-
-
-    // // Функция для снятия мута с игрока по его ID
-    // async function unmutePlayer(chatId, playerId) {
-    //     await bot.restrictChatMember(chatId, playerId, {
-    //         can_send_messages: true,
-    //         until_date: 0 // Установить until_date в 0, чтобы снять ограничение
-    //     });
-    // }
-
-    // // Обработчик команды /unmute
-    // bot.onText(/\/unmute (\d+)/, async (msg, match) => {
-    //     const chatId = msg.chat.id;
-    //     const playerId = match[1]; // Получаем ID игрока из команды
-    //     await unmutePlayer(chatId, playerId); // Вызываем функцию снятия мута
-    //     bot.sendMessage(chatId, 'Мут с игрока снят.'); // Отправляем сообщение о снятии мута
-    // })
 }
 
 start()
@@ -263,3 +225,36 @@ collectionBot.updateOne({}, { $set: { botLastIncTime: botLastIncludedTime } })
 
 log(`Бот запущён и работает </>`)
 
+    // if (text === 'h') {
+    //     const chatId = msg.chat.id;
+    //     const userId = msg.from.id;
+
+    //     const uniqueId = `${userId}_${Date.now()}`;
+
+    //     // Сохраняем состояние пользователя и уникальный идентификатор в объекте userStates
+    //     userStates[userId] = { state: 'waiting_for_button_click', uniqueId };
+
+    //     const options = {
+    //         reply_markup: {
+    //             inline_keyboard: [
+    //                 [{ text: 'Кнопка 1', callback_data: uniqueId }],
+    //                 [{ text: 'Кнопка 2', callback_data: uniqueId }],
+    //                 // Добавьте другие кнопки с уникальными идентификаторами
+    //             ],
+    //         },
+    //     };
+
+    //     bot.sendMessage(chatId, 'Выберите действие:', options);
+    // }
+    // bot.on('callback_query', (query) => {
+    //     const userId = query.from.id;
+    //     const userState = userStates[userId]?.state;
+
+    //     if (userState === 'waiting_for_button_click') {
+    //         const uniqueId = query.data;
+    //         // Ваша логика обработки действия с уникальным идентификатором uniqueId
+    //         bot.answerCallbackQuery(query.id, { text: 'Вы выбрали кнопку.' });
+    //     } else {
+    //         bot.answerCallbackQuery(query.id, { text: 'Это кнопка не для тебя.' });
+    //     }
+    // });
