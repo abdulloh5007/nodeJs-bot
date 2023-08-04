@@ -40,27 +40,55 @@ async function updateCryptoToUp(msg, bot, collectionCrypto) {
 
     const parts = text.split(' ')
 
+    let cryptoCur;
+    let cryptoPrice
+    const crypto = await collectionCrypto.findOne({})
+
     if (text.toLowerCase().startsWith('крипта вверх')) {
         if (userId === adminId) {
-            const crypto = await collectionCrypto.findOne({ name: 'altcoinidx' })
-            const cryptoPrice = crypto.price
-            const price = parseInt(parts[2])
-            const price2 = cryptoPrice + price
-            if (parts.length === 3 && !isNaN(price)) {
-                bot.sendMessage(chatId, `
+            if (parts[2].toLowerCase() == crypto.name) {
+                cryptoCur = crypto.name
+                cryptoPrice = crypto.price
+            }
+            else {
+                cryptoCur = null
+            }
+
+
+            if (parts[2].toLowerCase() == cryptoCur) {
+                if (parts.length === 4) {
+                    const price = parseInt(parts[3])
+                    const price2 = cryptoPrice + price
+                    if (!isNaN(price)) {
+                        bot.sendMessage(chatId, `
 <b><a href='tg://user?id=${userId}'>Владелец</a> вы успешно изменили</b>
 
-<b>Цену криптовалюты на:</b> <i>${price}</i>
+<b>Цену криптовалюты на:</b> вверх <i>${price}</i>
 <b>Время:</b> <i>${lastUpdateTime}</i>
 
 теперь 1 криптовалюта ALTCOINIDX равна ${price2}
-                `, { parse_mode: 'HTML' })
-                collectionCrypto.updateOne({ name: 'altcoinidx' }, { $set: { price: price2 } })
-                collectionCrypto.updateOne({ name: 'altcoinidx' }, { $set: { move: parts[1] } })
-                collectionCrypto.updateOne({ name: 'altcoinidx' }, { $set: { lastUpdateTime: lastUpdateTime } })
+                        `, { parse_mode: 'HTML' })
+                        collectionCrypto.updateOne({ name: 'altcoinidx' }, { $set: { price: price2 } })
+                        collectionCrypto.updateOne({ name: 'altcoinidx' }, { $set: { move: parts[1] } })
+                        collectionCrypto.updateOne({ name: 'altcoinidx' }, { $set: { lastUpdateTime: lastUpdateTime } })
+                    }
+                    else {
+                        bot.sendMessage(chatId, `Данные введены не правильно напишите\n<code>крипта [вверх, вниз] [имя крипты] цену</code> цена только в цыфрах`, { parse_mode: "HTML" })
+                    }
+                }
+                else {
+                    bot.sendMessage(chatId, `Данные введены не правильно напишите\n<code>крипта [вверх, вниз] цену</code> цена только в цыфрах`, { parse_mode: "HTML" })
+                }
             }
             else {
-                bot.sendMessage(chatId, `Данные введены не правильно напишите\n<code>крипта [вверх, вниз] цену</code> цена только в цыфрах`, { parse_mode: "HTML" })
+                const dostupCrypto = await collectionCrypto.findOne()
+                const dostupName = dostupCrypto.name
+                console.log(dostupName);
+                bot.sendMessage(chatId, `
+Данные имя крипты введены не правильно напишите
+<code>крипта [вверх, вниз] [имя крипты] цену</code> цена только в цыфрах
+Доступные криптовалюты <code>${dostupName}</code>
+                `, { parse_mode: "HTML" })
             }
         }
         else {
@@ -76,28 +104,59 @@ async function updateCryptoToDown(msg, bot, collectionCrypto) {
 
     const parts = text.split(' ')
 
+    let cryptoCur;
+    let cryptoPrice
+    const crypto = await collectionCrypto.findOne({})
+
     if (text.toLowerCase().startsWith('крипта вниз')) {
         if (userId === adminId) {
-            const crypto = await collectionCrypto.findOne({ name: 'altcoinidx' })
-            const cryptoPrice = crypto.price
+            if (parts[2].toLowerCase() == crypto.name) {
+                cryptoCur = crypto.name
+                cryptoPrice = crypto.price
+            }
+            else {
+                cryptoCur = null
+            }
 
-            const price2 = cryptoPrice - parseInt(parts[2])
-            const price = parseInt(parts[2])
-            if (parts.length === 3 && !isNaN(price)) {
-                bot.sendMessage(chatId, `
+            if (parts[2].toLowerCase() == cryptoCur) {
+                if (parts.length == 4) {
+                    if (parts[3] < cryptoPrice) {
+                        const price2 = cryptoPrice - parseInt(parts[3])
+                        const price = parseInt(parts[3])
+                        if (!isNaN(price)) {
+                            bot.sendMessage(chatId, `
 <b><a href='tg://user?id=${userId}'>Владелец</a> вы успешно изменили</b>
 
-<b>Цену криптовалюты на:</b> <i>${price}</i>
+<b>Цену криптовалюты на:</b> вниз <i>${price}</i>
 <b>Время:</b> <i>${lastUpdateTime}</i>
 
 теперь 1 криптовалюта ALTCOINIDX равна ${price2}
-                `, { parse_mode: 'HTML' })
-                collectionCrypto.updateOne({ name: 'altcoinidx' }, { $inc: { price: -price } })
-                collectionCrypto.updateOne({ name: 'altcoinidx' }, { $set: { move: parts[1] } })
-                collectionCrypto.updateOne({ name: 'altcoinidx' }, { $set: { lastUpdateTime: lastUpdateTime } })
+                            `, { parse_mode: 'HTML' })
+                            collectionCrypto.updateOne({ name: cryptoCur }, { $inc: { price: -price } })
+                            collectionCrypto.updateOne({ name: cryptoCur }, { $set: { move: parts[1] } })
+                            collectionCrypto.updateOne({ name: cryptoCur }, { $set: { lastUpdateTime: lastUpdateTime } })
+                        }
+                        else {
+                            bot.sendMessage(chatId, `Данные введены не правильно напишите\n<code>крипта [вверх, вниз] [имя крипты] цену</code> цена только в цыфрах`, { parse_mode: "HTML" })
+                        }
+                    }
+                    else {
+                        bot.sendMessage(chatId, 'Вы не можете понизить цену крипты до отрицательной или до 0 цены')
+                    }
+                }
+                else {
+                    bot.sendMessage(chatId, `Данные введены не правильно напишите\n<code>крипта [вверх, вниз] [имя крипты] цену</code>`, { parse_mode: "HTML" })
+                }
             }
             else {
-                bot.sendMessage(chatId, `Данные введены не правильно напишите\n<code>крипта [вверх, вниз] цену</code> цена только в цыфрах`, { parse_mode: "HTML" })
+                const dostupCrypto = await collectionCrypto.findOne()
+                const dostupName = dostupCrypto.name
+                console.log(dostupName);
+                bot.sendMessage(chatId, `
+Данные имя крипты введены не правильно напишите
+<code>крипта [вверх, вниз] [имя крипты] цену</code> цена только в цыфрах
+Доступные криптовалюты <code>${dostupName}</code>
+                `, { parse_mode: "HTML" })
             }
         }
         else {
@@ -115,24 +174,26 @@ async function cryptoStatus(msg, bot, collectionCrypto) {
 
     let cryptoCur;
     const crypto = await collectionCrypto.findOne({})
-    if (parts[2] == crypto.name) {
-        cryptoCur = crypto.name
-    }
-    else {
-        cryptoCur = false
-    }
 
     let stats;
-    if (parts[3] == 'true') {
-        stats = 'продаваемым'
-    }
-    else if (parts[3] == 'false') {
-        stats = 'не продаваемым'
-    }
 
     if (text.toLowerCase().startsWith('crypto status')) {
         if (userId === adminId) {
             if (parts.length == 4) {
+                if (parts[2].toLowerCase() == crypto.name) {
+                    cryptoCur = crypto.name
+                }
+                else {
+                    cryptoCur = false
+                }
+
+                if (parts[3].toLowerCase() == 'true') {
+                    stats = 'продаваемым'
+                }
+                else if (parts[3].toLowerCase() == 'false') {
+                    stats = 'не продаваемым'
+                }
+
                 if (parts[2].toLowerCase() == cryptoCur) {
                     if (parts[3].toLowerCase() == 'true') {
                         bot.sendMessage(chatId, `
@@ -174,9 +235,50 @@ async function cryptoStatus(msg, bot, collectionCrypto) {
     }
 }
 
+async function isPrivateChatWithBot(userId) {
+    try {
+        // Выполняем запрос к API Telegram для получения информации о пользователе
+        const chatMember = await bot.getChat(userId, userId);
+
+        // Если метод выполнен без ошибок, значит пользователь является участником приватного чата с ботом
+        return chatMember;
+    } catch (error) {
+        // Если произошла ошибка, значит приватного чата с ботом нет
+        return false;
+    }
+}
+
+async function cryptoShopWithBtn(msg, bot, collectionCrypto) {
+    const text = msg.text
+    const userId = msg.from.id
+    const chatId = msg.chat.id
+
+    if (text.toLowerCase() === 'магазин') {
+        const hasPrivateChat = isPrivateChatWithBot(userId);
+
+        // Выводим результат в консоль
+        console.log(`У пользователя с id ${userId} ${hasPrivateChat ? 'есть' : 'нет'} приватного чата с ботом`);
+        // bot.getUpdates().then((updates) => {
+        //     const privateChatUpdates = updates.filter((update) => {
+        //         return update.message && update.message.chat.type === 'private' && update.message.chat.id === userId;
+        //     });
+
+        //     if (privateChatUpdates.length > 0) {
+        //         bot.sendMessage(chatId, 'У вас есть сообщения от бота в личке.');
+        //     } else {
+        //         bot.sendMessage(chatId, 'У вас нет сообщений от бота в личке.');
+        //     }
+        // }).catch((error) => {
+        //     console.error('Ошибка при проверке сообщений в личке:', error);
+        //     bot.sendMessage(chatId, 'Произошла ошибка при проверке сообщений в личке.');
+        // });
+    }
+}
+
 module.exports = {
     cryptoCurrenceLaunch,
     updateCryptoToUp,
     updateCryptoToDown,
     cryptoStatus,
+    cryptoShopWithBtn,
 }

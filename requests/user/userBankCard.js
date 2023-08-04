@@ -1,3 +1,5 @@
+const { parseNumber } = require("../systems/systemRu")
+
 async function generateCardNumber(msg, bot, collection) {
     const text = msg.text
     const userId = msg.from.id
@@ -47,7 +49,7 @@ async function infoAboutCards(msg, bot, collection) {
 
     const user = await collection.findOne({ id: userId })
 
-    if(text == 'инфо карта'){
+    if(text.toLowerCase() == 'инфо карта'){
         const userName = user.userName
         bot.sendMessage(chatId, `
 Игрок <a href='tg://user?id=${userId}'>${userName}</a> вот информация о картах
@@ -70,6 +72,8 @@ async function infoAboutCards(msg, bot, collection) {
 <b>Напишите:</b> <i><code>карта снять (номер карты) (пароль карты если она есть) (сумму)
 </code></i> (чтобы снять с чужой карты обратите внимание это пример как вывести деньги с
 другой карты <i>карта снять (номер1234 5678 1234 5678) (пароль1111) (сумма который вы хотите снять)</i> Напишите без скобок и без слов номер и пароль)
+
+<b>!Если нету пароля карты то вместо пароля вы просто можете поставить 0</b>
         `, { parse_mode: 'HTML', reply_to_message_id: replyId })
     }
 }
@@ -146,7 +150,7 @@ async function createUpdateCardPassword(msg, bot, collection) {
         if (chatId === userId) {
             if (parts.length === 3 && newCardPassword.length == 4) {
                 const cardPs = parseInt(parts[2])
-                if (!isNaN(cardPs)) {
+                if (!isNaN(cardPs) && parts[2] > 0) {
                     const oldPassword = user.bankCard[0].cardPassword
                     if (cardPs !== oldPassword) {
                         bot.sendMessage(chatId, `
@@ -211,17 +215,18 @@ async function getMoneyFromCard(msg, bot, collection) {
                 const userCardPassword = userCardOwner.bankCard[0].cardPassword
                 const userCardValue = userCardOwner.bankCard[0].cardValue
                 const userCardOwnerId = userCardOwner.bankCard[0].cardOwnerId
+                const systemGet = parseNumber(parts[7])
 
                 if (userCardPassword == 0) {
-                    if (parts[7] <= userCardValue && parts[6] == 0) {
-                        if (parts[7] > 0) {
+                    if (systemGet <= userCardValue && parts[6] == 0) {
+                        if (systemGet > 0) {
                             bot.sendMessage(chatId, `
 Вы успешно сняли денег с карты: ${userCardNumber}
-Сумму: ${parts[7]}
+Сумму: ${systemGet}
                             `)
 
-                            collection.updateOne({ "bankCard.0.cardOwnerId": userCardOwnerId }, { $inc: { "bankCard.0.cardValue": -parseInt(parts[7]) } })
-                            collection.updateOne({ id: userId }, { $inc: { balance: parseInt(parts[7]) } })
+                            collection.updateOne({ "bankCard.0.cardOwnerId": userCardOwnerId }, { $inc: { "bankCard.0.cardValue": -systemGet } })
+                            collection.updateOne({ id: userId }, { $inc: { balance: systemGet } })
                         }
                         else {
                             bot.sendMessage(chatId, 'Вы неможете снять отрицательное или 0 количество денег')
@@ -234,14 +239,14 @@ async function getMoneyFromCard(msg, bot, collection) {
                 else {
                     if (userCardPassword != 0) {
                         if (parts[6] == userCardPassword) {
-                            if (parts[7] <= userCardValue) {
-                                if (parts[7] > 0) {
+                            if (systemGet <= userCardValue) {
+                                if (systemGet > 0) {
                                     bot.sendMessage(chatId, `
 Вы успешно сняли денег с карты: ${userCardNumber}
 Сумму: ${parts[7]}
                                 `)
-                                    collection.updateOne({ "bankCard.0.cardOwnerId": userCardOwnerId }, { $inc: { "bankCard.0.cardValue": -parseInt(parts[7]) } })
-                                    collection.updateOne({ id: userId }, { $inc: { balance: parseInt(parts[7]) } })
+                                    collection.updateOne({ "bankCard.0.cardOwnerId": userCardOwnerId }, { $inc: { "bankCard.0.cardValue": -systemGet } })
+                                    collection.updateOne({ id: userId }, { $inc: { balance: systemGet } })
                                 }
                                 else {
                                     bot.sendMessage(chatId, 'Вы неможете снять отрицательное или 0 количество денег')
@@ -281,7 +286,7 @@ async function getMoneyFromOwnCard(msg, bot, collection) {
 
     if (text.toLowerCase().startsWith('мкарта снять')) {
         const userCardBalance = user.bankCard[0].cardValue
-        const moneyToGet = parseInt(parts[2])
+        const moneyToGet = parseInt(parseNumber(parts[2]))
         if (moneyToGet <= userCardBalance) {
             if (moneyToGet > 0) {
                 if (chatId == userId) {
@@ -328,9 +333,9 @@ async function setMoneyToCard(msg, bot, collection) {
     const parts = text.split(' ')
     const user = await collection.findOne({ id: userId })
 
-    if (text.toLowerCase().startsWith('карта положить')) {
+    if (text.toLowerCase().startsWith('карта положить') || text.toLowerCase().startsWith('карта пополнить')) {
         const userBalance = user.balance
-        const moneyToSet = parseInt(parts[2])
+        const moneyToSet = parseInt(parseNumber(parts[2]))
         if (userBalance >= moneyToSet) {
             if (moneyToSet > 0) {
                 bot.sendMessage(chatId, `

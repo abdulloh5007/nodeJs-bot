@@ -10,6 +10,8 @@ const hours = date.getHours()
 const minutes = date.getMinutes()
 const registerUserTime = `${day}-${month}-${year} ${hours}:${minutes}`
 
+const userStates = {};
+
 function generateRandomElementsOnlyUsers(letters, numbers) {
     const alphabet = letters;
     const randomLetter = alphabet[Math.floor(Math.random() * alphabet.length)];
@@ -29,7 +31,6 @@ const onlyUsersId = generateRandomElementsOnlyUsers('BFNPRS', 7);
 async function commandStart(msg, collection, bot) {
     const chatId = msg.chat.id
     const userId = msg.from.id
-    const userName = msg.from.username
     const user = await collection.findOne({ id: userId })
 
     if (user) {
@@ -37,7 +38,7 @@ async function commandStart(msg, collection, bot) {
         const register_time = user.registerTime
 
         await bot.sendMessage(chatId, `
-Привет, <a href='tg://user?id=${userId}'>${userName}</a> \n
+Привет, <a href='tg://user?id=${userId}'>Игрок</a> \n
 <b>Ты уже добавлен в базу</b>
 <i>Дата ${register_time}</i>
             `, { parse_mode: 'HTML', ...startOptions, reply_to_message_id: msg.message_id })
@@ -47,7 +48,7 @@ async function commandStart(msg, collection, bot) {
         await bot.sendSticker(chatId, 'CAACAgIAAxkBAAEJuehkthTWSWEaOSTzdOjdX5T1rpuFEgACSQADQbVWDGATQ6Y8j8OALwQ')
             .then(() => {
                 bot.sendMessage(chatId, `
-Привет, <a href='tg://user?id=${userId}'>${userName}</a> \n
+Привет, <a href='tg://user?id=${userId}'>Игрок</a> \n
 Я-игровой бот для игры в различные игры.\n
 Тебе выдан подарок 🎁 в размере 10.000€.\n
 Так же ты можешь добавить меня в беседу для игры с друзьями.\n
@@ -69,10 +70,11 @@ async function commandStart(msg, collection, bot) {
         collection.insertOne({
             id: userId,
             gameId: onlyUsersId,
-            userName: userName,
+            userName: 'Игрок',
             balance: 1000,
             registerTime: registerUserTime,
             altcoinidx: 0,
+            checkPayment: 'not',
             crypto: [{
                 altcoinidx: 0
             }],
@@ -90,7 +92,7 @@ async function commandStart(msg, collection, bot) {
                 cardHave: true,
                 cardNumber: cardNumber,
                 cardName: "mastercard",
-                cardOwner: userName,
+                cardOwner: 'Игрок',
                 cardValue: 0,
                 cardPassword: 0,
                 cardOwnerId: userId
@@ -102,7 +104,7 @@ async function commandStart(msg, collection, bot) {
     // ЕСЛИ ХОЧЕШЬ ОТПРАВИТЬ ФОТО ВМЕСТО СТИКЕРА
 
     //         bot.sendPhoto(chatId, 'УРЛ ОТ ФОТО', { caption: `
-    // Привет, <a href='tg://user?id=${userId}'>${userName}</a> \n
+    // Привет, <a href='tg://user?id=${userId}'>Игрок</a> \n
     // Я-игровой бот для игры в различные игры.\n
     // Тебе выдан подарок 🎁 в размере 10.000€.\n
     // Так же ты можешь добавить меня в беседу для игры с друзьями.\n
@@ -234,11 +236,12 @@ async function userInfoReplyToMessage(msg, bot, collection) {
                     const ratesLose = user.rates.map((e) => e.loses);
                     const userBankCard = user.bankCard[0].cardNumber
                     const cryptoCurAlt = user.crypto[0].altcoinidx
+                    const userId2 = user.id
 
                     if (chatId == userId) {
                         await bot.sendMessage(chatId, `
 <b>Игровой 🆔:</b> ${userGameId}
-<b>Ник 👨:</b> <a href='tg://user?id=${userId}'>${userGameName}</a>
+<b>Ник 👨:</b> <a href='tg://user?id=${userId2}'>${userGameName}</a>
 <b>Баланс 💸: ${userGameBalance}$</b>
 <b>Карта: |<code>${userBankCard}</code>|</b>
 <b>Криптовалюты ↓</b>
@@ -251,7 +254,7 @@ async function userInfoReplyToMessage(msg, bot, collection) {
                     else {
                         await bot.sendMessage(chatId, `
 <b>Игровой 🆔:</b> ${userGameId}
-<b>Ник 👨:</b> <a href='tg://user?id=${userId}'>${userGameName}</a>
+<b>Ник 👨:</b> <a href='tg://user?id=${userId2}'>${userGameName}</a>
 <b>Баланс 💸: ${userGameBalance}$</b>
 <b>Карта: |<code>5444 **** **** ****</code>|</b>
 <b>Криптовалюты ↓</b>
@@ -276,31 +279,81 @@ async function userInfoReplyToMessage(msg, bot, collection) {
     }
 }
 
-async function sendPrivateMessage(userId, text, bot, userIdReq) {
-    await bot.sendMessage(userId, `
-Вам пришло сообщение от владельца <a href='tg://user?id=${userIdReq}'>Владелец</a>
-Текст: ${text}
-    `, { parse_mode: "HTML" });
-}
+// async function sendPrivateMessage(userId, text, bot, userIdReq) {
+//     await bot.sendMessage(userId, `
+// Вам пришло сообщение от игрока <a href='tg://user?id=${userIdReq}'>Игрок</a>
+// Текст: ${text}
+//     `, { parse_mode: "HTML" });
+// }
 
-async function userMsg(msg, bot) {
-    const chatId = msg.chat.id;
-    const text = msg.text;
-    const userIdReq = msg.from.id
+// async function isBotBlocked(userId, bot, text, userIdReq) {
+//     try {
+//         // Выполняем запрос к API Telegram для отправки сообщения пользователю
+//         await bot.sendMessage(userId, `
+// Вам пришло сообщение от игрока <a href='tg://user?id=${userIdReq}'>Игрок</a>
+// Текст: ${text}
+//     `, { parse_mode: "HTML" });
+//         return true; // Бот не заблокирован и может отправлять сообщения
+//     } catch (error) {
+//         // Если при отправке сообщения возникла ошибка, проверяем ее код
+//         if (error.code === 'ETELEGRAM' && error.response.body.error_code === 403) {
+//             return false; // Бот заблокирован и не может отправлять сообщения
+//         } else {
+//             throw error; // Возникла другая ошибка, пробрасываем ее дальше
+//         }
+//     }
+// }
 
-    const parts = text.split(' ')
+// async function userMsg(msg, bot, collection) {
+//     const chatId = msg.chat.id;
+//     const text = msg.text;
+//     const userIdReq = msg.from.id
 
-    if (text.startsWith('/msg')) {
-        const userIdToSend = parts[1]
-        if (userIdToSend) {
-            const message = text.split(' ').slice(2).join(' ');
-            sendPrivateMessage(userIdToSend, message, bot, userIdReq);
-            bot.sendMessage(chatId, `Сообщение отправлено пользователю с айди ${userIdToSend}.`);
-        } else {
-            bot.sendMessage(chatId, 'Ошибка: не удалось определить пользователя для отправки сообщения.');
-        }
-    }
-}
+//     const userIdToSendDb = await collection.findOne({})
+//     const parts = text.split(' ')
+
+//     const message = text.split(' ').slice(2).join(' ');
+//     if (text.startsWith('/msg')) {
+//         const userIdToSend = parseInt(parts[1])
+//         let userToResId
+//         if (userIdToSend == userIdToSendDb.id) {
+//             userToResId = userIdToSendDb.id
+//         }
+//         else {
+//             userToResId = null
+//         }
+//         if (userIdToSendDb) {
+
+//             const hasPrivateChat = await isBotBlocked(userToResId, bot, message, userIdReq);
+//             console.log(userIdReq);
+//             if (!hasPrivateChat) {
+//                 // Если приватного чата нет или бот заблокирован, уведомляем отправителя команды
+//                 bot.sendMessage(chatId, `Пользователь с ID ${userToResId} не имеет приватного чата с ботом или заблокировал его и не может получать сообщения от бота. Пожалуйста, напишите боту в приватный чат.`);
+//             }
+//             else {
+//                 // Сохраняем информацию о том, что бот будет отправлять сообщение пользователю в приватный чат
+//                 // Для этого можно использовать базу данных или другой механизм хранения данных
+//                 // Здесь я просто добавил объект userStates, который содержит информацию о том, что бот будет отправлять сообщение
+//                 const userId = msg.from.id;
+//                 userStates[userId] = { state: 'waiting_for_private_message', message };
+//                 const userState = userStates[userId];
+
+//                 if (userState && userState.state === 'waiting_for_private_message') {
+//                     // Если бот ожидает сообщение от пользователя, отправляем ему сохраненное сообщение
+
+//                     // sendPrivateMessage(userIdToSend, message, bot, userIdReq);
+//                     bot.sendMessage(chatId, `Сообщение отправлено пользователю с айди ${userIdToSendDb.id}.`);
+
+//                     // Очищаем информацию о состоянии пользователя после отправки сообщения
+//                     delete userStates[userId];
+//                 }
+//             }
+
+//         } else {
+//             bot.sendMessage(chatId, 'Ошибка: не удалось определить пользователя для отправки сообщения.');
+//         }
+//     }
+// }
 
 async function deleteAllUsers(msg, collection, bot, ObjectId) {
     const chatId = adminId
@@ -331,7 +384,7 @@ module.exports = {
     commandHelp,
     commandHelpAsBtn,
     commandHelpInChats,
-    userMsg,
+    // userMsg,
     deleteAllUsers,
     userInfoReplyToMessage,
 }

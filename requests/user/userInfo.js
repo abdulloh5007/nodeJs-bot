@@ -9,7 +9,7 @@ async function userBalance(msg, collection, bot) {
     const userId = msg.from.id;
     const user = await collection.findOne({ id: userId });
 
-    if (['б', 'баланс', 'счёт'].includes(text.toLowerCase())) {
+    if (['б', 'баланс', 'счёт', 'b', 'balance', 'balanc', 'balans'].includes(text.toLowerCase())) {
         const balance = user.balance;
         const name = user.userName;
         const txt = `

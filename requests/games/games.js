@@ -1,4 +1,5 @@
 const { againGameOptions } = require("../../options");
+const { parseNumber } = require("../systems/systemRu");
 const { gameWinStickers, gameLoseStickers } = require("./gameStickers");
 
 async function kazino(msg, collection, bot) {
@@ -14,10 +15,11 @@ async function kazino(msg, collection, bot) {
     if (parts && parts[0].toLowerCase() === 'казино' && parts.length === 2) {
         const balance = user.balance;
         const name = user.userName;
-        const value = parseFloat(parts[1]);
+        const value = parseInt(parseNumber(parts[1].toLowerCase()));
 
-        if (!isNaN(value)) {
-            if (balance >= value) {
+        // if (!isNaN(value)) {
+        if (balance >= value) {
+            if (value > 0) {
                 const randomNum = Math.floor(Math.random() * 100);
                 const winAmount = value * 2;
                 const newBalance = balance + winAmount;
@@ -30,12 +32,16 @@ async function kazino(msg, collection, bot) {
                     await bot.sendMessage(chatId, `<b style='color: red'>Игрок ${name}</b>\nК сожалению, вы проиграли ${value} ${gameLoseStickers()}\nВаш новый баланс: ${loseAmount}.`, { reply_to_message_id: messageId, parse_mode: 'HTML', ...againGameOptions });
                     collection.updateOne({ id: userId }, { $set: { balance: loseAmount }, $inc: { "rates.0.all": 1, "rates.0.loses": 1 } });
                 }
-            } else {
-                await bot.sendMessage(chatId, '<b>У вас нехватает средств</b>', { reply_to_message_id: messageId, parse_mode: 'HTML' });
+            }
+            else {
+                bot.sendMessage(chatId, 'Вы не можете поставить отрицательное или 0 денег для ставки')
             }
         } else {
-            await bot.sendMessage(chatId, `Введите только число`, { reply_to_message_id: messageId });
+            await bot.sendMessage(chatId, '<b>У вас нехватает средств</b>', { reply_to_message_id: messageId, parse_mode: 'HTML' });
         }
+        // } else {
+        //     await bot.sendMessage(chatId, `Введите только число`, { reply_to_message_id: messageId });
+        // }
     }
 }
 

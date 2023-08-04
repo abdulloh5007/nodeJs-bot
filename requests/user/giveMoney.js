@@ -1,3 +1,5 @@
+const { parseNumber } = require("../systems/systemRu");
+
 async function giveMoney(msg, bot, collection) {
     const chatId = msg.chat.id;
     const text = msg.text;
@@ -8,7 +10,7 @@ async function giveMoney(msg, bot, collection) {
             if (msg.reply_to_message && msg.reply_to_message.from) {
                 const userToAccept = msg.reply_to_message.from.id;
                 const userToGive = msg.from.id;
-                const amount = parseInt(parts[1]);
+                const amount = parseInt(parseNumber(parts[1]));
 
                 // Проверяем, чтобы пользователь не давал деньги самому себе
                 if (userToAccept === userToGive) {

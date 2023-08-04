@@ -8,14 +8,14 @@ const { MongoClient, ObjectId } = require('mongodb');
 const client = new MongoClient(mongoDbUrl);
 
 const { kazino } = require('./requests/games/games');
-const { commandStart, commandHelp, commandHelpAsBtn, commandHelpInChats, userMsg, deleteAllUsers, userInfoReplyToMessage } = require('./requests/commands/commands');
+const { commandStart, commandHelp, commandHelpAsBtn, commandHelpInChats, deleteAllUsers, userInfoReplyToMessage } = require('./requests/commands/commands');
 const { userBalance, userEditGameId, userGameInfo, userEditGameName, myId } = require('./requests/user/userInfo');
 const { userMute, userUnMute, userUnMuteAll, userMuteId } = require('./requests/violations/userMute');
 const { botInfo, botInfo2, deleteMessageBot, isJoinNotification, handleJoinLeaveMessages, botVersionChange } = require('./requests/botInfo/botInfos');
 const { giveMoney } = require('./requests/user/giveMoney');
-const { extraditeMoney, takeMoney } = require('./requests/admin/adminCommands');
+const { extraditeMoney, takeMoney, takeAllMoney } = require('./requests/admin/adminCommands');
 const { generateCardNumber, cardInfo, createUpdateCardPassword, setMoneyToCard, getMoneyFromOwnCard, getMoneyFromCard, infoAboutCards } = require('./requests/user/userBankCard');
-const { cryptoCurrenceLaunch, updateCryptoToUp, updateCryptoToDown, cryptoStatus } = require('./requests/crypto/cryptoCurrence');
+const { cryptoCurrenceLaunch, updateCryptoToUp, updateCryptoToDown, cryptoStatus, cryptoShopWithBtn } = require('./requests/crypto/cryptoCurrence');
 const { cryptoShop, buyCryptoCurrence, buyCryptoCurrenceBtn } = require('./requests/shop/cryptoShop');
 
 client.connect()
@@ -29,8 +29,6 @@ const bot = new TelegramBot(botToken, { polling: true });
 function log(e) {
     console.log(e)
 }
-
-const userStates = {};
 
 const date = new Date()
 const year = date.getFullYear()
@@ -89,10 +87,12 @@ function start() {
         const new_chat_photo = msg.new_chat_photo
         const left_chat_member = msg.left_chat_member
         const sendedPhoto = msg.photo
+        const sendGiff = msg.animation
+        const sendSticker = msg.sticker
 
         const user = await collection.findOne({ id: userId });
 
-        if (pinned_message || new_chat_members || new_chat_title || new_chat_photo || left_chat_member || sendedPhoto) {
+        if (pinned_message || new_chat_members || new_chat_title || new_chat_photo || left_chat_member || sendedPhoto || sendGiff || sendSticker) {
             return
         }
 
@@ -110,7 +110,8 @@ function start() {
             updateCryptoToDown(msg, bot, collectionCrypto)
             cryptoStatus(msg, bot, collectionCrypto)
             buyCryptoCurrence(msg, bot, collection, collectionCrypto)
-            
+            cryptoShopWithBtn(msg, bot, collectionCrypto)
+
             // help
             commandHelp(msg, collection, bot)
 
@@ -144,7 +145,7 @@ function start() {
             giveMoney(msg, bot, collection)
 
             // Func /msg
-            userMsg(msg, bot)
+            // userMsg(msg, bot, collection)
 
             //delete All Users = это функцию можешь использовать когда обновляешь бота или добавляешь что-то новое в датабазу MONGODB
             deleteAllUsers(msg, collection, bot, ObjectId)
@@ -158,6 +159,7 @@ function start() {
             //Выдача денег
             extraditeMoney(msg, collection, bot)
             takeMoney(msg, collection, bot)
+            takeAllMoney(msg, collection, bot)
 
             // Пластик карты
             generateCardNumber(msg, bot, collection);
@@ -168,6 +170,27 @@ function start() {
             getMoneyFromCard(msg, bot, collection)
             infoAboutCards(msg, bot, collection)
 
+            // if (text == 'qwe') {
+            //     const chatId = msg.chat.id;
+
+            //     // Отправляем приветственное сообщение с кнопкой "Как дела?"
+            //     bot.sendMessage(chatId, 'Привет! Как дела?', {
+            //         reply_markup: {
+            //             inline_keyboard: [
+            //                 [{ text: 'Хорошо', callback_data: 'good' }],
+            //                 [{ text: 'Плохо', callback_data: 'bad' }],
+            //             ],
+            //         },
+            //     }).then((sentMessage) => {
+            //         // Получаем ID отправленного сообщения
+            //         const messageId = sentMessage.message_id;
+            //         // Устанавливаем таймер на 6 секунд
+            //         setTimeout(() => {
+            //             // Отправляем новое сообщение с текстом "Вы не успели ответить на вопрос."
+            //             bot.editMessageText(`asd`, { chat_id: chatId, message_id: messageId, });
+            //         }, 6000);
+            //     });
+            // }
         }
         else {
             await bot.sendMessage(chatId, `
