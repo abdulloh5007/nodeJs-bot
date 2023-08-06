@@ -1,4 +1,4 @@
-const { parseNumber } = require("../systems/systemRu")
+const { parseNumber, formatNumberInScientificNotation } = require("../systems/systemRu")
 
 async function generateCardNumber(msg, bot, collection) {
     const text = msg.text
@@ -52,28 +52,21 @@ async function infoAboutCards(msg, bot, collection) {
     if(text.toLowerCase() == 'инфо карта'){
         const userName = user.userName
         bot.sendMessage(chatId, `
-Игрок <a href='tg://user?id=${userId}'>${userName}</a> вот информация о картах
+Игрок <a href='tg://user?id=${userId}'>${userName}</a>  вот информация о картах:
 
-<b>Напишите:</b> <i><code>карта создать</code></i> (чтобы, иметь
-Банковскую карту Master Card)
+• <code>Карта создать</code> - <b>создать свою банковскую карту Master Card</b>
 
-<b>Напишите:</b> <i><code>моя карта</code></i> (чтобы, узнать ифнормацию
-своей карты)
+• <code>Моя карта</code> - <b>информация о вашей банковской карте</b>
 
-<b>Напишите:</b> <i><code>+карта пароль (4-значное число)</code></i> (чтобы, 
-Поставить пароль в карту p.s только цыфры)
+• <code>+карта пароль [4-значное число]</code> - <b>установить пин-код на вашу карту </b>
 
-<b>Напишите:</b> <i><code>карта положить (сумму)</code></i> (чтобы, положить
-деньги в карту конечно если у вас есть они в балансе)
+• <code>Карта положить [сумма]</code> - <b>возможность положить монеты с баланса на карту</b>
 
-<b>Напишите:</b> <i><code>мкарта снять (сумму)</code></i> (чтобы, снять только со своей карты
-напишите только в личке бота. ПОчему мкарта снять ? потому что мкарта это означает моя карта)
+• <code>Мкарта снять [сумма]</code> - <b>снять баланс с вашей карты. (мкарта - моя карта)</b>
 
-<b>Напишите:</b> <i><code>карта снять (номер карты) (пароль карты если она есть) (сумму)
-</code></i> (чтобы снять с чужой карты обратите внимание это пример как вывести деньги с
-другой карты <i>карта снять (номер1234 5678 1234 5678) (пароль1111) (сумма который вы хотите снять)</i> Напишите без скобок и без слов номер и пароль)
+• <code>Карта снять [номер карты] [пин-код карты, если он имеется] [сумму]</code> - <b>возможность снять монеты с чужой банковской карты. Пример: <i>123 456 789 123</i> 8888 <i>916371632</i></b>
 
-<b>!Если нету пароля карты то вместо пароля вы просто можете поставить 0</b>
+<b>❗️ | Если на вашей карте не установлен пин-код, то вы можете просто выставить «0»</b>
         `, { parse_mode: 'HTML', reply_to_message_id: replyId })
     }
 }
@@ -101,7 +94,7 @@ async function cardInfo(msg, bot, collection) {
 <b>Номер карты:</b> |<code>${userCardNumber}</code>|\n
 <b>Имя карты:</b> <i>${userCardName}</i>
 <b>Владелец карты:</b> <i>${userCardOwner}</i>
-<b>Деньги:</b> <i>${userCardValue}</i>
+<b>Деньги:</b> <i>${userCardValue.toLocaleString('de-DE')} (${formatNumberInScientificNotation(userCardValue)})</i>
 <b>Пароль карты:</b> <i>${userCardPassword}</i>
                     `, { parse_mode: 'HTML', reply_to_message_id: replyId })
                 }
@@ -110,7 +103,7 @@ async function cardInfo(msg, bot, collection) {
 <b>Номер карты:</b> |<code>${userCardNumber}</code>|\n
 <b>Имя карты:</b> <i>${userCardName}</i>
 <b>Владелец карты:</b> <i>${userCardOwner}</i>
-<b>Деньги:</b> <i>${userCardValue}</i>
+<b>Деньги:</b> <i>${userCardValue.toLocaleString('de-DE')} (${formatNumberInScientificNotation(userCardValue)})</i>
 <b>Пароль карты:</b> <i>Вы еще не ставили пароль</i>
 
 <b>Рекомендация поставьте пароль с командой <code>+карта пароль (4-значная цифра)</code></b>
@@ -122,7 +115,7 @@ async function cardInfo(msg, bot, collection) {
 <b>Номер карты:</b> |5444 **** **** ****|\n
 <b>Имя карты:</b> <i>${userCardName}</i>
 <b>Владелец карты:</b> <i>${userCardOwner}</i>
-<b>Деньги:</b> <i>${userCardValue}</i>
+<b>Деньги:</b> <i>${userCardValue.toLocaleString('de-DE')} (${formatNumberInScientificNotation(userCardValue)})</i>
 <b>Пароль карты:</b> ****
 
 <b>Напишите в лс бота чтобы узнать свои данные</b>
@@ -222,7 +215,7 @@ async function getMoneyFromCard(msg, bot, collection) {
                         if (systemGet > 0) {
                             bot.sendMessage(chatId, `
 Вы успешно сняли денег с карты: ${userCardNumber}
-Сумму: ${systemGet}
+Сумму: ${systemGet.toLocaleString('de-DE')} (${formatNumberInScientificNotation(systemGet)})
                             `)
 
                             collection.updateOne({ "bankCard.0.cardOwnerId": userCardOwnerId }, { $inc: { "bankCard.0.cardValue": -systemGet } })
@@ -241,9 +234,10 @@ async function getMoneyFromCard(msg, bot, collection) {
                         if (parts[6] == userCardPassword) {
                             if (systemGet <= userCardValue) {
                                 if (systemGet > 0) {
+                                    const systemGet2 = parseNumber(parts[7])
                                     bot.sendMessage(chatId, `
 Вы успешно сняли денег с карты: ${userCardNumber}
-Сумму: ${parts[7]}
+Сумму: ${systemGet2.toLocaleString('de-DE')} (${formatNumberInScientificNotation(systemGet2)})
                                 `)
                                     collection.updateOne({ "bankCard.0.cardOwnerId": userCardOwnerId }, { $inc: { "bankCard.0.cardValue": -systemGet } })
                                     collection.updateOne({ id: userId }, { $inc: { balance: systemGet } })
@@ -293,7 +287,7 @@ async function getMoneyFromOwnCard(msg, bot, collection) {
                     const userCardNumber = user.bankCard[0].cardNumber
                     bot.sendMessage(chatId, `
 Вы успешно сняли с вашей карты: <code>|${userCardNumber}|</code>
-Сумму: ${moneyToGet}
+Сумму: ${moneyToGet.toLocaleString('de-DE')} (${formatNumberInScientificNotation(moneyToGet)})
 
 Баланс карты: ${userCardBalance - moneyToGet}
                     `, { parse_mode: 'HTML' })
@@ -301,7 +295,7 @@ async function getMoneyFromOwnCard(msg, bot, collection) {
                 else {
                     bot.sendMessage(chatId, `
 Вы успешно сняли с вашей карты: <code>|5444 **** **** ****|</code>
-Сумму: ${moneyToGet}
+Сумму: ${moneyToGet.toLocaleString('de-DE')} (${formatNumberInScientificNotation(moneyToGet)})
 
 Баланс карты: ${userCardBalance - moneyToGet}
                     `, { parse_mode: 'HTML', reply_to_message_id: replyId })
@@ -327,7 +321,6 @@ async function setMoneyToCard(msg, bot, collection) {
     const chatId = msg.chat.id
     const userId = msg.from.id
     const text = msg.text
-    const userName = msg.from.username
     const replyId = msg.message_id
 
     const parts = text.split(' ')
@@ -340,7 +333,7 @@ async function setMoneyToCard(msg, bot, collection) {
             if (moneyToSet > 0) {
                 bot.sendMessage(chatId, `
 Вы успешно положили в свою карту
-Сумму: ${moneyToSet}
+Сумму: ${moneyToSet.toLocaleString('de-DE')} (${formatNumberInScientificNotation(moneyToSet)})
                 `, { reply_to_message_id: replyId })
                 collection.updateOne({ id: userId }, { $inc: { "bankCard.0.cardValue": moneyToSet } })
                 collection.updateOne({ id: userId }, { $inc: { balance: -moneyToSet } })

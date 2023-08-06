@@ -1,4 +1,5 @@
-const { startOptions, helpOption, backOption } = require("../../options")
+const { startOptions, helpOption, backOption } = require("../../options");
+const { formatNumberInScientificNotation } = require("../systems/systemRu");
 require('dotenv').config();
 const adminId = parseInt(process.env.ADMIN_ID)
 
@@ -41,7 +42,7 @@ async function commandStart(msg, collection, bot) {
 Привет, <a href='tg://user?id=${userId}'>Игрок</a> \n
 <b>Ты уже добавлен в базу</b>
 <i>Дата ${register_time}</i>
-            `, { parse_mode: 'HTML', ...startOptions, reply_to_message_id: msg.message_id })
+        `, { parse_mode: 'HTML', ...startOptions, reply_to_message_id: msg.message_id })
     }
     else {
         // ЕСЛИ ВСЁ ТАКИ ХОЧЕШЬ ОТПРАВИТЬ СТИКЕР
@@ -54,7 +55,7 @@ async function commandStart(msg, collection, bot) {
 Так же ты можешь добавить меня в беседу для игры с друзьями.\n
 Рекомендую скорее нажать на помощь "Помощь" |
 
-+Вам в подарок было выдано плстик карта MasterCard
++Вам в подарок было выдано пластик карта MasterCard
 Напишите <code>карта инфо</code> чтобы узнать информацию о карте
         `, { parse_mode: 'HTML', ...startOptions, reply_to_message_id: msg.message_id })
             })
@@ -75,6 +76,10 @@ async function commandStart(msg, collection, bot) {
             registerTime: registerUserTime,
             altcoinidx: 0,
             checkPayment: 'not',
+            referral: [{
+                code: '',
+                amount: 0,
+            }],
             crypto: [{
                 altcoinidx: 0
             }],
@@ -120,18 +125,18 @@ async function commandHelpInChats(msg, userGameName, bot) {
 
     await bot.sendMessage(chatId, `
 <a href='tg://user?id=${userId}'>${userGameName}</a>
-🗂Разделы
-👨‍🔬Ownner: @levou7 
+<b>🗂Разделы</b>
+<b>👨‍🔬Ownner: Corporation of The Youngs</b>
 
-👜 Основные✇ 
-🌇 Имущество❃۬
-🛡 Для ✄Админов
-🤹‍♂ Игры✺
-☎️ Модерация㋡
-📓 Развлекательное❒
+<i>👜 Основные✇ </i>
+<i>🌇 Имущество❃۬</i>
+<i>🛡 Для ✄Админов</i>
+<i>🤹‍♂ Игры✺</i>
+<i>☎️ Модерация㋡</i>
+<i>📓 Развлекательное❒</i>
 
 🗄 Беседа - официальные чаты и канал бота.
-        `, { parse_mode: 'HTML', ...helpOption, reply_to_message_id: replyId })
+    `, { parse_mode: 'HTML', ...helpOption, reply_to_message_id: replyId })
 }
 
 async function commandHelp(msg, collection, bot) {
@@ -145,18 +150,18 @@ async function commandHelp(msg, collection, bot) {
         const userGameName = user.userName
         await bot.sendMessage(chatId, `
 <a href='tg://user?id=${userId}'>${userGameName}</a>
-🗂Разделы
-👨‍🔬Ownner: @levou7 
+<b>🗂Разделы</b>
+<b>👨‍🔬Ownner: Corporation of The Youngs</b>
 
-👜 Основные✇ 
-🌇 Имущество❃۬
-🛡 Для ✄Админов
-🤹‍♂ Игры✺
-☎️ Модерация㋡
-📓 Развлекательное❒
+<i>👜 Основные✇ </i>
+<i>🌇 Имущество❃۬</i>
+<i>🛡 Для ✄Админов</i>
+<i>🤹‍♂ Игры✺</i>
+<i>☎️ Модерация㋡</i>
+<i>📓 Развлекательное❒</i>
 
 🗄 Беседа - официальные чаты и канал бота.
-`, { parse_mode: 'HTML', ...helpOption, reply_to_message_id: replyId })
+        `, { parse_mode: 'HTML', ...helpOption, reply_to_message_id: replyId })
     }
 }
 
@@ -168,15 +173,15 @@ async function commandHelpAsBtn(msg, bot, userGameName) {
 
     const help = `
 <a href='tg://user?id=${userId}'>${userGameName}</a>
-🗂Разделы
-👨‍🔬Ownner: @levou7 
+<b>🗂Разделы</b>
+<b>👨‍🔬Ownner: Corporation of The Youngs</b>
 
-👜 Основные✇ 
-🌇 Имущество❃۬
-🛡 Для ✄Админов
-🤹‍♂ Игры✺
-☎️ Модерация㋡
-📓 Развлекательное❒
+<i>👜 Основные✇ </i>
+<i>🌇 Имущество❃۬</i>
+<i>🛡 Для ✄Админов</i>
+<i>🤹‍♂ Игры✺</i>
+<i>☎️ Модерация㋡</i>
+<i>📓 Развлекательное❒</i>
 
 🗄 Беседа - официальные чаты и канал бота.
     `
@@ -223,7 +228,7 @@ async function userInfoReplyToMessage(msg, bot, collection) {
 
     const user = userIdToGet ? await collection.findOne({ id: userIdToGet }) : null
 
-    if (text == '.infoid') {
+    if (text.toLowerCase() == '.infoid') {
         if (userId === adminId) {
             if (!!user) {
                 if (userIdToGet) {
@@ -240,9 +245,10 @@ async function userInfoReplyToMessage(msg, bot, collection) {
 
                     if (chatId == userId) {
                         await bot.sendMessage(chatId, `
+<b>Телеграм 🆔</b> <code><i>${user.id}</i></code>
 <b>Игровой 🆔:</b> ${userGameId}
 <b>Ник 👨:</b> <a href='tg://user?id=${userId2}'>${userGameName}</a>
-<b>Баланс 💸: ${userGameBalance}$</b>
+<b>Баланс 💸: ${userGameBalance.toLocaleString('de-DE')}$ (${formatNumberInScientificNotation(userGameBalance)})</b>
 <b>Карта: |<code>${userBankCard}</code>|</b>
 <b>Криптовалюты ↓</b>
    <b>Alt Coin IDX:</b> ${cryptoCurAlt}
@@ -253,9 +259,10 @@ async function userInfoReplyToMessage(msg, bot, collection) {
                     }
                     else {
                         await bot.sendMessage(chatId, `
+<b>Телеграм 🆔</b> <code><i>${user.id}</i></code>
 <b>Игровой 🆔:</b> ${userGameId}
 <b>Ник 👨:</b> <a href='tg://user?id=${userId2}'>${userGameName}</a>
-<b>Баланс 💸: ${userGameBalance}$</b>
+<b>Баланс 💸: ${userGameBalance.toLocaleString('de-DE')}$ (${formatNumberInScientificNotation(userGameBalance)})</b>
 <b>Карта: |<code>5444 **** **** ****</code>|</b>
 <b>Криптовалюты ↓</b>
    <b>Alt Coin IDX:</b> ${cryptoCurAlt}
@@ -279,81 +286,73 @@ async function userInfoReplyToMessage(msg, bot, collection) {
     }
 }
 
-// async function sendPrivateMessage(userId, text, bot, userIdReq) {
-//     await bot.sendMessage(userId, `
-// Вам пришло сообщение от игрока <a href='tg://user?id=${userIdReq}'>Игрок</a>
-// Текст: ${text}
-//     `, { parse_mode: "HTML" });
-// }
+async function isBotBlocked(userId, bot, text, userIdReq) {
+    try {
+        // Выполняем запрос к API Telegram для отправки сообщения пользователю
+        await bot.sendMessage(userId, `
+Вам пришло сообщение от игрока <a href='tg://user?id=${userIdReq}'>Игрок</a>
+Текст: ${text}
+    `, { parse_mode: "HTML" });
+        return true; // Бот не заблокирован и может отправлять сообщения
+    } catch (error) {
+        // Если при отправке сообщения возникла ошибка, проверяем ее код
+        if (error.code === 'ETELEGRAM' && error.response.body.error_code === 403) {
+            return false; // Бот заблокирован и не может отправлять сообщения
+        } else {
+            throw error; // Возникла другая ошибка, пробрасываем ее дальше
+        }
+    }
+}
 
-// async function isBotBlocked(userId, bot, text, userIdReq) {
-//     try {
-//         // Выполняем запрос к API Telegram для отправки сообщения пользователю
-//         await bot.sendMessage(userId, `
-// Вам пришло сообщение от игрока <a href='tg://user?id=${userIdReq}'>Игрок</a>
-// Текст: ${text}
-//     `, { parse_mode: "HTML" });
-//         return true; // Бот не заблокирован и может отправлять сообщения
-//     } catch (error) {
-//         // Если при отправке сообщения возникла ошибка, проверяем ее код
-//         if (error.code === 'ETELEGRAM' && error.response.body.error_code === 403) {
-//             return false; // Бот заблокирован и не может отправлять сообщения
-//         } else {
-//             throw error; // Возникла другая ошибка, пробрасываем ее дальше
-//         }
-//     }
-// }
+async function userMsg(msg, bot, collection) {
+    const chatId = msg.chat.id;
+    const text = msg.text;
+    const userIdReq = msg.from.id
 
-// async function userMsg(msg, bot, collection) {
-//     const chatId = msg.chat.id;
-//     const text = msg.text;
-//     const userIdReq = msg.from.id
+    const userIdToSendDb = await collection.findOne({})
+    const parts = text.split(' ')
 
-//     const userIdToSendDb = await collection.findOne({})
-//     const parts = text.split(' ')
+    const message = text.split(' ').slice(2).join(' ');
+    if (text.startsWith('/msg')) {
+        const userIdToSend = parseInt(parts[1])
+        let userToResId
+        if (userIdToSend == userIdToSendDb.id) {
+            userToResId = userIdToSendDb.id
+        }
+        else {
+            userToResId = null
+        }
+        if (userIdToSendDb) {
 
-//     const message = text.split(' ').slice(2).join(' ');
-//     if (text.startsWith('/msg')) {
-//         const userIdToSend = parseInt(parts[1])
-//         let userToResId
-//         if (userIdToSend == userIdToSendDb.id) {
-//             userToResId = userIdToSendDb.id
-//         }
-//         else {
-//             userToResId = null
-//         }
-//         if (userIdToSendDb) {
+            const hasPrivateChat = await isBotBlocked(userToResId, bot, message, userIdReq);
+            if (!hasPrivateChat) {
+                // Если приватного чата нет или бот заблокирован, уведомляем отправителя команды
+                bot.sendMessage(chatId, `Пользователь с ID ${userToResId} не имеет приватного чата с ботом или заблокировал его и не может получать сообщения от бота. Пожалуйста, напишите боту в приватный чат.`);
+            }
+            else {
+                // Сохраняем информацию о том, что бот будет отправлять сообщение пользователю в приватный чат
+                // Для этого можно использовать базу данных или другой механизм хранения данных
+                // Здесь я просто добавил объект userStates, который содержит информацию о том, что бот будет отправлять сообщение
+                const userId = msg.from.id;
+                userStates[userId] = { state: 'waiting_for_private_message', message };
+                const userState = userStates[userId];
 
-//             const hasPrivateChat = await isBotBlocked(userToResId, bot, message, userIdReq);
-//             console.log(userIdReq);
-//             if (!hasPrivateChat) {
-//                 // Если приватного чата нет или бот заблокирован, уведомляем отправителя команды
-//                 bot.sendMessage(chatId, `Пользователь с ID ${userToResId} не имеет приватного чата с ботом или заблокировал его и не может получать сообщения от бота. Пожалуйста, напишите боту в приватный чат.`);
-//             }
-//             else {
-//                 // Сохраняем информацию о том, что бот будет отправлять сообщение пользователю в приватный чат
-//                 // Для этого можно использовать базу данных или другой механизм хранения данных
-//                 // Здесь я просто добавил объект userStates, который содержит информацию о том, что бот будет отправлять сообщение
-//                 const userId = msg.from.id;
-//                 userStates[userId] = { state: 'waiting_for_private_message', message };
-//                 const userState = userStates[userId];
+                if (userState && userState.state === 'waiting_for_private_message') {
+                    // Если бот ожидает сообщение от пользователя, отправляем ему сохраненное сообщение
 
-//                 if (userState && userState.state === 'waiting_for_private_message') {
-//                     // Если бот ожидает сообщение от пользователя, отправляем ему сохраненное сообщение
+                    // sendPrivateMessage(userIdToSend, message, bot, userIdReq);
+                    bot.sendMessage(chatId, `Сообщение отправлено пользователю с айди ${userIdToSendDb.id}.`);
 
-//                     // sendPrivateMessage(userIdToSend, message, bot, userIdReq);
-//                     bot.sendMessage(chatId, `Сообщение отправлено пользователю с айди ${userIdToSendDb.id}.`);
+                    // Очищаем информацию о состоянии пользователя после отправки сообщения
+                    delete userStates[userId];
+                }
+            }
 
-//                     // Очищаем информацию о состоянии пользователя после отправки сообщения
-//                     delete userStates[userId];
-//                 }
-//             }
-
-//         } else {
-//             bot.sendMessage(chatId, 'Ошибка: не удалось определить пользователя для отправки сообщения.');
-//         }
-//     }
-// }
+        } else {
+            bot.sendMessage(chatId, 'Ошибка: не удалось определить пользователя для отправки сообщения.');
+        }
+    }
+}
 
 async function deleteAllUsers(msg, collection, bot, ObjectId) {
     const chatId = adminId
@@ -384,7 +383,7 @@ module.exports = {
     commandHelp,
     commandHelpAsBtn,
     commandHelpInChats,
-    // userMsg,
+    userMsg,
     deleteAllUsers,
     userInfoReplyToMessage,
 }

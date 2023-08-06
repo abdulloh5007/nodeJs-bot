@@ -1,5 +1,5 @@
 const { againGameOptions } = require("../../options");
-const { parseNumber } = require("../systems/systemRu");
+const { parseNumber, formatNumberInScientificNotation } = require("../systems/systemRu");
 const { gameWinStickers, gameLoseStickers } = require("./gameStickers");
 
 async function kazino(msg, collection, bot) {
@@ -10,11 +10,12 @@ async function kazino(msg, collection, bot) {
     const user = await collection.findOne({ id: userId });
 
     const parts = text && text.split(' ');
-    const winChance = 30;
+    const winChance = 40;
 
     if (parts && parts[0].toLowerCase() === 'казино' && parts.length === 2) {
         const balance = user.balance;
         const name = user.userName;
+        const userIdG = user.id
         const value = parseInt(parseNumber(parts[1].toLowerCase()));
 
         // if (!isNaN(value)) {
@@ -24,12 +25,21 @@ async function kazino(msg, collection, bot) {
                 const winAmount = value * 2;
                 const newBalance = balance + winAmount;
                 const loseAmount = balance - value;
-
+                
                 if (randomNum < winChance) {
-                    await bot.sendMessage(chatId, `<b>Игрок ${name}</b>\nПоздравляем! Вы выиграли ${winAmount} ${gameWinStickers()}.\nВаш новый баланс: ${newBalance}.`, { reply_to_message_id: messageId, parse_mode: 'HTML', ...againGameOptions });
+                    collection.updateOne({ id: userId }, { $inc: { balance: -value } })
+                    await bot.sendMessage(chatId, `
+<b>Пользователь <a href='tg://user?id=${userIdG}'>${name}</a></b>
+<b>2x</b>
+<b>Поздравляем! Вы выиграли ${winAmount.toLocaleString('de-DE')} ${gameWinStickers()}.</b>
+                    `, { reply_to_message_id: messageId, parse_mode: 'HTML', ...againGameOptions });
                     collection.updateOne({ id: userId }, { $set: { balance: newBalance }, $inc: { "rates.0.all": 1, "rates.0.wins": 1 } });
                 } else {
-                    await bot.sendMessage(chatId, `<b style='color: red'>Игрок ${name}</b>\nК сожалению, вы проиграли ${value} ${gameLoseStickers()}\nВаш новый баланс: ${loseAmount}.`, { reply_to_message_id: messageId, parse_mode: 'HTML', ...againGameOptions });
+                    await bot.sendMessage(chatId, `
+<b>Пользователь <a href='tg://user?id=${userIdG}'>${name}</a></b>
+<b>0x</b>
+<b>К сожалению, вы проиграли ${value.toLocaleString('de-DE')} ${gameLoseStickers()}.</b>
+                    `, { reply_to_message_id: messageId, parse_mode: 'HTML', ...againGameOptions });
                     collection.updateOne({ id: userId }, { $set: { balance: loseAmount }, $inc: { "rates.0.all": 1, "rates.0.loses": 1 } });
                 }
             }
@@ -39,9 +49,6 @@ async function kazino(msg, collection, bot) {
         } else {
             await bot.sendMessage(chatId, '<b>У вас нехватает средств</b>', { reply_to_message_id: messageId, parse_mode: 'HTML' });
         }
-        // } else {
-        //     await bot.sendMessage(chatId, `Введите только число`, { reply_to_message_id: messageId });
-        // }
     }
 }
 

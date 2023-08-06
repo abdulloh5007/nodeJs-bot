@@ -3,7 +3,7 @@ module.exports = {
         reply_markup: JSON.stringify({
             inline_keyboard: [
                 [{ text: 'Помощь', callback_data: 'help' }],
-                [ { text: 'Добавить бота в чат', url: 'https://telegram.me/levoujs_bot?startgroup=new' }]
+                [{ text: 'Добавить бота в чат', url: 'https://telegram.me/levoujs_bot?startgroup=new' }]
             ]
         })
     },
@@ -45,4 +45,13 @@ module.exports = {
             ]
         })
     },
+    topOptions: {
+        reply_markup: JSON.stringify({
+            inline_keyboard: [
+                [{ text: 'Топ баланс', callback_data: 'top_balance' }],
+                [{ text: 'Топ проведены игр', callback_data: 'top_game' }],
+                [{ text: 'Топ баланса на карте', callback_data: 'top_card' }],
+            ]
+        })
+    }
 }

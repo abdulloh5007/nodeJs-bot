@@ -1,4 +1,4 @@
-const { parseNumber } = require("../systems/systemRu");
+const { parseNumber, formatNumberInScientificNotation } = require("../systems/systemRu");
 
 async function giveMoney(msg, bot, collection) {
     const chatId = msg.chat.id;
@@ -29,7 +29,7 @@ async function giveMoney(msg, bot, collection) {
                 if (userToGiveBalance >= amount) {
                     const successful = userToGiveBalance - amount;
                     bot.sendMessage(chatId, `
-Игрок <a href='tg://user?id=${userToGive}'>${userToGiveName}</a> дал игроку <a href='tg://user?id=${userToAccept}'>${userToAcceptName}</a> сумму ${amount}`, { parse_mode: 'HTML' });
+Игрок <a href='tg://user?id=${userToGive}'>${userToGiveName}</a> дал игроку <a href='tg://user?id=${userToAccept}'>${userToAcceptName}</a> сумму ${amount.toLocaleString('de-DE')} (${formatNumberInScientificNotation(amount)})`, { parse_mode: 'HTML' });
                     collection.updateOne({ id: userToGive }, { $set: { balance: successful } });
                     collection.updateOne({ id: userToAccept }, { $inc: { balance: amount } });
                 } else {

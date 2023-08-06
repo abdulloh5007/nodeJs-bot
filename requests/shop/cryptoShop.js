@@ -3,13 +3,16 @@ let globalCrypto3;
 let globalCryptoPrice;
 let globalPermission = false;
 
-async function cryptoShop(msg, bot, collectionCrypto) {
+async function cryptoShop(msg, bot, collectionCrypto, collection) {
     const text = msg.text
     const userId = msg.from.id
     const chatId = msg.chat.id
 
     if (text.toLowerCase() == 'магазин крипты') {
         const crypto = await collectionCrypto.findOne({ name: 'altcoinidx' })
+        const user = await collection.findOne({ id: userId })
+
+        const userName = user.userName
         const cryptoPrice = crypto.price
         const cryptoLastUpd = crypto.lastUpdateTime
         const cryptoStatus = crypto.status
@@ -24,7 +27,7 @@ async function cryptoShop(msg, bot, collectionCrypto) {
         }
 
         bot.sendMessage(chatId, `
-<a href='tg://user?id=${userId}'>😎Игрок</a> Вот магазин криптовалют
+<a href='tg://user?id=${userId}'>${userName}</a> Вот магазин криптовалют
 В данный момент🟣🌀💠🌐
 
 <b>🪪Название:</b> ALTCOINIDX
@@ -122,11 +125,11 @@ async function buyCryptoCurrence(msg, bot, collection, collectionCrypto) {
                                 // Устанавливаем таймер на 6 секунд
                                 setTimeout(() => {
                                     // Отправляем новое сообщение с текстом "Вы не успели ответить на вопрос."
-                                    // if (globalPermission != true) {
-                                    bot.editMessageText(`Время прошло вы не успели купить криптовалюту надо было нажать на кнопку своей пластик карты в течении 6 секунд`, { chat_id: chatId, message_id: messageId, });
-                                    // }
+                                    if (globalPermission != true) {
+                                        bot.editMessageText(`Время прошло вы не успели купить криптовалюту надо было нажать на кнопку своей пластик карты в течении 6 секунд`, { chat_id: chatId, message_id: messageId, });
+                                    }
                                     collection.updateOne({ id: userId }, { $set: { checkPayment: 'not' } })
-                                }, 20000);
+                                }, 6000);
                             });
                     }
                     else {
@@ -160,7 +163,7 @@ async function buyCryptoCurrenceBtn(msg, bot, collection) {
 
 
     if (oplate === 'oplata') {
-        if (`mastercard_${userCardNum}` === userCheck  && buttonUserId === String(userId)) {
+        if (`mastercard_${userCardNum}` === userCheck && buttonUserId === String(userId)) {
             const userCardBalance = user.bankCard[0].cardValue
 
             if (userCardBalance >= globalCrypto3) {
@@ -214,7 +217,7 @@ async function buyCryptoCurrenceBtn(msg, bot, collection) {
         }
     }
     if (oplate === 'oplataBack') {
-        if (`mastercard_${userCardNum}` === userCheck  && buttonUserId === String(userId)) {
+        if (`mastercard_${userCardNum}` === userCheck && buttonUserId === String(userId)) {
             bot.answerCallbackQuery(msg.id, { text: 'Вы успешно отменили оплату', show_alert: true });
             bot.editMessageText(`Вы успешно отменили оплату\nВам не чего не было начислено на баланс крипты`, {
                 chat_id: chatId,

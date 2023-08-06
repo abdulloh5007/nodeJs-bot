@@ -42,6 +42,45 @@ function parseNumber(input) {
     return parseInt(input);
 }
 
+function formatNumberWithAbbreviations(number) {
+    const SI_SYMBOL = ['', 'тыс', 'млн', 'млрд', 'трлн']; // Отображаемые сокращения
+
+    // Находим порядок числа (тысячи, миллионы, миллиарды и т.д.)
+    const order = Math.min(Math.floor(Math.log10(Math.abs(number)) / 3), SI_SYMBOL.length - 1);
+
+    // Округляем число с учетом порядка
+    const roundedNumber = (number / Math.pow(10, order * 3)).toFixed(3);
+
+    // Убираем лишние нули после десятичной точки
+    const formattedNumber = parseFloat(roundedNumber).toString();
+
+    // Возвращаем число с соответствующим сокращением
+    return formattedNumber + SI_SYMBOL[order];
+}
+
+function formatNumberInScientificNotation(number) {
+    // Если число меньше 1000, то нет необходимости представлять в научной нотации
+    if (Math.abs(number) < 1000) {
+        return number.toLocaleString();
+    }
+
+    // Находим порядок числа (тысячи, миллионы, миллиарды и т.д.)
+    const order = Math.floor(Math.log10(Math.abs(number)) / 3) * 3;
+
+    // Округляем число с учетом порядка
+    const roundedNumber = (number / Math.pow(10, order)).toFixed(3);
+
+    // Убираем лишние нули после десятичной точки
+    const formattedNumber = parseFloat(roundedNumber).toString();
+
+    // Возвращаем число в научной нотации
+    return formattedNumber + "e" + order;
+}
+
+
+
 module.exports = {
     parseNumber,
+    formatNumberWithAbbreviations,
+    formatNumberInScientificNotation,
 }

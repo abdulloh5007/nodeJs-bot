@@ -1,4 +1,4 @@
-const { parseNumber } = require('../systems/systemRu');
+const { parseNumber, formatNumberInScientificNotation } = require('../systems/systemRu');
 
 require('dotenv').config();
 const adminIdInt = parseInt(process.env.ADMIN_ID_INT)
@@ -20,7 +20,7 @@ async function extraditeMoney(msg, collection, bot) {
 
                 if (!!userToGet) {
                     const userNameToGet = userToGet.userName
-                    bot.sendMessage(chatId, `Вы успешно выдали игроку <a href='tg://user?id=${userIdToGet}'>${userNameToGet}</a>\nСумму: ${sum}`, { parse_mode: "HTML" })
+                    bot.sendMessage(chatId, `Вы успешно выдали игроку <a href='tg://user?id=${userIdToGet}'>${userNameToGet}</a>\nСумму: ${sum.toLocaleString('de-DE')} (${formatNumberInScientificNotation(sum)})`, { parse_mode: "HTML" })
 
                     collection.updateOne({ id: userIdToGet }, { $inc: { balance: sum } })
 
@@ -58,13 +58,13 @@ async function takeMoney(msg, collection, bot) {
                     const userToTakeBalance = userToTake.balance
                     if (sum <= userToTakeBalance) {
                         const userNameToTake = userToTake.userName
-                        bot.sendMessage(chatId, `Вы успешно забрали от игрока <a href='tg://user?id=${userIdToTake}'>${userNameToTake}</a>\nСумму: ${sum}`, { parse_mode: "HTML" })
+                        bot.sendMessage(chatId, `Вы успешно забрали от игрока <a href='tg://user?id=${userIdToTake}'>${userNameToTake}</a>\nСумму: ${sum.toLocaleString('de-DE')} (${formatNumberInScientificNotation(userToTakeBalance)})`, { parse_mode: "HTML" })
 
                         collection.updateOne({ id: userIdToTake }, { $inc: { balance: -sum } })
 
                     }
                     else {
-                        bot.sendMessage(chatId, `У этого пользователя меньше денег чем вы назначили чтобы забрать вы можете забрать у него\nСумму: ${userToTakeBalance}`, { reply_to_message_id: messageId })
+                        bot.sendMessage(chatId, `У этого пользователя меньше денег чем вы назначили чтобы забрать вы можете забрать у него\nСумму: ${userToTakeBalance.toLocaleString('de-DE')} (${formatNumberInScientificNotation(userToTakeBalance)})`, { reply_to_message_id: messageId })
                     }
                 }
                 else {

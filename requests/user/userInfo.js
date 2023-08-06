@@ -1,7 +1,12 @@
 const { dayBonusOption } = require("../../options");
+const { formatNumberWithAbbreviations, formatNumberInScientificNotation } = require("../systems/systemRu");
 require('dotenv').config();
 const adminIdInt = parseInt(process.env.ADMIN_ID_INT)
 const adminIdStr = process.env.ADMIN_ID
+
+async function userChangeBFunc() {
+    
+}
 
 async function userBalance(msg, collection, bot) {
     const chatId = msg.chat.id;
@@ -10,14 +15,21 @@ async function userBalance(msg, collection, bot) {
     const user = await collection.findOne({ id: userId });
 
     if (['б', 'баланс', 'счёт', 'b', 'balance', 'balanc', 'balans'].includes(text.toLowerCase())) {
-        const balance = user.balance;
+        // const balance = user.balance.toLocaleString('de-DE');
+        const balance = user.balance
+        const balanceFuncE = formatNumberInScientificNotation(balance)
+        const balanceFuncT = balance.toLocaleString('de-DE')
         const name = user.userName;
+        const userColId = user.id
         const txt = `
-игрок ${name}
-вот ваш баланс ${balance}
+игрок <a href='tg://user?id=${userColId}'>${name}</a>, ваш баланс
+
+🪙 | Монет: ${balanceFuncT} ${balance > 1000 ? `(${balanceFuncE})` : ''}
         `
-        
-        await bot.sendPhoto(chatId, `https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSrpLxzWuUEiluZkzdPI7HGYY-ZT9ahl7EGoQ&usqp=CAU`, { parse_mode: 'HTML', ...dayBonusOption, reply_to_message_id: msg.message_id, caption: txt });
+
+        const balancePng = __dirname + `./balance.jpg`
+
+        await bot.sendPhoto(chatId, `https://www.google.com/imgres?imgurl=https%3A%2F%2Fakket.com%2Fwp-content%2Fuploads%2F2021%2F12%2FEto-neizbezhno.-S-1-yanvarya-dengi-obestsenyatsya-9.jpg&tbnid=o1Go25fVBwGaXM&vet=1&imgrefurl=https%3A%2F%2Fakket.com%2Fraznoe%2F253432-eto-neizbezhno-s-1-yanvarya-dengi-obestsenyatsya.html&docid=uSD7AMS4aZnuAM&w=1800&h=1200&itg=1&hl=ru-RU&source=sh%2Fx%2Fim%2F4`, { parse_mode: 'HTML', ...dayBonusOption, reply_to_message_id: msg.message_id, caption: txt });
     }
 }
 
@@ -84,13 +96,16 @@ async function userGameInfo(msg, bot, collection) {
         const userBankCard = user.bankCard[0].cardNumber
         const cryptoCurAlt = user.crypto[0].altcoinidx
 
+        const balanceFuncE = formatNumberInScientificNotation(userGameBalance)
+        const balanceFuncT = userGameBalance.toLocaleString('de-DE')
+
         if (chatId == userId) {
             await bot.sendMessage(chatId, `
 <b>Игровой 🆔:</b> ${userGameId}
 <b>Ник 👨:</b> <a href='tg://user?id=${userId}'>${userGameName}</a>
-<b>Баланс 💸: ${userGameBalance}$</b>
-<b>Карта: |<code>${userBankCard}</code>|</b>
-<b>Криптовалюты ↓</b>
+<b>Баланс 💸: ${balanceFuncT}$ ${userGameBalance > 1000 ? `(${balanceFuncE})` : ''}</b>
+<b>Карта 💳: |<code>${userBankCard}</code>|</b>
+<b>Криптовалюты 📊↓</b>
    <b>Alt Coin IDX:</b> ${cryptoCurAlt}
 
 <b>Сыграно игр: ${ratesAll} \n    Выигрыши: ${ratesWin} \n    Проигрыши: ${ratesLose}</b>
@@ -101,9 +116,9 @@ async function userGameInfo(msg, bot, collection) {
             await bot.sendMessage(chatId, `
 <b>Игровой 🆔:</b> ${userGameId}
 <b>Ник 👨:</b> <a href='tg://user?id=${userId}'>${userGameName}</a>
-<b>Баланс 💸: ${userGameBalance}$</b>
-<b>Карта: |<code>5444 **** **** ****</code>|</b>
-<b>Криптовалюты ↓</b>
+<b>Баланс 💸: ${balanceFuncT}$ ${userGameBalance > 1000 ? `(${balanceFuncE})` : ''}</b>
+<b>Карта 💳: |<code>5444 **** **** ****</code>|</b>
+<b>Криптовалюты 📊↓</b>
    <b>Alt Coin IDX:</b> ${cryptoCurAlt}
 
 <b>Сыграно игр: ${ratesAll} \n    Выигрыши: ${ratesWin} \n    Проигрыши: ${ratesLose}</b>
