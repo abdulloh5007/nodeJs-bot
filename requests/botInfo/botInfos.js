@@ -75,7 +75,7 @@ async function botVersionChange(msg, bot, collectionBot) {
                 console.log(parts[3], 'ok');
             }
             else if(parts[3] !== undefined && parts[2] !== undefined && parts.length === 4){
-                const versionBot = parts[2] + ' ' + parts[3]
+                const versionBot = parts[2] + ' ' + parts[3].toUpperCase()
                 bot.sendMessage(chatId, `Версия бота успешно обновлена до ${versionBot}`)
                 collectionBot.updateOne({ id: adminIdInt }, { $set: { botVersion: versionBot } })
             }

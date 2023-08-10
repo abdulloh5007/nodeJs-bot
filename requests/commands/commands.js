@@ -49,14 +49,19 @@ async function commandStart(msg, collection, bot) {
         await bot.sendSticker(chatId, 'CAACAgIAAxkBAAEJuehkthTWSWEaOSTzdOjdX5T1rpuFEgACSQADQbVWDGATQ6Y8j8OALwQ')
             .then(() => {
                 bot.sendMessage(chatId, `
-Привет, <a href='tg://user?id=${userId}'>Игрок</a> \n
-Я-игровой бот для игры в различные игры.\n
-Тебе выдан подарок 🎁 в размере 10.000€.\n
-Так же ты можешь добавить меня в беседу для игры с друзьями.\n
-Рекомендую скорее нажать на помощь "Помощь" |
+Привет, <a href='tg://user?id=${userId}'>Игрок</a>
 
-+Вам в подарок было выдано пластик карта MasterCard
-Напишите <code>карта инфо</code> чтобы узнать информацию о карте
+Я - игровой бот для игры в различные игры.
+
+🎁 | Тебе выдан подарок в размере 10.000€.
+
+Так же ты можешь добавить меня в беседу для игры с друзьями.
+
+Рекомендую скорее нажать на помощь или написав: «Помощь»
+
++ вам в подарок была выдана пластик карта «MasterCard».
+
+Напишите: «карта инфо», чтобы узнать информацию о карте, приятной игры! 😊
         `, { parse_mode: 'HTML', ...startOptions, reply_to_message_id: msg.message_id })
             })
         const prefix = "5444";
@@ -76,6 +81,19 @@ async function commandStart(msg, collection, bot) {
             registerTime: registerUserTime,
             altcoinidx: 0,
             checkPayment: 'not',
+            // avatar: [{
+            //     waiting: '',
+            //     avaUrl: '',
+            // }],
+            properties: [{
+                house: [{
+                    houseName: '',
+                    housePrice: 0,
+                    houseSeason: 0,
+                    houseImg: '',
+                }],
+                car: '',
+            }],
             referral: [{
                 code: '',
                 amount: 0,
@@ -359,7 +377,7 @@ async function deleteAllUsers(msg, collection, bot, ObjectId) {
     const text = msg.text
     const userId = msg.from.id
 
-    if (text.toLowerCase() === 'удалить всех пользователей') {
+    if (text.toLowerCase() === 'удалить всех пользователей' || text.toLowerCase() === 'увп') {
         if (userId === adminId) {
             const user = await collection.find({ _id: ObjectId })
             const deletedUsers = await user.map((doc) => doc.id).toArray();

@@ -5,7 +5,7 @@ const adminIdInt = parseInt(process.env.ADMIN_ID_INT)
 const adminIdStr = process.env.ADMIN_ID
 
 async function userChangeBFunc() {
-    
+
 }
 
 async function userBalance(msg, collection, bot) {
@@ -20,16 +20,14 @@ async function userBalance(msg, collection, bot) {
         const balanceFuncE = formatNumberInScientificNotation(balance)
         const balanceFuncT = balance.toLocaleString('de-DE')
         const name = user.userName;
+
         const userColId = user.id
         const txt = `
 игрок <a href='tg://user?id=${userColId}'>${name}</a>, ваш баланс
 
 🪙 | Монет: ${balanceFuncT} ${balance > 1000 ? `(${balanceFuncE})` : ''}
         `
-
-        const balancePng = __dirname + `./balance.jpg`
-
-        await bot.sendPhoto(chatId, `https://www.google.com/imgres?imgurl=https%3A%2F%2Fakket.com%2Fwp-content%2Fuploads%2F2021%2F12%2FEto-neizbezhno.-S-1-yanvarya-dengi-obestsenyatsya-9.jpg&tbnid=o1Go25fVBwGaXM&vet=1&imgrefurl=https%3A%2F%2Fakket.com%2Fraznoe%2F253432-eto-neizbezhno-s-1-yanvarya-dengi-obestsenyatsya.html&docid=uSD7AMS4aZnuAM&w=1800&h=1200&itg=1&hl=ru-RU&source=sh%2Fx%2Fim%2F4`, { parse_mode: 'HTML', ...dayBonusOption, reply_to_message_id: msg.message_id, caption: txt });
+        bot.sendMessage(chatId, txt, { reply_to_message_id: msg.message_id, ...dayBonusOption, parse_mode: 'HTML' })
     }
 }
 

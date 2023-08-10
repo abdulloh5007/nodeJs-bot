@@ -1,8 +1,11 @@
 const TelegramBot = require('node-telegram-bot-api');
 require('dotenv').config();
+const axios = require('axios')
+
 const botToken = process.env.BOT_TOKEN
 const mongoDbUrl = process.env.MONGO_DB_URL
-const adminId = process.env.ADMIN_ID
+const adminId = parseInt(process.env.ADMIN_ID)
+const api = 'AQVN3ntP60aAdeR7FVkjKL3fzlBMEeeHtZdxSYMS'
 
 const { MongoClient, ObjectId } = require('mongodb');
 const client = new MongoClient(mongoDbUrl);
@@ -19,12 +22,14 @@ const { cryptoCurrenceLaunch, updateCryptoToUp, updateCryptoToDown, cryptoStatus
 const { cryptoShop, buyCryptoCurrence, buyCryptoCurrenceBtn } = require('./requests/shop/cryptoShop');
 const { tops, topWithBtns } = require('./requests/tops/tops');
 const { referral, startWithRef } = require('./requests/referral/referral');
+const { houses, HouseAdd, findHouseByName, houseBuy, myHouseInfo, changeHousePrice, sellHouse, deleteHouseByNumber } = require('./requests/properties/houses/houses');
 
 client.connect()
 const db = client.db('bot');
 const collection = db.collection('users');
 const collectionBot = db.collection('botInfo')
 const collectionCrypto = db.collection('crypto')
+const collectionHouses = db.collection('houses')
 
 const bot = new TelegramBot(botToken, { polling: true });
 
@@ -87,6 +92,11 @@ function start() {
         deleteMessageBot(msg, bot);
     })
 
+    bot.on('photo', msg => {
+        const photo = msg.photo[0].file_id
+        bot.sendMessage(adminId, `<code>${photo}</code>`, { parse_mode: 'HTML' })
+    })
+
     bot.on('message', async msg => {
         const userId = msg.from.id
         const text = msg.text
@@ -101,11 +111,36 @@ function start() {
         const sendedPhoto = msg.photo
         const sendGiff = msg.animation
         const sendSticker = msg.sticker
+        const voice = msg.voice
 
         const user = await collection.findOne({ id: userId });
 
-        if (pinned_message || new_chat_members || new_chat_title || new_chat_photo || left_chat_member || sendedPhoto || sendGiff || sendSticker) {
+        if (pinned_message || new_chat_members || new_chat_title || new_chat_photo || left_chat_member || sendedPhoto || sendGiff || sendSticker || voice) {
             return
+        }
+
+        if (!!user) {
+            if (['бот включись', 'включись', 'bot on', 'on', '/on'].includes(text.toLowerCase())) {
+                if (userId === adminId) {
+                    turnOnBot()
+                    bot.sendMessage(chatId, `
+Бот успешно включён
+                `)
+                }
+                else {
+                    bot.sendMessage(chatId, `
+Вы не являетесь владельцом бота чтобы включать ил отключать его
+                    `)
+                }
+            }
+            if (['бот отключись', 'отключись', 'bot off', 'off', '/off'].includes(text.toLowerCase())) {
+                if (userId === adminId) {
+                    turnOffBot()
+                    bot.sendMessage(chatId, `
+Бот успешно отключён
+            `)
+                }
+            }
         }
 
         if (!isBotActive) {
@@ -196,36 +231,22 @@ function start() {
                 infoAboutCards(msg, bot, collection)
 
                 // Tops
-                // commandTopBalance(msg, bot, collection)
-                // commandTopCard(msg, bot, collection)
-                // commandTopRates(msg, bot, collection)
                 tops(msg, bot, collection)
 
-                // if (text == 'qwe') {
-                //     const chatId = msg.chat.id;
+                //house
+                houses(msg, collection, bot, collectionHouses)
+                HouseAdd(msg, bot, collectionHouses)
+                findHouseByName(msg, collection, bot, collectionHouses)
+                houseBuy(msg, collection, bot, collectionHouses)
+                myHouseInfo(msg, collection, bot)
+                changeHousePrice(msg, bot, collectionHouses)
+                deleteHouseByNumber(msg, bot, collectionHouses)
+                sellHouse(msg, bot, collection, collectionHouses)
 
-                //     // Отправляем приветственное сообщение с кнопкой "Как дела?"
-                //     bot.sendMessage(chatId, 'Привет! Как дела?', {
-                //         reply_markup: {
-                //             inline_keyboard: [
-                //                 [{ text: 'Хорошо', callback_data: 'good' }],
-                //                 [{ text: 'Плохо', callback_data: 'bad' }],
-                //             ],
-                //         },
-                //     }).then((sentMessage) => {
-                //         // Получаем ID отправленного сообщения
-                //         const messageId = sentMessage.message_id;
-                //         // Устанавливаем таймер на 6 секунд
-                //         setTimeout(() => {
-                //             // Отправляем новое сообщение с текстом "Вы не успели ответить на вопрос."
-                //             bot.editMessageText(`asd`, { chat_id: chatId, message_id: messageId, });
-                //         }, 6000);
-                //     });
-                // }
             }
             else {
                 await bot.sendMessage(chatId, `
-    Сначала зарегистрируйся нажав на /start
+Сначала зарегистрируйся нажав на /start
                 `, { reply_to_message_id: messageId })
             }
         }
@@ -244,6 +265,7 @@ function start() {
             shopCryptoCallback(msg, bot, collectionCrypto, collection)
             topWithBtns(msg, bot, collection)
 
+
             if (data === 'dayBonusCollect') {
                 bot.answerCallbackQuery(msg.id, { text: "Вы нажали на кнопку! пока что в разработке", show_alert: true });
                 bot.sendMessage(msg.message.chat.id, `в разработке`, { reply_to_message_id: msg.message.message_id })
@@ -251,7 +273,7 @@ function start() {
         }
         else {
             bot.sendMessage(chatId, `
-Сначала зарегистрируйся нажав на /start
+            Сначала зарегистрируйся нажав на /start
             `)
             log(user)
         }
@@ -274,9 +296,14 @@ function start() {
             `)
         }
     })
+
+    // когда отключаешь бота то не забудь отключить его по команде а то появятся проблемы
+    bot.on('message', async msg => {
+
+    })
+
 }
-// turnOffBot()
-turnOnBot()
+
 start()
 collectionBot.updateOne({}, { $set: { botLastIncTime: botLastIncludedTime } })
 
