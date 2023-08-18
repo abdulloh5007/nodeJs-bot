@@ -1,5 +1,5 @@
-const { dayBonusOption } = require("../../options");
 const { formatNumberWithAbbreviations, formatNumberInScientificNotation } = require("../systems/systemRu");
+const { handleDailyBonus } = require("./bonusCollectBtn");
 require('dotenv').config();
 const adminIdInt = parseInt(process.env.ADMIN_ID_INT)
 const adminIdStr = process.env.ADMIN_ID
@@ -20,14 +20,81 @@ async function userBalance(msg, collection, bot) {
         const balanceFuncE = formatNumberInScientificNotation(balance)
         const balanceFuncT = balance.toLocaleString('de-DE')
         const name = user.userName;
-
+        const userUc = user.uc
+        const userStatusName = user.status[0].statusName
         const userColId = user.id
-        const txt = `
-игрок <a href='tg://user?id=${userColId}'>${name}</a>, ваш баланс
+
+        let userStatus
+        if(userStatusName === 'standart'){
+            userStatus = `
+<a href='tg://user?id=${userColId}'>${name} "🎁"</a>, ваш баланс
 
 🪙 | Монет: ${balanceFuncT} ${balance > 1000 ? `(${balanceFuncE})` : ''}
+UC | ${userUc}
+
+<b>РЕКЛАМА: Скоро</b>
+            `
+        }
+        else if (userStatusName === 'vip'){
+            userStatus = `
+<a href='tg://user?id=${userColId}'>${name} "💎"</a>, ваш баланс
+
+🪙 | Монет: ${balanceFuncT} ${balance > 1000 ? `(${balanceFuncE})` : ''}
+UC | ${userUc}
+            `
+        }
+        else if (userStatusName === 'premium'){
+            userStatus = `
+<a href='tg://user?id=${userColId}'>${name} "⭐️"</a>, ваш баланс
+
+🪙 | Монет: ${balanceFuncT} ${balance > 1000 ? `(${balanceFuncE})` : ''}
+UC | ${userUc}
+            `
+        }
+        else {
+            userStatus = `
+<a href='tg://user?id=${userColId}'>${name}</a>, ваш баланс
+
+🪙 | Монет: ${balanceFuncT} ${balance > 1000 ? `(${balanceFuncE})` : ''}
+UC | ${userUc}
+
+<b>РЕКЛАМА: Скоро</b>
+            `
+        }
+
+        const txt = `
+${userStatus}
         `
+
+        let dayBonusOption = {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: 'Получить бонус', callback_data: `dayBonusCollect_${userId}` }]
+                ]
+            }
+        }
         bot.sendMessage(chatId, txt, { reply_to_message_id: msg.message_id, ...dayBonusOption, parse_mode: 'HTML' })
+    }
+}
+
+async function dayBonusCollectingBtn(msg, collection, bot) {
+    const chatId = msg.message.chat.id
+    const userId = msg.from.id
+    const data = msg.data
+    const msgId = msg.id
+    const messageId = msg.message.message_id
+
+    const [bonus, userIdClick] = data.split('_')
+    
+    if (bonus === 'dayBonusCollect') {
+        if (userId == userIdClick) {
+            // bot.answerCallbackQuery(msgId, { text: "Вы нажали на кнопку! пока что в разработке", show_alert: true });
+            // bot.sendMessage(chatId, `в разработке`, { reply_to_message_id: messageId })
+            handleDailyBonus(msg, collection, bot)
+        }
+        else {
+            bot.answerCallbackQuery(msgId, { show_alert: true, text: 'Это кнопка не для тебя' })
+        }
     }
 }
 
@@ -93,6 +160,8 @@ async function userGameInfo(msg, bot, collection) {
         const ratesLose = user.rates.map((e) => e.loses);
         const userBankCard = user.bankCard[0].cardNumber
         const cryptoCurAlt = user.crypto[0].altcoinidx
+        const userUc = user.uc
+        const userStatus = user.status[0].statusName
 
         const balanceFuncE = formatNumberInScientificNotation(userGameBalance)
         const balanceFuncT = userGameBalance.toLocaleString('de-DE')
@@ -102,6 +171,8 @@ async function userGameInfo(msg, bot, collection) {
 <b>Игровой 🆔:</b> ${userGameId}
 <b>Ник 👨:</b> <a href='tg://user?id=${userId}'>${userGameName}</a>
 <b>Баланс 💸: ${balanceFuncT}$ ${userGameBalance > 1000 ? `(${balanceFuncE})` : ''}</b>
+<b>Uc: ${userUc}</b>
+<b>Status: ${userStatus.toUpperCase()}</b>
 <b>Карта 💳: |<code>${userBankCard}</code>|</b>
 <b>Криптовалюты 📊↓</b>
    <b>Alt Coin IDX:</b> ${cryptoCurAlt}
@@ -115,6 +186,8 @@ async function userGameInfo(msg, bot, collection) {
 <b>Игровой 🆔:</b> ${userGameId}
 <b>Ник 👨:</b> <a href='tg://user?id=${userId}'>${userGameName}</a>
 <b>Баланс 💸: ${balanceFuncT}$ ${userGameBalance > 1000 ? `(${balanceFuncE})` : ''}</b>
+<b>Uc: ${userUc}</b>
+<b>Status: ${userStatus.toUpperCase()}</b>
 <b>Карта 💳: |<code>5444 **** **** ****</code>|</b>
 <b>Криптовалюты 📊↓</b>
    <b>Alt Coin IDX:</b> ${cryptoCurAlt}
@@ -147,4 +220,5 @@ module.exports = {
     userGameInfo,
     userEditGameName,
     myId,
+    dayBonusCollectingBtn,
 };

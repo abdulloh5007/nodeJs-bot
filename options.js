@@ -37,7 +37,7 @@ module.exports = {
                 [{ text: 'Играть еще раз', switch_inline_query_current_chat: 'казино ' }]
             ]
         })
-    },
+    },    
     dayBonusOption: {
         reply_markup: JSON.stringify({
             inline_keyboard: [

@@ -1,28 +1,27 @@
 const TelegramBot = require('node-telegram-bot-api');
 require('dotenv').config();
-const axios = require('axios')
 
 const botToken = process.env.BOT_TOKEN
 const mongoDbUrl = process.env.MONGO_DB_URL
 const adminId = parseInt(process.env.ADMIN_ID)
-const api = 'AQVN3ntP60aAdeR7FVkjKL3fzlBMEeeHtZdxSYMS'
 
 const { MongoClient, ObjectId } = require('mongodb');
 const client = new MongoClient(mongoDbUrl);
 
 const { kazino } = require('./requests/games/games');
 const { commandStart, commandHelp, commandHelpAsBtn, commandHelpInChats, deleteAllUsers, userInfoReplyToMessage, userMsg } = require('./requests/commands/commands');
-const { userBalance, userEditGameId, userGameInfo, userEditGameName, myId } = require('./requests/user/userInfo');
+const { userBalance, userEditGameId, userGameInfo, userEditGameName, myId, dayBonusCollectingBtn } = require('./requests/user/userInfo');
 const { userMute, userUnMute, userUnMuteAll, userMuteId } = require('./requests/violations/userMute');
-const { botInfo, botInfo2, deleteMessageBot, botVersionChange } = require('./requests/botInfo/botInfos');
+const { botInfo, deleteMessageBot, botVersionChange } = require('./requests/botInfo/botInfos');
 const { giveMoney } = require('./requests/user/giveMoney');
-const { extraditeMoney, takeMoney, takeAllMoney } = require('./requests/admin/adminCommands');
+const { extraditeMoney, takeMoney, takeAllMoney, extraditeUc, takeUc, takeAllUc } = require('./requests/admin/adminCommands');
 const { generateCardNumber, cardInfo, createUpdateCardPassword, setMoneyToCard, getMoneyFromOwnCard, getMoneyFromCard, infoAboutCards } = require('./requests/user/userBankCard');
 const { cryptoCurrenceLaunch, updateCryptoToUp, updateCryptoToDown, cryptoStatus, cryptoShopWithBtn, shopCryptoCallback } = require('./requests/crypto/cryptoCurrence');
 const { cryptoShop, buyCryptoCurrence, buyCryptoCurrenceBtn } = require('./requests/shop/cryptoShop');
 const { tops, topWithBtns } = require('./requests/tops/tops');
 const { referral, startWithRef } = require('./requests/referral/referral');
-const { houses, HouseAdd, findHouseByName, houseBuy, myHouseInfo, changeHousePrice, sellHouse, deleteHouseByNumber } = require('./requests/properties/houses/houses');
+const { houses, HouseAdd, findHouseByName, houseBuy, myHouseInfo, changeHousePrice, sellHouse, donateHouses, houseDonateBuy, btnHouses, HouseDonateAdd, changeHouseName, } = require('./requests/properties/houses/houses');
+const { donateMenu, donateBtns, donateInfo } = require('./requests/donate/donate');
 
 client.connect()
 const db = client.db('bot');
@@ -55,6 +54,28 @@ function turnOffBot() {
     isBotActive = false;
 }
 
+
+async function sendMsgWhenBotStarts() {
+    const [botInn, botInnOwner] = await Promise.all([
+        collectionBot.findOne({ id: adminId }),
+        collection.findOne({ id: adminId })
+    ]);
+
+    const ownerGameId = botInnOwner.gameId;
+    const updateUserBotInfo = await collection.countDocuments();
+    await collectionBot.updateOne({}, { $set: { registeredUsers: updateUserBotInfo } });
+
+    bot.sendMessage(adminId, `
+<b>Игровой айди Владельца бота: <a href='tg://user?id=${botInnOwner.id}'>${ownerGameId}</a></b>
+<b>Количество пользователей: ${updateUserBotInfo}</b>
+<b>Последнее время запуска бота или обновление бота: ${botLastIncludedTime}</b>
+<b>Версия: ${botInn.botVersion}</b>
+        `, { parse_mode: 'HTML' });
+}
+
+// Использовать когда хотите что бы бот отправил сообщение когда его включали
+// sendMsgWhenBotStarts()
+
 function start() {
     bot.setMyCommands([
         {
@@ -64,12 +85,13 @@ function start() {
 
     // Обработчик события оповещения о входе нового участника
     bot.on('new_chat_members', async (msg) => {
-        deleteMessageBot(msg, bot);
+        bot.sendMessage(msg.chat.id, 'Напиши в личку бота что бы иметь полный доступ к моим командам', { reply_to_message_id: msg.message_id })
     });
 
     // Обработчик события оповещения об уходе участника из чата
     bot.on('left_chat_member', async (msg) => {
-        deleteMessageBot(msg, bot);
+        // deleteMessageBot(msg, bot);
+        bot.sendMessage(msg.chat.id, 'Ну и ху* с ним', { reply_to_message_id: msg.message_id })
     });
 
     // Обработчик события оповещения о новом фото чата
@@ -94,7 +116,9 @@ function start() {
 
     bot.on('photo', msg => {
         const photo = msg.photo[0].file_id
-        bot.sendMessage(adminId, `<code>${photo}</code>`, { parse_mode: 'HTML' })
+        const userId = msg.from.id
+
+        bot.sendMessage(userId, `<code>${photo}</code>`, { parse_mode: 'HTML' })
     })
 
     bot.on('message', async msg => {
@@ -112,10 +136,13 @@ function start() {
         const sendGiff = msg.animation
         const sendSticker = msg.sticker
         const voice = msg.voice
+        const dice = msg.dice
+        const video = msg.video
+        const document = msg.document
 
         const user = await collection.findOne({ id: userId });
 
-        if (pinned_message || new_chat_members || new_chat_title || new_chat_photo || left_chat_member || sendedPhoto || sendGiff || sendSticker || voice) {
+        if (pinned_message || new_chat_members || new_chat_title || new_chat_photo || left_chat_member || sendedPhoto || sendGiff || sendSticker || voice || dice || video || document) {
             return
         }
 
@@ -198,14 +225,14 @@ function start() {
 
                 //Bot Info
                 botInfo(msg, collectionBot, bot, collection)
-                botInfo2(msg, collectionBot, bot, collection)
+                // botInfo2(msg, collectionBot, bot, collection)
                 botVersionChange(msg, bot, collectionBot)
 
                 // Give Money
                 giveMoney(msg, bot, collection)
 
                 // Func /msg
-                userMsg(msg, bot, collection)
+                userMsg(msg, collection, bot,)
 
                 //delete All Users = это функцию можешь использовать когда обновляешь бота или добавляешь что-то новое в датабазу MONGODB
                 deleteAllUsers(msg, collection, bot, ObjectId)
@@ -216,10 +243,15 @@ function start() {
                 //info ID
                 userInfoReplyToMessage(msg, bot, collection)
 
-                //Выдача денег
+                //Выдача отбор денег
                 extraditeMoney(msg, collection, bot)
                 takeMoney(msg, collection, bot)
                 takeAllMoney(msg, collection, bot)
+
+                // Выдача отбор UC
+                extraditeUc(msg, collection, bot)
+                takeUc(msg, collection, bot)
+                takeAllUc(msg, collection, bot)
 
                 // Пластик карты
                 generateCardNumber(msg, bot, collection);
@@ -235,14 +267,30 @@ function start() {
 
                 //house
                 houses(msg, collection, bot, collectionHouses)
+                donateHouses(msg, collection, bot, collectionHouses)
                 HouseAdd(msg, bot, collectionHouses)
+                HouseDonateAdd(msg, bot, collectionHouses)
                 findHouseByName(msg, collection, bot, collectionHouses)
                 houseBuy(msg, collection, bot, collectionHouses)
-                myHouseInfo(msg, collection, bot)
+                houseDonateBuy(msg, collection, bot, collectionHouses)
+                myHouseInfo(msg, collection, bot, collectionHouses)
                 changeHousePrice(msg, bot, collectionHouses)
-                deleteHouseByNumber(msg, bot, collectionHouses)
+                changeHouseName(msg, bot, collectionHouses)
                 sellHouse(msg, bot, collection, collectionHouses)
 
+                // donates
+                donateMenu(msg, bot, collection)
+                donateInfo(msg, bot, collection)
+
+                if (text == 'testEditingStatuses') {
+                    bot.sendChatAction(chatId, 'typing')
+                    await collection.updateMany({ _id: ObjectId }, { $set: { status: [{
+                        statusName: 'player',
+                        purchaseDate: 0,
+                        statusExpireDate: 0,
+                    }] } })
+                    bot.sendMessage(chatId, 'Успешна обновлена датабаза')
+                }
             }
             else {
                 await bot.sendMessage(chatId, `
@@ -264,16 +312,15 @@ function start() {
             buyCryptoCurrenceBtn(msg, bot, collection)
             shopCryptoCallback(msg, bot, collectionCrypto, collection)
             topWithBtns(msg, bot, collection)
+            btnHouses(msg, bot, collection, collectionHouses)
+            dayBonusCollectingBtn(msg, collection, bot)
 
-
-            if (data === 'dayBonusCollect') {
-                bot.answerCallbackQuery(msg.id, { text: "Вы нажали на кнопку! пока что в разработке", show_alert: true });
-                bot.sendMessage(msg.message.chat.id, `в разработке`, { reply_to_message_id: msg.message.message_id })
-            }
+            //donat BTNS
+            donateBtns(msg, bot, collection)
         }
         else {
             bot.sendMessage(chatId, `
-            Сначала зарегистрируйся нажав на /start
+Сначала зарегистрируйся нажав на /start
             `)
             log(user)
         }
@@ -295,11 +342,6 @@ function start() {
 Сначала зарегистрируйся нажав на /start
             `)
         }
-    })
-
-    // когда отключаешь бота то не забудь отключить его по команде а то появятся проблемы
-    bot.on('message', async msg => {
-
     })
 
 }
