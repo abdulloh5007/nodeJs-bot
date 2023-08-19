@@ -1,3 +1,4 @@
+const { donatedUsers } = require('../../donate/donatedUsers')
 const { parseNumber, formatNumberInScientificNotation } = require('../../systems/systemRu')
 
 require('dotenv').config()
@@ -145,14 +146,10 @@ async function HouseDonateAdd(msg, bot, collectionHouses) {
 
 async function donateHouses(msg, collection, bot, collectionHouses) {
     const text = msg.text;
-    const userId = msg.from.id;
     const chatId = msg.chat.id;
 
-    const user = await collection.findOne({ id: userId });
-
     if (text.toLowerCase() === 'донат дома') {
-        const userBotId = user.id;
-        const userBotName = user.userName;
+        const userStatus = await donatedUsers(msg, collection)
 
         let options = {
             reply_markup: {
@@ -165,7 +162,7 @@ async function donateHouses(msg, collection, bot, collectionHouses) {
         const sortedHouses = await collectionHouses.find({ houseDonate: true }).sort({ housePrice: 1 }).toArray();
         const houseNamesString = sortedHouses.map((house, index) => `${index + 1}. ${house.houseName} - ${house.housePrice.toLocaleString('de-DE')} UC`).join('\n');
         bot.sendMessage(chatId, `
-<a href='tg://user?id=${userBotId}'>${userBotName}</a>, вот доступные дома (отсортированы по цене):
+${userStatus}, вот доступные дома (отсортированы по цене):
 
 ${houseNamesString}
 
@@ -179,14 +176,10 @@ ${houseNamesString}
 
 async function houses(msg, collection, bot, collectionHouses) {
     const text = msg.text;
-    const userId = msg.from.id;
     const chatId = msg.chat.id;
 
-    const user = await collection.findOne({ id: userId });
-
     if (text.toLowerCase() === 'дома') {
-        const userBotId = user.id;
-        const userBotName = user.userName;
+        const userStatus = await donatedUsers(msg, collection)
         let options = {
             reply_markup: {
                 inline_keyboard: [
@@ -198,7 +191,7 @@ async function houses(msg, collection, bot, collectionHouses) {
         const sortedHouses = await collectionHouses.find({ houseDonate: false }).sort({ housePrice: 1 }).toArray();
         const houseNamesString = sortedHouses.map((house, index) => `${index + 1}. ${house.houseName} - ${house.housePrice.toLocaleString('de-DE')}$ (${formatNumberInScientificNotation(house.housePrice)})`).join('\n');
         bot.sendMessage(chatId, `
-<a href='tg://user?id=${userBotId}'>${userBotName}</a>, вот доступные дома (отсортированы по цене):
+${userStatus}, вот доступные дома (отсортированы по цене):
 
 ${houseNamesString}
 
@@ -215,10 +208,6 @@ async function findHouseByName(msg, collection, bot, collectionHouses) {
     const userId = msg.from.id;
     const chatId = msg.chat.id;
 
-    const user = await collection.findOne({ id: userId });
-    const userBotId = user.id;
-    const userBotName = user.userName;
-
     if (text.toLowerCase().startsWith('инфо дом')) {
 
         const parts = text.split(' ');
@@ -226,10 +215,10 @@ async function findHouseByName(msg, collection, bot, collectionHouses) {
 
         if (parts.length === 3) {
             const house = await collectionHouses.findOne({ houseName: houseNameToSearch });
-
+            const userStatus = await donatedUsers(msg, collection)
             if (house) {
                 const houseInfo = `
-<a href='tg://user?id=${userBotId}'>${userBotName}</a>, вот доступные дома:
+${userStatus}, вот доступные дома:
 
 Название: ${house.houseName}
 Цена: ${house.housePrice.toLocaleString('de-DE')} (${formatNumberInScientificNotation(house.housePrice)})
@@ -391,8 +380,7 @@ async function myHouseInfo(msg, collection, bot, collectionHouses) {
     const user = await collection.findOne({ id: userId });
 
     if (text.toLowerCase() === 'мой дом') {
-        const userBotName = user.userName;
-        const userBotId = user.id;
+        const userStatus = await donatedUsers(msg, collection)
         const userHouseName = user.properties[0].house;
 
         if (userHouseName) {
@@ -410,7 +398,7 @@ async function myHouseInfo(msg, collection, bot, collectionHouses) {
                     const userHouImg = house.houseImg
 
                     const houseInfo = `
-<a href='tg://user?id=${userBotId}'>${userBotName}</a>, вот информация о вашем донат доме:
+${userStatus}, вот информация о вашем донат доме:
 
 Название: ${userHouseName2}
 Цена: ${userHousePrice.toLocaleString('de-DE')} UC
@@ -424,7 +412,7 @@ async function myHouseInfo(msg, collection, bot, collectionHouses) {
                     const userHouImg = house.houseImg
 
                     const houseInfo = `
-<a href='tg://user?id=${userBotId}'>${userBotName}</a>, вот информация о вашем доме:
+${userStatus}, вот информация о вашем доме:
 
 Название: ${userHouseName2}
 Цена: ${userHousePrice.toLocaleString('de-DE')}$ ${userHousePrice > 1000 ? `(${formatNumberInScientificNotation(userHousePrice)})` : ''}
@@ -527,13 +515,10 @@ async function changeHouseName(msg, bot, collectionHouses) {
 async function btnHouses(msg, bot, collection, collectionHouses) {
     const data = msg.data
     const chatId = msg.message.chat.id;
-    const userId = msg.from.id;
-    const user = await collection.findOne({ id: userId });
     const messageId = msg.message.message_id
 
     if (data === 'donateHouses') {
-        const userBotId = user.id;
-        const userBotName = user.userName;
+        const userStatus = await donatedUsers(msg, collection)
 
         const sortedHouses = await collectionHouses.find({ houseDonate: true }).sort({ housePrice: 1 }).toArray();
         let options = {
@@ -546,7 +531,7 @@ async function btnHouses(msg, bot, collection, collectionHouses) {
         };
         const houseNamesString = sortedHouses.map((house, index) => `${index + 1}. ${house.houseName} - ${house.housePrice.toLocaleString('de-DE')} UC`).join('\n');
         bot.editMessageText(`
-<a href='tg://user?id=${userBotId}'>${userBotName}</a>, вот доступные донат дома (отсортированы по цене):
+${userStatus}, вот доступные донат дома (отсортированы по цене):
 
 ${houseNamesString}
 
@@ -560,8 +545,7 @@ ${houseNamesString}
     }
 
     if (data === 'simpleHouses') {
-        const userBotId = user.id;
-        const userBotName = user.userName;
+        const userStatus = await donatedUsers(msg, collection)
         let options = {
             reply_markup: {
                 inline_keyboard: [
@@ -574,7 +558,7 @@ ${houseNamesString}
         const houseNamesString = sortedHouses.map((house, index) => `${index + 1}. ${house.houseName} - ${house.housePrice.toLocaleString('de-DE')}$ (${formatNumberInScientificNotation(house.housePrice)})`).join('\n');
 
         bot.editMessageText(`
-<a href='tg://user?id=${userBotId}'>${userBotName}</a>, вот доступные дома (отсортированы по цене):
+${userStatus}, вот доступные дома (отсортированы по цене):
 
 ${houseNamesString}
 

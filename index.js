@@ -22,6 +22,7 @@ const { tops, topWithBtns } = require('./requests/tops/tops');
 const { referral, startWithRef } = require('./requests/referral/referral');
 const { houses, HouseAdd, findHouseByName, houseBuy, myHouseInfo, changeHousePrice, sellHouse, donateHouses, houseDonateBuy, btnHouses, HouseDonateAdd, changeHouseName, } = require('./requests/properties/houses/houses');
 const { donateMenu, donateBtns, donateInfo } = require('./requests/donate/donate');
+const { checkAndUpdateDonations } = require('./requests/donate/donatedUsers');
 
 client.connect()
 const db = client.db('bot');
@@ -281,14 +282,23 @@ function start() {
                 // donates
                 donateMenu(msg, bot, collection)
                 donateInfo(msg, bot, collection)
+                // Вызывайте эту функцию регулярно, например, каждый день или час
+                setInterval(() => {
+                    checkAndUpdateDonations(collection, bot, msg);
+                    log('ok')
+                }, 12 * 60 * 60 * 1000 ); // 24 часа или 12 часа
 
                 if (text == 'testEditingStatuses') {
                     bot.sendChatAction(chatId, 'typing')
-                    await collection.updateMany({ _id: ObjectId }, { $set: { status: [{
-                        statusName: 'player',
-                        purchaseDate: 0,
-                        statusExpireDate: 0,
-                    }] } })
+                    await collection.updateMany({ _id: ObjectId }, {
+                        $set: {
+                            status: [{
+                                statusName: 'player',
+                                purchaseDate: 0,
+                                statusExpireDate: 0,
+                            }]
+                        }
+                    })
                     bot.sendMessage(chatId, 'Успешна обновлена датабаза')
                 }
             }

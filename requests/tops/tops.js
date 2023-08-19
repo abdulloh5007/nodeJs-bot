@@ -1,4 +1,5 @@
 const { topOptions } = require("../../options");
+const { donatedUsers } = require("../donate/donatedUsers");
 const { formatNumberWithAbbreviations } = require("../systems/systemRu");
 
 async function getTopPlayersBalance(msg, bot, collection) {
@@ -176,15 +177,13 @@ async function topWithBtns(msg, bot, collection) {
 
 async function tops(msg, bot, collection) {
     const text = msg.text
-    const userId = msg.from.id
     const chatId = msg.chat.id
 
-    const user = await collection.findOne({ id: userId })
-    const userName = user.userName
+    const userStatus = await donatedUsers(msg, collection);
 
     if (text.toLowerCase() === 'топ') {
         bot.sendMessage(chatId, `
-<b><a href='tg://user?id=${userId}'>${userName}</a></b>, Выберите категорю топа
+<b>${userStatus}</b>, Выберите категорю топа
         `, {
             parse_mode: "HTML",
             ...topOptions

@@ -1,3 +1,5 @@
+const { donatedUsers } = require("./donatedUsers")
+
 async function donateMain(msg, bot, collection) {
     const userId1 = msg.from.id
     const chatId = msg.message.chat.id
@@ -7,6 +9,7 @@ async function donateMain(msg, bot, collection) {
     const userId = user.id
     const userName = user.userName
     const userStatusName = user.status[0].statusName
+    const userDonatedStatus = await donatedUsers(msg, collection)
 
     let purchase;
 
@@ -27,7 +30,7 @@ async function donateMain(msg, bot, collection) {
         }
     }
     await bot.editMessageText(`
-<a href='tg://user?id=${userId}'>${userName}</a> вот доступные донаты
+${userDonatedStatus}, вот доступные донаты
 ${purchase}
 1 UC = 0.5 Р
 
@@ -46,13 +49,13 @@ ${purchase}
     })
 }
 
-async function buyStandardStatus(userId, collection) {
+async function buyStandartStatus(userId, collection) {
     const purchaseDate = new Date();
     const sevenDaysLater = new Date(purchaseDate.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     await collection.updateOne({ id: userId }, {
         $set: {
-            "status.0.statusName": 'standard',
+            "status.0.statusName": 'standart',
             "status.0.purchaseDate": purchaseDate,
             "status.0.statusExpireDate": sevenDaysLater
         }
@@ -85,6 +88,19 @@ async function buyPremiumStatus(userId, collection) {
     });
 }
 
+async function buyStatus(userId, collection, statusName, days) {
+    const purchaseDate = new Date();
+    const expireDate = new Date(purchaseDate.getTime() + days * 24 * 60 * 60 * 1000);
+
+    await collection.updateOne({ id: userId }, {
+        $set: {
+            "status.0.statusName": statusName,
+            "status.0.purchaseDate": purchaseDate,
+            "status.0.statusExpireDate": expireDate
+        }
+    });
+}
+
 async function donateMenu(msg, bot, collection) {
     const text = msg.text
     const chatId = msg.chat.id
@@ -93,6 +109,7 @@ async function donateMenu(msg, bot, collection) {
 
     const user = await collection.findOne({ id: userId1 })
     const userStatusName = user.status[0].statusName
+    const userDonatedStatus = await donatedUsers(msg, collection)
 
     let optionsDonate = {
         reply_markup: {
@@ -106,15 +123,13 @@ async function donateMenu(msg, bot, collection) {
 
     if (userStatusName.toLowerCase() !== 'player') {
         purchase = `
-Вы приобрели статус ${userStatusName}
+<b>Вы приобрели статус:</b> <i>${userStatusName.toUpperCase()}</i>
         `
     }
     else {
         purchase = ''
     }
     if (text.toLowerCase() === 'донат') {
-        const userId = user.id
-        const userName = user.userName
         let goBot = {
             reply_markup: {
                 inline_keyboard: [
@@ -125,7 +140,7 @@ async function donateMenu(msg, bot, collection) {
         if (chatId === userId1) {
 
             await bot.sendMessage(chatId, `
-<a href='tg://user?id=${userId}'>${userName}</a>, вот доступные донаты
+${userDonatedStatus}, вот доступные донаты
 ${purchase}
 1 UC = 0.5 Р
 
@@ -140,7 +155,7 @@ ${purchase}
         }
         else {
             bot.sendMessage(chatId, `
-<a href='tg://user?id=${userId}'>${userName}</a> Я отправил вам донат меню в лс
+${userDonatedStatus}, Я отправил вам донат меню в лс
             `, { parse_mode: 'HTML', reply_to_message_id: messageId, ...goBot })
         }
     }
@@ -155,9 +170,10 @@ async function donateBtns(msg, bot, collection) {
     const user = await collection.findOne({ id: userId1 })
 
     const userId = user.id
-    const userName = user.userName
     const userStatusName = user.status[0].statusName
     const userStatusExpireDate = user.status[0].statusExpireDate
+
+    const userDonatedStatus = await donatedUsers(msg, collection)
 
     if (data === 'donate_standart') {
         let optionsStandart = {
@@ -170,7 +186,7 @@ async function donateBtns(msg, bot, collection) {
         }
 
         bot.editMessageText(`
-<a href='tg://user?id=${userId}'>${userName}</a> Вот данные за донат статус <b>STANDART 🎁</b>
+${userDonatedStatus}, Вот данные за донат статус <b>STANDART 🎁</b>
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
@@ -203,7 +219,7 @@ async function donateBtns(msg, bot, collection) {
         }
 
         bot.editMessageText(`
-<a href='tg://user?id=${userId}'>${userName}</a> Вот данные за донат статус <b>VIP 💎</b>
+${userDonatedStatus}, Вот данные за донат статус <b>VIP 💎</b>
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
@@ -236,7 +252,7 @@ async function donateBtns(msg, bot, collection) {
         }
 
         bot.editMessageText(`
-<a href='tg://user?id=${userId}'>${userName}</a> Вот данные за донат статус <b>PREMIUM ⭐️</b>
+${userDonatedStatus}, Вот данные за донат статус <b>PREMIUM ⭐️</b>
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
@@ -270,17 +286,26 @@ async function donateBtns(msg, bot, collection) {
         }
     }
 
-    // STANDART
-    if (data === 'active_donate_standart') {
-        if (userStatusName === 'player' || userStatusName === 'standard') {
-            if (userStatusName === 'standard' && userStatusExpireDate > new Date()) {
-                // Пользователь уже купил статус и еще не истек срок его действия
-                const remainingTime = userStatusExpireDate - new Date();
-                const remainingDays = Math.ceil(remainingTime / (24 * 60 * 60 * 1000));
+    const dataMap = {
+        'active_donate_standart': { statusName: 'standart', days: 7, cost: 0 },
+        'active_donate_vip': { statusName: 'vip', days: 30, cost: 99 },
+        'active_donate_premium': { statusName: 'premium', days: 30, cost: 300 }
+    };
 
+    if (data in dataMap) {
+        const { statusName, days, cost } = dataMap[data];
+        const remainingTime = userStatusExpireDate - new Date();
+        const remainingDays = Math.ceil(remainingTime / (24 * 60 * 60 * 1000));
+        const remainingHours = Math.floor((remainingTime % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+        const remainingMinutes = Math.floor((remainingTime % (60 * 60 * 1000)) / (60 * 1000));
+
+        if (userStatusName === 'player' || userStatusName === statusName) {
+            if (userStatusExpireDate > new Date()) {
                 bot.editMessageText(`
-<a href='tg://user?id=${userId}'>${userName}</a>,Вы уже купили статус <b>STANDART 🎁</b>.
-Подождите до ${userStatusExpireDate.toLocaleString()} (еще ${remainingDays} дней), прежде чем вы сможете купить его снова.
+${userDonatedStatus}, Вы уже купили статус <b>${statusName}</b>.
+<b>Подождите до:</b> <i>${userStatusExpireDate.toLocaleString()}</i>
+
+<b>Eще ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут</b>, прежде чем вы сможете купить его снова.
                 `, {
                     chat_id: chatId,
                     message_id: messageId,
@@ -288,140 +313,41 @@ async function donateBtns(msg, bot, collection) {
                     ...optionsDonateMain,
                 });
             } else {
-                await buyStandardStatus(userId, collection);
-                bot.editMessageText(`
-<a href='tg://user?id=${userId}'>${userName}</a>,
-Вы успешно активировали статус <b>STANDART 🎁</b>.
+                const enoughUC = user.uc >= cost;
+                const key = `active_donate_${statusName}`;
+                const statusTitle = statusName.charAt(0).toUpperCase() + statusName.slice(1);
+
+                if (enoughUC) {
+                    await buyStatus(userId, collection, statusName, days);
+                    collection.updateOne({ id: userId }, { $inc: { uc: -cost } });
+
+                    bot.editMessageText(`
+${userDonatedStatus},
+Вы успешно активировали статус <b>${statusName}</b>.
 
 <b>Спасибо вам огромное что покупали наш товар</b>
                 `, {
-                    chat_id: chatId,
-                    message_id: messageId,
-                    parse_mode: 'HTML',
-                })
-            }
-        }
-        else {
-            bot.editMessageText(`
-<a href='tg://user?id=${userId}'>${userName}</a>, Ваш статус выше чем статус 
-вы покупаете
-            `, {
-                chat_id: chatId,
-                message_id: messageId,
-                parse_mode: 'HTML',
-                ...optionsDonateMain,
-            })
-        }
-    }
-
-    // VIP
-    if (data === 'active_donate_vip') {
-        if (user.uc >= 99) {
-            if (userStatusName === 'player' || userStatusName === 'standard' || userStatusName === 'vip') {
-                if (userStatusName === 'vip' && userStatusExpireDate > new Date()) {
-                    // Пользователь уже купил статус и еще не истек срок его действия
-                    const remainingTime = userStatusExpireDate - new Date();
-                    const remainingDays = Math.ceil(remainingTime / (24 * 60 * 60 * 1000));
-
-                    bot.editMessageText(`
-<a href='tg://user?id=${userId}'>${userName}</a>,Вы уже купили статус <b>VIP 💎</b>.
-Подождите до ${userStatusExpireDate.toLocaleString()} (еще ${remainingDays} дней), прежде чем вы сможете купить его снова.
-                    `, {
-                        chat_id: chatId,
-                        message_id: messageId,
-                        parse_mode: 'HTML',
-                        ...optionsDonateMain
-                    });
-                } else {
-                    await buyVipStatus(userId, collection);
-                    bot.editMessageText(`
-<a href='tg://user?id=${userId}'>${userName}</a>,
-Вы успешно активировали статус <b>VIP 💎</b>.
-
-<b>Спасибо вам огромное что покупали наш товар</b>
-                    `, {
                         chat_id: chatId,
                         message_id: messageId,
                         parse_mode: 'HTML',
                     })
-                    collection.updateOne({ id: userId }, { $inc: { uc: -99 } })
-                }
-            }
-            else {
-                bot.editMessageText(`
-<a href='tg://user?id=${userId}'>${userName}</a>, Ваш статус выше чем статус 
-вы покупаете
-                `, {
-                    chat_id: chatId,
-                    message_id: messageId,
-                    parse_mode: 'HTML',
-                    ...optionsDonateMain,
-                })
-            }
-        }
-        else {
-            bot.editMessageText(`
-<a href='tg://user?id=${userId}'>${userName}</a>, У вас не достаточно UC для покупки 
-Статуса <b>VIP 💎</b>
-            `, {
-                chat_id: chatId,
-                message_id: messageId,
-                parse_mode: 'HTML',
-                ...optionsDonateMain,
-            })
-        }
-    }
-
-    // PREMIUM
-    if (data === 'active_donate_premium') {
-        if (user.uc >= 300) {
-            if (userStatusName === 'player' || userStatusName === 'standard' || userStatusName === 'vip' || userStatusName === 'premium') {
-                if (userStatusName === 'premium' && userStatusExpireDate > new Date()) {
-                    // Пользователь уже купил статус и еще не истек срок его действия
-                    const remainingTime = userStatusExpireDate - new Date();
-                    const remainingDays = Math.ceil(remainingTime / (24 * 60 * 60 * 1000));
-
-                    bot.editMessageText(`
-<a href='tg://user?id=${userId}'>${userName}</a>,Вы уже купили статус <b>PREMIUM ⭐️</b>.
-Подождите до ${userStatusExpireDate.toLocaleString()} (еще ${remainingDays} дней), прежде чем вы сможете купить его снова.
-                    `, {
-                        chat_id: chatId,
-                        message_id: messageId,
-                        parse_mode: 'HTML',
-                        ...optionsDonateMain
-                    });
                 } else {
-                    await buyPremiumStatus(userId, collection);
                     bot.editMessageText(`
-<a href='tg://user?id=${userId}'>${userName}</a>,
-Вы успешно активировали статус <b>PREMIUM ⭐️</b>.
-
-<b>Спасибо вам огромное что покупали наш товар</b>
+${userDonatedStatus}, У вас не достаточно UC для покупки 
+Статуса <b>${statusName}</b>
                     `, {
                         chat_id: chatId,
                         message_id: messageId,
                         parse_mode: 'HTML',
+                        ...optionsDonateMain,
                     })
-                    collection.updateOne({ id: userId }, { $inc: { uc: -300 } })
                 }
             }
-            else {
-                bot.editMessageText(`
-<a href='tg://user?id=${userId}'>${userName}</a>, Ваш статус выше чем статус 
+        } else {
+            bot.editMessageText(`
+${userDonatedStatus}, Ваш статус выше чем статус 
 вы покупаете
                 `, {
-                    chat_id: chatId,
-                    message_id: messageId,
-                    parse_mode: 'HTML',
-                    ...optionsDonateMain,
-                })
-            }
-        }
-        else {
-            bot.editMessageText(`
-<a href='tg://user?id=${userId}'>${userName}</a>, У вас не достаточно UC для покупки 
-Статуса <b>PREMIUM ⭐️</b>
-            `, {
                 chat_id: chatId,
                 message_id: messageId,
                 parse_mode: 'HTML',
@@ -429,6 +355,171 @@ async function donateBtns(msg, bot, collection) {
             })
         }
     }
+
+    //     const remainingTime = userStatusExpireDate - new Date();
+    //     const remainingDays = Math.ceil(remainingTime / (24 * 60 * 60 * 1000));
+    //     const remainingHours = Math.floor((remainingTime % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+    //     const remainingMinutes = Math.floor((remainingTime % (60 * 60 * 1000)) / (60 * 1000));
+
+    //     // STANDART
+    //     if (data === 'active_donate_standart') {
+    //         if (userStatusName === 'player' || userStatusName === 'standart') {
+    //             if (userStatusName === 'standart' && userStatusExpireDate > new Date()) {
+    //                 // Пользователь уже купил статус и еще не истек срок его действия
+
+    //                 bot.editMessageText(`
+    // ${userDonatedStatus}, Вы уже купили статус <b>STANDART 🎁</b>.
+    // <b>Подождите до:</b> <i>${userStatusExpireDate.toLocaleString()}</i>
+
+    // <b>Eще ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут</b>, прежде чем вы сможете купить его снова.
+    //                 `, {
+    //                     chat_id: chatId,
+    //                     message_id: messageId,
+    //                     parse_mode: 'HTML',
+    //                     ...optionsDonateMain,
+    //                 });
+    //             } else {
+    //                 await buyStandartStatus(userId, collection);
+    //                 bot.editMessageText(`
+    // ${userDonatedStatus},
+    // Вы успешно активировали статус <b>STANDART 🎁</b>.
+
+    // <b>Спасибо вам огромное что покупали наш товар</b>
+    //                 `, {
+    //                     chat_id: chatId,
+    //                     message_id: messageId,
+    //                     parse_mode: 'HTML',
+    //                 })
+    //             }
+    //         }
+    //         else {
+    //             bot.editMessageText(`
+    // ${userDonatedStatus}, Ваш статус выше чем статус 
+    // вы покупаете
+    //             `, {
+    //                 chat_id: chatId,
+    //                 message_id: messageId,
+    //                 parse_mode: 'HTML',
+    //                 ...optionsDonateMain,
+    //             })
+    //         }
+    //     }
+
+    //     // VIP
+    //     if (data === 'active_donate_vip') {
+    //         if (user.uc >= 99) {
+    //             if (userStatusName === 'player' || userStatusName === 'standart' || userStatusName === 'vip') {
+    //                 if (userStatusName === 'vip' && userStatusExpireDate > new Date()) {
+    //                     // Пользователь уже купил статус и еще не истек срок его действия
+
+    //                     bot.editMessageText(`
+    // ${userDonatedStatus}, Вы уже купили статус <b>VIP 💎</b>.
+    // <b>Подождите до:</b> <i>${userStatusExpireDate.toLocaleString()}</i>
+
+    // <b>Eще ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут</b>, прежде чем вы сможете купить его снова.
+    //                     `, {
+    //                         chat_id: chatId,
+    //                         message_id: messageId,
+    //                         parse_mode: 'HTML',
+    //                         ...optionsDonateMain
+    //                     });
+    //                 } else {
+    //                     await buyVipStatus(userId, collection);
+    //                     bot.editMessageText(`
+    // ${userDonatedStatus},
+    // Вы успешно активировали статус <b>VIP 💎</b>.
+
+    // <b>Спасибо вам огромное что покупали наш товар</b>
+    //                     `, {
+    //                         chat_id: chatId,
+    //                         message_id: messageId,
+    //                         parse_mode: 'HTML',
+    //                     })
+    //                     collection.updateOne({ id: userId }, { $inc: { uc: -99 } })
+    //                 }
+    //             }
+    //             else {
+    //                 bot.editMessageText(`
+    // ${userDonatedStatus}, Ваш статус выше чем статус 
+    // вы покупаете
+    //                 `, {
+    //                     chat_id: chatId,
+    //                     message_id: messageId,
+    //                     parse_mode: 'HTML',
+    //                     ...optionsDonateMain,
+    //                 })
+    //             }
+    //         }
+    //         else {
+    //             bot.editMessageText(`
+    // ${userDonatedStatus}, У вас не достаточно UC для покупки 
+    // Статуса <b>VIP 💎</b>
+    //             `, {
+    //                 chat_id: chatId,
+    //                 message_id: messageId,
+    //                 parse_mode: 'HTML',
+    //                 ...optionsDonateMain,
+    //             })
+    //         }
+    //     }
+
+    //     // PREMIUM
+    //     if (data === 'active_donate_premium') {
+    //         if (user.uc >= 300) {
+    //             if (userStatusName === 'player' || userStatusName === 'standart' || userStatusName === 'vip' || userStatusName === 'premium') {
+    //                 if (userStatusName === 'premium' && userStatusExpireDate > new Date()) {
+    //                     // Пользователь уже купил статус и еще не истек срок его действия
+
+    //                     bot.editMessageText(`
+    // ${userDonatedStatus}, Вы уже купили статус <b>PREMIUM ⭐️</b>.
+    // <b>Подождите до:</b> <i>${userStatusExpireDate.toLocaleString()}</i>
+
+    // <b>Eще ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут</b>, прежде чем вы сможете купить его снова.
+    //                     `, {
+    //                         chat_id: chatId,
+    //                         message_id: messageId,
+    //                         parse_mode: 'HTML',
+    //                         ...optionsDonateMain
+    //                     });
+    //                 } else {
+    //                     await buyPremiumStatus(userId, collection);
+    //                     bot.editMessageText(`
+    // ${userDonatedStatus},
+    // Вы успешно активировали статус <b>PREMIUM ⭐️</b>.
+
+    // <b>Спасибо вам огромное что покупали наш товар</b>
+    //                     `, {
+    //                         chat_id: chatId,
+    //                         message_id: messageId,
+    //                         parse_mode: 'HTML',
+    //                     })
+    //                     collection.updateOne({ id: userId }, { $inc: { uc: -300 } })
+    //                 }
+    //             }
+    //             else {
+    //                 bot.editMessageText(`
+    // ${userDonatedStatus}, Ваш статус выше чем статус 
+    // вы покупаете
+    //                 `, {
+    //                     chat_id: chatId,
+    //                     message_id: messageId,
+    //                     parse_mode: 'HTML',
+    //                     ...optionsDonateMain,
+    //                 })
+    //             }
+    //         }
+    //         else {
+    //             bot.editMessageText(`
+    // ${userDonatedStatus}, У вас не достаточно UC для покупки 
+    // Статуса <b>PREMIUM ⭐️</b>
+    //             `, {
+    //                 chat_id: chatId,
+    //                 message_id: messageId,
+    //                 parse_mode: 'HTML',
+    //                 ...optionsDonateMain,
+    //             })
+    //         }
+    //     }
 }
 
 async function donateInfo(msg, bot, collection) {
@@ -439,16 +530,16 @@ async function donateInfo(msg, bot, collection) {
 
     const user = await collection.findOne({ id: userId1 })
 
-    const userId = user.id
-    const userName = user.userName
     const userStatusName = user.status[0].statusName
     const userStatusExpireDate = user.status[0].statusExpireDate
     const purchaseDate = user.status[0].purchaseDate
 
     const remainingTime = userStatusExpireDate - new Date();
     const remainingDays = Math.ceil(remainingTime / (24 * 60 * 60 * 1000));
+    const remainingHours = Math.floor((remainingTime % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+    const remainingMinutes = Math.floor((remainingTime % (60 * 60 * 1000)) / (60 * 1000));
 
-    let userStatus
+    let userStatus;
 
     if (userStatusName === 'standart') {
         userStatus = `
@@ -466,7 +557,7 @@ async function donateInfo(msg, bot, collection) {
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-<b>Срок действия:</b> ${remainingDays} дней
+<b>Срок действия:</b> ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут
 <b>Был совершен в:</b> ${purchaseDate.toLocaleString()}
         `
     }
@@ -486,7 +577,7 @@ async function donateInfo(msg, bot, collection) {
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-<b>Срок действия:</b> ${remainingDays} дней
+<b>Срок действия:</b> ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут
 <b>Был совершен в:</b> ${purchaseDate.toLocaleString()}
         `
     }
@@ -506,7 +597,7 @@ async function donateInfo(msg, bot, collection) {
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-<b>Срок действия:</b> ${remainingDays} дней
+<b>Срок действия:</b> ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут
 <b>Был совершен в:</b> ${purchaseDate.toLocaleString()}
         `
     }
@@ -515,10 +606,11 @@ async function donateInfo(msg, bot, collection) {
     }
 
     if (text.toLowerCase() === 'мой статус') {
+        const userDonateStatues = await donatedUsers(msg, collection)
         bot.sendMessage(chatId, `
-<a href='tg://user?id=${userId}'>${userName}</a>, Вот данные за ваш статус
+${userDonateStatues}, Вот данные за ваш статус
 
-<b>Статус:</b> ${userStatusName}
+<b>Статус:</b> ${userStatusName.toUpperCase()}
 ${userStatus}
         `, { parse_mode: 'HTML', reply_to_message_id: messageId, })
     }
