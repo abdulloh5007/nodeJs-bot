@@ -14,8 +14,8 @@ const { userBalance, userEditGameId, userGameInfo, userEditGameName, myId, dayBo
 const { userMute, userUnMute, userUnMuteAll, userMuteId } = require('./requests/violations/userMute');
 const { botInfo, deleteMessageBot, botVersionChange } = require('./requests/botInfo/botInfos');
 const { giveMoney } = require('./requests/user/giveMoney');
-const { extraditeMoney, takeMoney, takeAllMoney, extraditeUc, takeUc, takeAllUc } = require('./requests/admin/adminCommands');
-const { generateCardNumber, cardInfo, createUpdateCardPassword, setMoneyToCard, getMoneyFromOwnCard, getMoneyFromCard, infoAboutCards } = require('./requests/user/userBankCard');
+const { extraditeMoney, takeMoney, takeAllMoney, extraditeUc, takeUc, takeAllUc, adminCommands, adminCommandsWithBtn, toBeAnAdministrtorBot, useKey, deleteGenKeys } = require('./requests/admin/adminCommands');
+const { generateCardNumber, cardInfo, createUpdateCardPassword, setMoneyToCard, getMoneyFromOwnCard, infoAboutCards } = require('./requests/user/userBankCard');
 const { cryptoCurrenceLaunch, updateCryptoToUp, updateCryptoToDown, cryptoStatus, cryptoShopWithBtn, shopCryptoCallback } = require('./requests/crypto/cryptoCurrence');
 const { cryptoShop, buyCryptoCurrence, buyCryptoCurrenceBtn } = require('./requests/shop/cryptoShop');
 const { tops, topWithBtns } = require('./requests/tops/tops');
@@ -23,6 +23,7 @@ const { referral, startWithRef } = require('./requests/referral/referral');
 const { houses, HouseAdd, findHouseByName, houseBuy, myHouseInfo, changeHousePrice, sellHouse, donateHouses, houseDonateBuy, btnHouses, HouseDonateAdd, changeHouseName, } = require('./requests/properties/houses/houses');
 const { donateMenu, donateBtns, donateInfo } = require('./requests/donate/donate');
 const { checkAndUpdateDonations } = require('./requests/donate/donatedUsers');
+const { createPromo, usingPromo, createDonatePromo } = require('./requests/promo/promo');
 
 client.connect()
 const db = client.db('bot');
@@ -30,6 +31,8 @@ const collection = db.collection('users');
 const collectionBot = db.collection('botInfo')
 const collectionCrypto = db.collection('crypto')
 const collectionHouses = db.collection('houses')
+const collectionAdmins = db.collection('administrators')
+const collectionPromo = db.collection('promo')
 
 const bot = new TelegramBot(botToken, { polling: true });
 
@@ -77,10 +80,18 @@ async function sendMsgWhenBotStarts() {
 // Использовать когда хотите что бы бот отправил сообщение когда его включали
 // sendMsgWhenBotStarts()
 
+async function hasUserStartedDialog(userId) {
+    const user = await collection.findOne({ id: userId });
+    return !!user; // Вернет true, если пользователь начал диалог с ботом
+}
+
 function start() {
     bot.setMyCommands([
         {
             command: '/help', description: 'Помощь'
+        },
+        {
+            command: '/admin', description: 'Помощь'
         },
     ])
 
@@ -175,6 +186,7 @@ function start() {
             return; // Если бот не активен, просто игнорируем входящие сообщения
         }
         else {
+            const userStartedDialog = await hasUserStartedDialog(userId);
 
             //start
             if (text.toLowerCase() === '/start' || text == '/start@levouJS_bot') {
@@ -185,6 +197,15 @@ function start() {
             //ref start
             else if (text.startsWith('/start ')) {
                 startWithRef(msg, bot, collection)
+            }
+
+            else if (!userStartedDialog) {
+                // Если пользователь не начал диалог с ботом, отправляем ему инструкцию
+                await bot.sendMessage(chatId, `
+Сначала зарегистрируйтесь, нажав на /start
+                `, { reply_to_message_id: messageId });
+        
+                return; // Прерываем обработку сообщения
             }
 
             else if (!!user) {
@@ -260,7 +281,6 @@ function start() {
                 createUpdateCardPassword(msg, bot, collection)
                 setMoneyToCard(msg, bot, collection)
                 getMoneyFromOwnCard(msg, bot, collection)
-                getMoneyFromCard(msg, bot, collection)
                 infoAboutCards(msg, bot, collection)
 
                 // Tops
@@ -288,6 +308,17 @@ function start() {
                     log('ok')
                 }, 12 * 60 * 60 * 1000 ); // 24 часа или 12 часа
 
+                // admin commands
+                adminCommands(msg, bot, collection)
+                toBeAnAdministrtorBot(msg, bot, collection, collectionAdmins)
+                useKey(msg, bot, collectionAdmins)
+                deleteGenKeys(msg, bot, collectionAdmins)
+
+                //promo
+                createPromo(msg, bot, collection, collectionPromo)
+                createDonatePromo(msg, bot, collection, collectionPromo)
+                usingPromo(msg, bot, collection, collectionPromo)
+
                 if (text == 'testEditingStatuses') {
                     bot.sendChatAction(chatId, 'typing')
                     await collection.updateMany({ _id: ObjectId }, {
@@ -303,9 +334,9 @@ function start() {
                 }
             }
             else {
-                await bot.sendMessage(chatId, `
-Сначала зарегистрируйся нажав на /start
-                `, { reply_to_message_id: messageId })
+//                 await bot.sendMessage(chatId, `
+// Сначала зарегистрируйся нажав на /start
+//                 `, { reply_to_message_id: messageId })
             }
         }
     })
@@ -327,6 +358,9 @@ function start() {
 
             //donat BTNS
             donateBtns(msg, bot, collection)
+
+            //admin commands
+            adminCommandsWithBtn(msg, bot, collection)
         }
         else {
             bot.sendMessage(chatId, `

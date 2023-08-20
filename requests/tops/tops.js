@@ -2,6 +2,19 @@ const { topOptions } = require("../../options");
 const { donatedUsers } = require("../donate/donatedUsers");
 const { formatNumberWithAbbreviations } = require("../systems/systemRu");
 
+function getStatusSticker(status) {
+    if(status === 'standart'){
+        return '🎁'
+    }
+    else if (status === 'vip') {
+        return '💎';
+    } else if (status === 'premium') {
+        return '⭐️';
+    } else {
+        return '';
+    }
+}
+
 async function getTopPlayersBalance(msg, bot, collection) {
     const chatId = msg.message.chat.id;
     const userId = msg.from.id;
@@ -38,9 +51,10 @@ async function getTopPlayersBalance(msg, bot, collection) {
 
         const name = user.userName || "Неизвестный игрок";
         const balance = user.balance;
+        const statusSticker = getStatusSticker(user.status[0].statusName);
 
         // Добавляем данные игрока в сообщение.
-        message += `${positionText} <a href='tg://user?id=${user.id}'>${name}</a>: ${balance > 0 ? formatNumberWithAbbreviations(balance) : balance} \n`;
+        message += `${positionText} <a href='tg://user?id=${user.id}'>${name} ${statusSticker}</a>: ${balance > 0 ? formatNumberWithAbbreviations(balance) : balance} \n`;
     });
 
     // Добавляем позицию и баланс пользователя в сообщение.
@@ -91,9 +105,10 @@ async function getTopPlayersCard(msg, bot, collection) {
 
         const name = user.userName || "Неизвестный игрок";
         const balance = user.bankCard[0].cardValue;
+        const statusSticker = getStatusSticker(user.status[0].statusName);
 
         // Добавляем данные игрока в сообщение.
-        message += `${positionText} <a href='tg://user?id=${user.id}'>${name}</a>: ${balance > 0 ? formatNumberWithAbbreviations(balance) : balance} \n`;
+        message += `${positionText} <a href='tg://user?id=${user.id}'>${name} ${statusSticker}</a>: ${balance > 0 ? formatNumberWithAbbreviations(balance) : balance} \n`;
     });
 
     // Добавляем позицию и баланс пользователя в сообщение.
@@ -144,9 +159,10 @@ async function getTopPlayersRates(msg, bot, collection) {
 
         const name = user.userName || "Неизвестный игрок";
         const rates = user.rates[0].all;
+        const statusSticker = getStatusSticker(user.status[0].statusName);
 
         // Добавляем данные игрока в сообщение.
-        message += `${positionText} <a href='tg://user?id=${user.id}'>${name}</a>: ${rates} \n`;
+        message += `${positionText} <a href='tg://user?id=${user.id}'>${name} ${statusSticker}</a>: ${rates} \n`;
     });
 
     // Добавляем позицию и баланс пользователя в сообщение.

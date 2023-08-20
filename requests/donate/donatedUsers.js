@@ -1,4 +1,29 @@
 
+async function adminDonatedUsers(userId1, collection) {
+    const user = await collection.findOne({ id: userId1 })
+    
+    if(!!user){
+        const userStatusName = user.status[0].statusName
+        const userId = user.id
+        const userName = user.userName
+        let userStatus;
+        if (userStatusName === 'standart') {
+            userStatus = `<a href='tg://user?id=${userId}'>${userName} "🎁"</a>`
+        }
+        else if (userStatusName === 'vip') {
+            userStatus = `<a href='tg://user?id=${userId}'>${userName} "💎"</a>`
+        }
+        else if (userStatusName === 'premium') {
+            userStatus = `<a href='tg://user?id=${userId}'>${userName} "⭐️"</a>`
+        }
+        else {
+            userStatus
+            userStatus = `<a href='tg://user?id=${userId}'>${userName}</a>`
+        }
+        return userStatus
+    }
+}
+
 async function donatedUsers(msg, collection) {
     const userId1 = msg.from.id
 
@@ -9,24 +34,21 @@ async function donatedUsers(msg, collection) {
 
     let userStatus;
     if (userStatusName === 'standart') {
-        userStatus = `
-<a href='tg://user?id=${userId}'>${userName} "🎁"</a>`
+        userStatus = `<i>STANDART 🎁</i> <a href='tg://user?id=${userId}'>${userName}</a>`
     }
     else if (userStatusName === 'vip') {
-        userStatus = `
-<a href='tg://user?id=${userId}'>${userName} "💎"</a>`
+        userStatus = `<i>VIP 💎</i> <a href='tg://user?id=${userId}'>${userName}</a>`
     }
     else if (userStatusName === 'premium') {
-        userStatus = `
-<a href='tg://user?id=${userId}'>${userName} "⭐️"</a>`
+        userStatus = `<i>PREMIUM ⭐️</i> <a href='tg://user?id=${userId}'>${userName}</a>`
     }
     else {
         userStatus
-        userStatus = `
-<a href='tg://user?id=${userId}'>${userName}</a>`
+        userStatus = `<a href='tg://user?id=${userId}'>${userName}</a>`
     }
     return userStatus
 }
+
 async function checkAndUpdateDonations(collection, bot, msg) {
     const users = await collection.find().toArray();
 
@@ -74,4 +96,5 @@ ${donatedUser},
 module.exports = {
     donatedUsers,
     checkAndUpdateDonations,
+    adminDonatedUsers,
 }

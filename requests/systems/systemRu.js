@@ -61,7 +61,7 @@ function formatNumberWithAbbreviations(number) {
 function formatNumberInScientificNotation(number) {
     // Если число меньше 1000, то нет необходимости представлять в научной нотации
     if (Math.abs(number) < 1000) {
-        return number.toLocaleString();
+        return ''
     }
 
     // Находим порядок числа (тысячи, миллионы, миллиарды и т.д.)
@@ -74,7 +74,7 @@ function formatNumberInScientificNotation(number) {
     const formattedNumber = parseFloat(roundedNumber).toString();
 
     // Возвращаем число в научной нотации
-    return formattedNumber + "e" + order;
+    return `(${formattedNumber + "e" + order})`;
 }
 
 

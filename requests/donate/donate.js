@@ -1,91 +1,43 @@
 const { donatedUsers } = require("./donatedUsers")
+async function sendMessage(msg, text, options = {}, bot) {
+    const chatId = msg.message.chat.id
+
+    await bot.editMessageText(text, {
+        chat_id: chatId,
+        message_id: msg.message.message_id,
+        parse_mode: 'HTML',
+        ...options 
+    });
+}
 
 async function donateMain(msg, bot, collection) {
-    const userId1 = msg.from.id
-    const chatId = msg.message.chat.id
-    const messageId = msg.message.message_id
-    const user = await collection.findOne({ id: userId1 })
+    const userId = msg.from.id;
+    const user = await collection.findOne({ id: userId });
+    const userStatusName = user.status[0].statusName;
+    const userDonatedStatus = await donatedUsers(msg, collection);
+    const purchase = userStatusName.toLowerCase() !== 'player' ? `<b>Вы приобрели статус:</b> <i>${userStatusName.toUpperCase()}</i>` : '';
 
-    const userId = user.id
-    const userName = user.userName
-    const userStatusName = user.status[0].statusName
-    const userDonatedStatus = await donatedUsers(msg, collection)
-
-    let purchase;
-
-    if (userStatusName.toLowerCase() !== 'player') {
-        purchase = `
-Вы приобрели статус ${userStatusName}
-        `
-    }
-    else {
-        purchase = ''
-    }
-
-    let optionsDonate = {
+    const optionsDonate = {
         reply_markup: {
             inline_keyboard: [
                 [{ text: '🎁', callback_data: 'donate_standart' }, { text: '💎', callback_data: 'donate_vip' }, { text: '⭐️', callback_data: 'donate_premium' }],
             ]
         }
-    }
-    await bot.editMessageText(`
+    };
+
+    sendMessage(msg, `
 ${userDonatedStatus}, вот доступные донаты
 ${purchase}
 1 UC = 0.5 Р
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖
-    
+
 <b>🎁STANDART</b> = <i>БЕСПЛАТНО 7 дней</i>
 <b>💎VIP</b> = <i>99 UC - 30 дней</i>
 <b>⭐️PREMIUM</b> = <i>300 UC - 30 дней</i>
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖
-    `, {
-        chat_id: chatId,
-        message_id: messageId,
-        ...optionsDonate,
-        parse_mode: 'HTML',
-    })
-}
-
-async function buyStandartStatus(userId, collection) {
-    const purchaseDate = new Date();
-    const sevenDaysLater = new Date(purchaseDate.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-    await collection.updateOne({ id: userId }, {
-        $set: {
-            "status.0.statusName": 'standart',
-            "status.0.purchaseDate": purchaseDate,
-            "status.0.statusExpireDate": sevenDaysLater
-        }
-    });
-}
-
-async function buyVipStatus(userId, collection) {
-    const purchaseDate = new Date();
-    const thirtyDaysLater = new Date(purchaseDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-    await collection.updateOne({ id: userId }, {
-        $set: {
-            "status.0.statusName": 'vip',
-            "status.0.purchaseDate": purchaseDate,
-            "status.0.statusExpireDate": thirtyDaysLater
-        }
-    });
-}
-
-async function buyPremiumStatus(userId, collection) {
-    const purchaseDate = new Date();
-    const thirtyDaysLater = new Date(purchaseDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-    await collection.updateOne({ id: userId }, {
-        $set: {
-            "status.0.statusName": 'premium',
-            "status.0.purchaseDate": purchaseDate,
-            "status.0.statusExpireDate": thirtyDaysLater
-        }
-    });
+    `, optionsDonate, bot);
 }
 
 async function buyStatus(userId, collection, statusName, days) {
@@ -196,6 +148,7 @@ ${userDonatedStatus}, Вот данные за донат статус <b>STANDA
 ОТКЛЮЧЕНИЕ РЕКЛАМЫ ❌
 ЕЖЕДНЕВНЫЙ БОНУС УВЕЛИЧЁН НА 2X ❌
 ВОЗМОЖНОСТЬ ПОСТАВИТЬ СВОЮ АВУ ❌
+ВОЗМОЖНОСТЬ ПОСТАВИТЬ НИК ДО 16 СИМВОЛОВ ❌
 СКИДКА НА ЛЮБУЮ КРОПТОВАЛЮТУ 5% ✅
 ОТМЕТКА В ПРОФИЛЕ <b>"🎁"</b> ✅
 УВЕЛИЧЁН ЛИМИТ ПЕРЕДАЧИ НА 1.000.000 (1е6) ✅
@@ -232,6 +185,7 @@ ${userDonatedStatus}, Вот данные за донат статус <b>VIP �
 СКИДКА НА ЛЮБУЮ КРОПТОВАЛЮТУ 7% ✅
 ОТМЕТКА В ПРОФИЛЕ <b>"💎"</b> ✅
 УВЕЛИЧЁН ЛИМИТ ПЕРЕДАЧИ НА 1.000.000.000 (1е9) ✅
+ВОЗМОЖНОСТЬ ПОСТАВИТЬ НИК ДО 16 СИМВОЛОВ ✅
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖
         `, {
@@ -265,6 +219,7 @@ ${userDonatedStatus}, Вот данные за донат статус <b>PREMIU
 СКИДКА НА ЛЮБУЮ КРОПТОВАЛЮТУ 10% ✅
 ОТМЕТКА В ПРОФИЛЕ <b>"⭐️"</b> ✅
 УВЕЛИЧЁН ЛИМИТ ПЕРЕДАЧИ НА 1.000.000.000.000 (1е12) ✅
+ВОЗМОЖНОСТЬ ПОСТАВИТЬ НИК ДО 16 СИМВОЛОВ ✅
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖
         `, {
@@ -299,227 +254,100 @@ ${userDonatedStatus}, Вот данные за донат статус <b>PREMIU
         const remainingHours = Math.floor((remainingTime % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
         const remainingMinutes = Math.floor((remainingTime % (60 * 60 * 1000)) / (60 * 1000));
 
-        if (userStatusName === 'player' || userStatusName === statusName) {
-            if (userStatusExpireDate > new Date()) {
-                bot.editMessageText(`
-${userDonatedStatus}, Вы уже купили статус <b>${statusName}</b>.
+        let userStatusSticker;
+
+        if (userStatusName === 'standart') {
+            userStatusSticker = '🎁';
+        } else if (userStatusName === 'vip') {
+            userStatusSticker = '💎';
+        } else if (userStatusName === 'premium') {
+            userStatusSticker = '⭐️';
+        } else {
+            userStatusSticker = '';
+        }
+
+        if (userStatusName === 'premium') {
+            // Пользователь уже имеет статус "premium"
+            bot.editMessageText(`
+${userDonatedStatus}, Вы уже имеете статус <b>${userStatusName.toUpperCase()} ${userStatusSticker}</b>.
 <b>Подождите до:</b> <i>${userStatusExpireDate.toLocaleString()}</i>
 
-<b>Eще ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут</b>, прежде чем вы сможете купить его снова.
-                `, {
-                    chat_id: chatId,
-                    message_id: messageId,
-                    parse_mode: 'HTML',
-                    ...optionsDonateMain,
-                });
-            } else {
-                const enoughUC = user.uc >= cost;
-                const key = `active_donate_${statusName}`;
-                const statusTitle = statusName.charAt(0).toUpperCase() + statusName.slice(1);
-
-                if (enoughUC) {
-                    await buyStatus(userId, collection, statusName, days);
-                    collection.updateOne({ id: userId }, { $inc: { uc: -cost } });
-
-                    bot.editMessageText(`
-${userDonatedStatus},
-Вы успешно активировали статус <b>${statusName}</b>.
-
-<b>Спасибо вам огромное что покупали наш товар</b>
-                `, {
-                        chat_id: chatId,
-                        message_id: messageId,
-                        parse_mode: 'HTML',
-                    })
-                } else {
-                    bot.editMessageText(`
-${userDonatedStatus}, У вас не достаточно UC для покупки 
-Статуса <b>${statusName}</b>
-                    `, {
-                        chat_id: chatId,
-                        message_id: messageId,
-                        parse_mode: 'HTML',
-                        ...optionsDonateMain,
-                    })
-                }
-            }
-        } else {
-            bot.editMessageText(`
-${userDonatedStatus}, Ваш статус выше чем статус 
-вы покупаете
-                `, {
+<b>Еще ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут</b>, прежде чем вы сможете купить другой статус.
+            `, {
                 chat_id: chatId,
                 message_id: messageId,
                 parse_mode: 'HTML',
                 ...optionsDonateMain,
-            })
+            });
+        } else if (userStatusName === statusName) {
+            // Пользователь уже имеет запрашиваемый статус
+            // (но это не "premium")
+            bot.editMessageText(`
+${userDonatedStatus}, Вы уже купили статус <b>${statusName.toUpperCase()} ${userStatusSticker}</b>.
+<b>Подождите до:</b> <i>${userStatusExpireDate.toLocaleString()}</i>
+
+<b>Еще ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут</b>, прежде чем вы сможете купить другой статус.
+            `, {
+                chat_id: chatId,
+                message_id: messageId,
+                parse_mode: 'HTML',
+                ...optionsDonateMain,
+            });
+        } else if (userStatusName === 'vip' && statusName !== 'premium') {
+            // Пользователь имеет статус "vip", но не "premium"
+            bot.editMessageText(`
+${userDonatedStatus}, Вы уже купили статус <b>${statusName.toUpperCase()} ${userStatusSticker}</b>.
+<b>Подождите до:</b> <i>${userStatusExpireDate.toLocaleString()}</i>
+
+<b>Еще ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут</b>, прежде чем вы сможете купить другой статус.
+            `, {
+                chat_id: chatId,
+                message_id: messageId,
+                parse_mode: 'HTML',
+                ...optionsDonateMain,
+            });
+        } else if (userStatusName === 'standart' && statusName === 'standart') {
+            // Пользователь уже имеет статус "standart" и хочет купить "standart"
+            bot.editMessageText(`
+${userDonatedStatus}, Вы уже купили статус <b>${statusName.toUpperCase()} ${userStatusSticker}</b>.
+<b>Подождите до:</b> <i>${userStatusExpireDate.toLocaleString()}</i>
+
+<b>Еще ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут</b>, прежде чем вы сможете купить другой статус.
+            `, {
+                chat_id: chatId,
+                message_id: messageId,
+                parse_mode: 'HTML',
+                ...optionsDonateMain,
+            });
+        } else {
+            const enoughUC = user.uc >= cost;
+            if (enoughUC) {
+                await buyStatus(userId, collection, statusName, days);
+                collection.updateOne({ id: userId }, { $inc: { uc: -cost } });
+
+                bot.editMessageText(`
+${userDonatedStatus},
+Вы успешно активировали статус <b>${statusName.toUpperCase()} ${userStatusSticker}</b>.
+
+<b>Спасибо вам огромное что покупали наш товар</b>
+                `, {
+                    chat_id: chatId,
+                    message_id: messageId,
+                    parse_mode: 'HTML',
+                })
+            } else {
+                bot.editMessageText(`
+${userDonatedStatus}, У вас не достаточно UC для покупки 
+Статуса <b>${statusName.toUpperCase()} ${userStatusSticker}</b>.
+                    `, {
+                    chat_id: chatId,
+                    message_id: messageId,
+                    parse_mode: 'HTML',
+                    ...optionsDonateMain,
+                })
+            }
         }
     }
-
-    //     const remainingTime = userStatusExpireDate - new Date();
-    //     const remainingDays = Math.ceil(remainingTime / (24 * 60 * 60 * 1000));
-    //     const remainingHours = Math.floor((remainingTime % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
-    //     const remainingMinutes = Math.floor((remainingTime % (60 * 60 * 1000)) / (60 * 1000));
-
-    //     // STANDART
-    //     if (data === 'active_donate_standart') {
-    //         if (userStatusName === 'player' || userStatusName === 'standart') {
-    //             if (userStatusName === 'standart' && userStatusExpireDate > new Date()) {
-    //                 // Пользователь уже купил статус и еще не истек срок его действия
-
-    //                 bot.editMessageText(`
-    // ${userDonatedStatus}, Вы уже купили статус <b>STANDART 🎁</b>.
-    // <b>Подождите до:</b> <i>${userStatusExpireDate.toLocaleString()}</i>
-
-    // <b>Eще ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут</b>, прежде чем вы сможете купить его снова.
-    //                 `, {
-    //                     chat_id: chatId,
-    //                     message_id: messageId,
-    //                     parse_mode: 'HTML',
-    //                     ...optionsDonateMain,
-    //                 });
-    //             } else {
-    //                 await buyStandartStatus(userId, collection);
-    //                 bot.editMessageText(`
-    // ${userDonatedStatus},
-    // Вы успешно активировали статус <b>STANDART 🎁</b>.
-
-    // <b>Спасибо вам огромное что покупали наш товар</b>
-    //                 `, {
-    //                     chat_id: chatId,
-    //                     message_id: messageId,
-    //                     parse_mode: 'HTML',
-    //                 })
-    //             }
-    //         }
-    //         else {
-    //             bot.editMessageText(`
-    // ${userDonatedStatus}, Ваш статус выше чем статус 
-    // вы покупаете
-    //             `, {
-    //                 chat_id: chatId,
-    //                 message_id: messageId,
-    //                 parse_mode: 'HTML',
-    //                 ...optionsDonateMain,
-    //             })
-    //         }
-    //     }
-
-    //     // VIP
-    //     if (data === 'active_donate_vip') {
-    //         if (user.uc >= 99) {
-    //             if (userStatusName === 'player' || userStatusName === 'standart' || userStatusName === 'vip') {
-    //                 if (userStatusName === 'vip' && userStatusExpireDate > new Date()) {
-    //                     // Пользователь уже купил статус и еще не истек срок его действия
-
-    //                     bot.editMessageText(`
-    // ${userDonatedStatus}, Вы уже купили статус <b>VIP 💎</b>.
-    // <b>Подождите до:</b> <i>${userStatusExpireDate.toLocaleString()}</i>
-
-    // <b>Eще ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут</b>, прежде чем вы сможете купить его снова.
-    //                     `, {
-    //                         chat_id: chatId,
-    //                         message_id: messageId,
-    //                         parse_mode: 'HTML',
-    //                         ...optionsDonateMain
-    //                     });
-    //                 } else {
-    //                     await buyVipStatus(userId, collection);
-    //                     bot.editMessageText(`
-    // ${userDonatedStatus},
-    // Вы успешно активировали статус <b>VIP 💎</b>.
-
-    // <b>Спасибо вам огромное что покупали наш товар</b>
-    //                     `, {
-    //                         chat_id: chatId,
-    //                         message_id: messageId,
-    //                         parse_mode: 'HTML',
-    //                     })
-    //                     collection.updateOne({ id: userId }, { $inc: { uc: -99 } })
-    //                 }
-    //             }
-    //             else {
-    //                 bot.editMessageText(`
-    // ${userDonatedStatus}, Ваш статус выше чем статус 
-    // вы покупаете
-    //                 `, {
-    //                     chat_id: chatId,
-    //                     message_id: messageId,
-    //                     parse_mode: 'HTML',
-    //                     ...optionsDonateMain,
-    //                 })
-    //             }
-    //         }
-    //         else {
-    //             bot.editMessageText(`
-    // ${userDonatedStatus}, У вас не достаточно UC для покупки 
-    // Статуса <b>VIP 💎</b>
-    //             `, {
-    //                 chat_id: chatId,
-    //                 message_id: messageId,
-    //                 parse_mode: 'HTML',
-    //                 ...optionsDonateMain,
-    //             })
-    //         }
-    //     }
-
-    //     // PREMIUM
-    //     if (data === 'active_donate_premium') {
-    //         if (user.uc >= 300) {
-    //             if (userStatusName === 'player' || userStatusName === 'standart' || userStatusName === 'vip' || userStatusName === 'premium') {
-    //                 if (userStatusName === 'premium' && userStatusExpireDate > new Date()) {
-    //                     // Пользователь уже купил статус и еще не истек срок его действия
-
-    //                     bot.editMessageText(`
-    // ${userDonatedStatus}, Вы уже купили статус <b>PREMIUM ⭐️</b>.
-    // <b>Подождите до:</b> <i>${userStatusExpireDate.toLocaleString()}</i>
-
-    // <b>Eще ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут</b>, прежде чем вы сможете купить его снова.
-    //                     `, {
-    //                         chat_id: chatId,
-    //                         message_id: messageId,
-    //                         parse_mode: 'HTML',
-    //                         ...optionsDonateMain
-    //                     });
-    //                 } else {
-    //                     await buyPremiumStatus(userId, collection);
-    //                     bot.editMessageText(`
-    // ${userDonatedStatus},
-    // Вы успешно активировали статус <b>PREMIUM ⭐️</b>.
-
-    // <b>Спасибо вам огромное что покупали наш товар</b>
-    //                     `, {
-    //                         chat_id: chatId,
-    //                         message_id: messageId,
-    //                         parse_mode: 'HTML',
-    //                     })
-    //                     collection.updateOne({ id: userId }, { $inc: { uc: -300 } })
-    //                 }
-    //             }
-    //             else {
-    //                 bot.editMessageText(`
-    // ${userDonatedStatus}, Ваш статус выше чем статус 
-    // вы покупаете
-    //                 `, {
-    //                     chat_id: chatId,
-    //                     message_id: messageId,
-    //                     parse_mode: 'HTML',
-    //                     ...optionsDonateMain,
-    //                 })
-    //             }
-    //         }
-    //         else {
-    //             bot.editMessageText(`
-    // ${userDonatedStatus}, У вас не достаточно UC для покупки 
-    // Статуса <b>PREMIUM ⭐️</b>
-    //             `, {
-    //                 chat_id: chatId,
-    //                 message_id: messageId,
-    //                 parse_mode: 'HTML',
-    //                 ...optionsDonateMain,
-    //             })
-    //         }
-    //     }
 }
 
 async function donateInfo(msg, bot, collection) {
@@ -540,6 +368,18 @@ async function donateInfo(msg, bot, collection) {
     const remainingMinutes = Math.floor((remainingTime % (60 * 60 * 1000)) / (60 * 1000));
 
     let userStatus;
+
+    let userStatusSticker;
+
+    if (userStatusName === 'standart') {
+        userStatusSticker = '🎁';
+    } else if (userStatusName === 'vip') {
+        userStatusSticker = '💎';
+    } else if (userStatusName === 'premium') {
+        userStatusSticker = '⭐️';
+    } else {
+        userStatusSticker = '';
+    }
 
     if (userStatusName === 'standart') {
         userStatus = `
@@ -610,7 +450,7 @@ async function donateInfo(msg, bot, collection) {
         bot.sendMessage(chatId, `
 ${userDonateStatues}, Вот данные за ваш статус
 
-<b>Статус:</b> ${userStatusName.toUpperCase()}
+<b>Статус:</b> ${userStatusName.toUpperCase()} ${userStatusSticker}
 ${userStatus}
         `, { parse_mode: 'HTML', reply_to_message_id: messageId, })
     }

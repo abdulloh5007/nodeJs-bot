@@ -1,3 +1,4 @@
+const { donatedUsers } = require("../donate/donatedUsers");
 const { formatNumberWithAbbreviations, formatNumberInScientificNotation } = require("../systems/systemRu");
 const { handleDailyBonus } = require("./bonusCollectBtn");
 require('dotenv').config();
@@ -24,43 +25,45 @@ async function userBalance(msg, collection, bot) {
         const userStatusName = user.status[0].statusName
         const userColId = user.id
 
+        const userDonateStatus = await donatedUsers(msg, collection)
         let userStatus
-        if(userStatusName === 'standart'){
+        if (userStatusName === 'standart') {
             userStatus = `
-<a href='tg://user?id=${userColId}'>${name} "🎁"</a>, ваш баланс
+${userDonateStatus}, ваш баланс
 
-🪙 | Монет: ${balanceFuncT} ${balance > 1000 ? `(${balanceFuncE})` : ''}
+🪙 | Монет: ${balanceFuncT} ${balanceFuncE}
 UC | ${userUc}
 
 <b>РЕКЛАМА: Скоро</b>
             `
         }
-        else if (userStatusName === 'vip'){
+        else if (userStatusName === 'vip') {
             userStatus = `
-<a href='tg://user?id=${userColId}'>${name} "💎"</a>, ваш баланс
+${userDonateStatus}, ваш баланс
 
-🪙 | Монет: ${balanceFuncT} ${balance > 1000 ? `(${balanceFuncE})` : ''}
+🪙 | Монет: ${balanceFuncT} ${balanceFuncE}
 UC | ${userUc}
             `
         }
-        else if (userStatusName === 'premium'){
+        else if (userStatusName === 'premium') {
             userStatus = `
-<a href='tg://user?id=${userColId}'>${name} "⭐️"</a>, ваш баланс
+${userDonateStatus}, ваш баланс
 
-🪙 | Монет: ${balanceFuncT} ${balance > 1000 ? `(${balanceFuncE})` : ''}
+🪙 | Монет: ${balanceFuncT} ${balanceFuncE}
 UC | ${userUc}
             `
         }
         else {
             userStatus = `
-<a href='tg://user?id=${userColId}'>${name}</a>, ваш баланс
+${userDonateStatus}, ваш баланс
 
-🪙 | Монет: ${balanceFuncT} ${balance > 1000 ? `(${balanceFuncE})` : ''}
+🪙 | Монет: ${balanceFuncT} ${balanceFuncE}
 UC | ${userUc}
 
 <b>РЕКЛАМА: Скоро</b>
             `
         }
+
 
         const txt = `
 ${userStatus}
@@ -85,7 +88,7 @@ async function dayBonusCollectingBtn(msg, collection, bot) {
     const messageId = msg.message.message_id
 
     const [bonus, userIdClick] = data.split('_')
-    
+
     if (bonus === 'dayBonusCollect') {
         if (userId == userIdClick) {
             // bot.answerCallbackQuery(msgId, { text: "Вы нажали на кнопку! пока что в разработке", show_alert: true });
@@ -129,20 +132,59 @@ async function userEditGameName(msg, bot, collection) {
     const chatId = msg.chat.id;
     const match = text && text.match(/сменить ник\s+(\S+)/i);
 
+    const prohibitedStickers = ["🎁", "💎", "⭐️"]; // Запрещенные стикеры
+    const user = await collection.findOne({ id: userId });
     if (match && match[1]) {
         const newName = match[1];
-        if (newName.length <= 14) {
-            await bot.sendMessage(chatId, `Вы сменили ник на "${newName}"`, { reply_to_message_id: msg.message_id });
-            collection.updateOne({ id: userId }, { $set: { userName: newName } });
-            collection.updateOne({ id: userId }, { $set: { "bankCard.0.cardOwner": newName } })
+        const userStatus = user.status[0].statusName
+
+        // Проверяем статус пользователя
+        if (userStatus === "premium" || userStatus === "vip") {
+            // Проверяем наличие запрещенных стикеров в новом никнейме
+            const containsProhibitedSticker = prohibitedStickers.some(sticker => newName.includes(sticker));
+
+            if (newName.length <= 16 && !containsProhibitedSticker) {
+                await bot.sendMessage(chatId, `Вы сменили ник на "${newName}"`, { reply_to_message_id: msg.message_id });
+                collection.updateOne({ id: userId }, { $set: { userName: newName } });
+                collection.updateOne({ id: userId }, { $set: { "bankCard.0.cardOwner": newName } });
+            } else {
+                let errorMessage = "Длина ника не должна превышать 16 знаков и не должен содержать запрещенные стикеры:\n";
+
+                if (newName.length > 16) {
+                    errorMessage += "Ник слишком длинный.\n";
+                }
+                
+                await bot.sendMessage(chatId, errorMessage, { reply_to_message_id: msg.message_id });
+            }
         } else {
-            await bot.sendMessage(chatId, `Длина ника не должна превышать 14 знаков.\nНапример: <code>Сменить ник B7777777</code>`, { parse_mode: 'HTML', reply_to_message_id: msg.message_id });
+            // Проверяем наличие запрещенных стикеров в новом никнейме
+            const containsProhibitedSticker = prohibitedStickers.some(sticker => newName.includes(sticker));
+
+            if (newName.length <= 9 && !containsProhibitedSticker) {
+                await bot.sendMessage(chatId, `Вы сменили ник на "${newName}"`, { reply_to_message_id: msg.message_id });
+                collection.updateOne({ id: userId }, { $set: { userName: newName } });
+                collection.updateOne({ id: userId }, { $set: { "bankCard.0.cardOwner": newName } });
+            } else {
+                let errorMessage = "Длина ника не должна превышать 9 знаков и не должен содержать запрещенные стикеры:\n";
+
+                if (newName.length > 9) {
+                    errorMessage += "Ник слишком длинный.\n";
+                }
+
+                if (containsProhibitedSticker) {
+                    errorMessage += "Нельзя использовать стикеры 🎁, 💎 или ⭐️ в никнейме.";
+                }
+
+                await bot.sendMessage(chatId, errorMessage, { reply_to_message_id: msg.message_id });
+            }
         }
     }
+
     if (text === 'сменить ник') {
-        await bot.sendMessage(chatId, `Напиши мне новый ник, который не должен превышать 14 знаков.\nНапример: <code>Сменить ник (я владелец)</code>`, { parse_mode: 'HTML', reply_to_message_id: msg.message_id });
+        await bot.sendMessage(chatId, `Напишите новый ник, который не должен превышать 14 знаков.\nНапример: <code>Сменить ник (я владелец)</code>`, { parse_mode: 'HTML', reply_to_message_id: msg.message_id });
     }
 }
+
 
 async function userGameInfo(msg, bot, collection) {
     const text = msg.text;
@@ -152,7 +194,6 @@ async function userGameInfo(msg, bot, collection) {
 
     if (['инфо', 'профиль'].includes(text.toLowerCase())) {
         const userGameId = user.gameId;
-        const userGameName = user.userName;
         const register_time = user.registerTime;
         const userGameBalance = user.balance;
         const ratesAll = user.rates.map((e) => e.all);
@@ -165,14 +206,15 @@ async function userGameInfo(msg, bot, collection) {
 
         const balanceFuncE = formatNumberInScientificNotation(userGameBalance)
         const balanceFuncT = userGameBalance.toLocaleString('de-DE')
+        const userDonateStatus = await donatedUsers(msg, collection)
 
         if (chatId == userId) {
             await bot.sendMessage(chatId, `
-<b>Игровой 🆔:</b> ${userGameId}
-<b>Ник 👨:</b> <a href='tg://user?id=${userId}'>${userGameName}</a>
-<b>Баланс 💸: ${balanceFuncT}$ ${userGameBalance > 1000 ? `(${balanceFuncE})` : ''}</b>
+<b>Ник 👨:</b> ${userDonateStatus}
+<b>Баланс 💸:</b> ${balanceFuncT}$ ${balanceFuncE}
 <b>Uc: ${userUc}</b>
 <b>Status: ${userStatus.toUpperCase()}</b>
+<b>Игровой 🆔:</b> ${userGameId}
 <b>Карта 💳: |<code>${userBankCard}</code>|</b>
 <b>Криптовалюты 📊↓</b>
    <b>Alt Coin IDX:</b> ${cryptoCurAlt}
@@ -184,8 +226,8 @@ async function userGameInfo(msg, bot, collection) {
         else {
             await bot.sendMessage(chatId, `
 <b>Игровой 🆔:</b> ${userGameId}
-<b>Ник 👨:</b> <a href='tg://user?id=${userId}'>${userGameName}</a>
-<b>Баланс 💸: ${balanceFuncT}$ ${userGameBalance > 1000 ? `(${balanceFuncE})` : ''}</b>
+<b>Ник 👨:</b> ${userDonateStatus}
+<b>Баланс 💸:</b> ${balanceFuncT}$ ${balanceFuncE}
 <b>Uc: ${userUc}</b>
 <b>Status: ${userStatus.toUpperCase()}</b>
 <b>Карта 💳: |<code>5444 **** **** ****</code>|</b>
@@ -206,11 +248,17 @@ async function myId(msg, bot, collection) {
     const messageId = msg.message_id
     const user = await collection.findOne({ id: userId })
 
+    const userDonateStatus = await donatedUsers(msg, collection)
+
     if (['айди', 'мой айди', 'my id', 'myid', 'id'].includes(text.toLowerCase())) {
         const userBotid = user.id
-        const userName = user.userName
+        const userGameId = user.gameId
 
-        bot.sendMessage(chatId, `игрок <a href='tg://user?id=${userBotid}'>${userName}</a> Вот ваш <b>Телеграм айди:</b> <code>${userBotid}</code>`, { parse_mode: 'HTML', reply_to_message_id: messageId })
+        bot.sendMessage(chatId, `
+${userDonateStatus}, Вот ваш 
+<b>Телеграм айди:</b> <code>${userBotid}</code>
+<b>Бот айди:</b> <code>${userGameId}</code>
+        `, { parse_mode: 'HTML', reply_to_message_id: messageId })
     }
 }
 

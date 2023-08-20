@@ -1,3 +1,4 @@
+const { donatedUsers, adminDonatedUsers } = require('../donate/donatedUsers');
 const { parseNumber, formatNumberInScientificNotation } = require('../systems/systemRu');
 
 require('dotenv').config();
@@ -12,16 +13,20 @@ async function extraditeMoney(msg, collection, bot) {
 
     const userIdToGet = msg.reply_to_message?.from?.id;
     const userToGet = userIdToGet ? await collection.findOne({ id: userIdToGet }) : null
+    const userDonateStatus = await donatedUsers(msg, collection)
+    const adminDonatStatus = await adminDonatedUsers(userIdToGet, collection)
 
     if (text.toLowerCase().startsWith('выдать')) {
-        if (userId == adminIdInt || userId == 5954575083 || userId === 1693414035) {
+        if (userId == adminIdInt) {
             if (parts.length == 2) {
                 const sum = parseInt(parseNumber(parts[1]))
 
                 if (!!userToGet) {
                     if (sum > 0) {
-                        const userNameToGet = userToGet.userName
-                        bot.sendMessage(chatId, `Вы успешно выдали игроку <a href='tg://user?id=${userIdToGet}'>${userNameToGet}</a>\nСумму: ${sum.toLocaleString('de-DE')} (${formatNumberInScientificNotation(sum)})`, { parse_mode: "HTML" })
+                        bot.sendMessage(chatId, `
+${userDonateStatus}, Вы успешно выдали игроку ${adminDonatStatus}
+<b>Сумму:</b> <i>${sum.toLocaleString('de-DE')} ${formatNumberInScientificNotation(sum)}</i>
+                        `, { parse_mode: "HTML" })
 
                         collection.updateOne({ id: userIdToGet }, { $inc: { balance: sum } })
                     }
@@ -55,15 +60,20 @@ async function extraditeUc(msg, collection, bot) {
     const userIdToGet = msg.reply_to_message?.from?.id;
     const userToGet = userIdToGet ? await collection.findOne({ id: userIdToGet }) : null
 
+    const userDonateStatus = await donatedUsers(msg, collection)
+    const adminDonateStatus = await adminDonatedUsers(userIdToGet, collection)
+
     if (text.toLowerCase().startsWith('uc выдать') || text.toLowerCase().startsWith('ус выдать')) {
-        if (userId == adminIdInt || userId === 1693414035) {
+        if (userId == adminIdInt) {
             if (parts.length == 3) {
                 const sum = parseInt(parseNumber(parts[2]))
 
                 if (!!userToGet) {
                     if (sum > 0) {
-                        const userNameToGet = userToGet.userName
-                        bot.sendMessage(chatId, `Вы успешно выдали игроку <a href='tg://user?id=${userIdToGet}'>${userNameToGet}</a>\nСумму: ${sum.toLocaleString('de-DE')} UC`, { parse_mode: "HTML" })
+                        bot.sendMessage(chatId, `
+${userDonateStatus}, вы успешно выдали игроку ${adminDonateStatus}
+Сумму: ${sum.toLocaleString('de-DE')} UC
+                        `, { parse_mode: "HTML" })
 
                         collection.updateOne({ id: userIdToGet }, { $inc: { uc: sum } })
                     }
@@ -97,6 +107,9 @@ async function takeMoney(msg, collection, bot) {
     const userIdToTake = msg.reply_to_message?.from?.id;
     const userToTake = userIdToTake ? await collection.findOne({ id: userIdToTake }) : null
 
+    const userDonateStatus = await donatedUsers(msg, collection)
+    const adminDonateStatus = await adminDonatedUsers(userIdToTake, collection)
+
     if (text.toLowerCase().startsWith('забрать')) {
         if (userId == adminIdInt) {
             if (parts.length == 2) {
@@ -107,7 +120,10 @@ async function takeMoney(msg, collection, bot) {
                     if (sum <= userToTakeBalance) {
                         if (sum > 0) {
                             const userNameToTake = userToTake.userName
-                            bot.sendMessage(chatId, `Вы успешно забрали от игрока <a href='tg://user?id=${userIdToTake}'>${userNameToTake}</a>\nСумму: ${sum.toLocaleString('de-DE')} (${formatNumberInScientificNotation(userToTakeBalance)})`, { parse_mode: "HTML" })
+                            bot.sendMessage(chatId, `
+${userDonateStatus}, Вы успешно забрали от игрока ${adminDonateStatus}
+Сумму: ${sum.toLocaleString('de-DE')} ${formatNumberInScientificNotation(userToTakeBalance)}
+                            `, { parse_mode: "HTML" })
 
                             collection.updateOne({ id: userIdToTake }, { $inc: { balance: -sum } })
                         }
@@ -116,7 +132,10 @@ async function takeMoney(msg, collection, bot) {
                         }
                     }
                     else {
-                        bot.sendMessage(chatId, `У этого пользователя меньше денег чем вы назначили чтобы забрать вы можете забрать у него\nСумму: ${userToTakeBalance.toLocaleString('de-DE')} (${formatNumberInScientificNotation(userToTakeBalance)})`, { reply_to_message_id: messageId })
+                        bot.sendMessage(chatId, `
+У этого пользователя ${adminDonateStatus} меньше денег чем вы назначили чтобы забрать вы можете забрать у него
+Сумму: ${userToTakeBalance.toLocaleString('de-DE')} ${formatNumberInScientificNotation(userToTakeBalance)}
+                        `, { reply_to_message_id: messageId })
                     }
                 }
                 else {
@@ -145,6 +164,9 @@ async function takeUc(msg, collection, bot) {
     const userIdToTake = msg.reply_to_message?.from?.id;
     const userToTake = userIdToTake ? await collection.findOne({ id: userIdToTake }) : null
 
+    const userDonateStatus = await donatedUsers(msg, collection)
+    const adminDonateStatus = await adminDonatedUsers(userToTake, collection)
+
     if (text.toLowerCase().startsWith('ус забрать') || text.toLowerCase().startsWith('uc забрать')) {
         if (userId == adminIdInt) {
             if (parts.length == 3) {
@@ -154,8 +176,10 @@ async function takeUc(msg, collection, bot) {
                     const userToTakeBalance = userToTake.uc
                     if (sum <= userToTakeBalance) {
                         if (sum > 0) {
-                            const userNameToTake = userToTake.userName
-                            bot.sendMessage(chatId, `Вы успешно забрали от игрока <a href='tg://user?id=${userIdToTake}'>${userNameToTake}</a>\nСумму: ${sum.toLocaleString('de-DE')} UC`, { parse_mode: "HTML" })
+                            bot.sendMessage(chatId, `
+${userDonateStatus}, Вы успешно забрали от игрока ${adminDonateStatus}
+Сумму: ${sum.toLocaleString('de-DE')} UC
+                            `, { parse_mode: "HTML" })
 
                             collection.updateOne({ id: userIdToTake }, { $inc: { uc: -sum } })
                         }
@@ -164,7 +188,10 @@ async function takeUc(msg, collection, bot) {
                         }
                     }
                     else {
-                        bot.sendMessage(chatId, `У этого пользователя меньше UC чем вы назначили чтобы забрать вы можете забрать у него\nСумму: ${userToTakeBalance.toLocaleString('de-DE')} UC`, { reply_to_message_id: messageId })
+                        bot.sendMessage(chatId, `
+У этого пользователя ${adminDonateStatus} меньше UC чем вы назначили чтобы забрать вы можете забрать у него
+Сумму: ${userToTakeBalance.toLocaleString('de-DE')} UC
+                        `, { reply_to_message_id: messageId })
                     }
                 }
                 else {
@@ -193,6 +220,9 @@ async function takeAllMoney(msg, collection, bot) {
     const userIdToTake = msg.reply_to_message?.from?.id;
     const userToTake = userIdToTake ? await collection.findOne({ id: userIdToTake }) : null
 
+    const userDonateStatus = await donatedUsers(msg, collection)
+    const adminDonateStatus = await adminDonatedUsers(userToTake, collection)
+
     if (text.toLowerCase() == 'деньги забрать все') {
         if (userId == adminIdInt) {
             if (parts.length == 2) {
@@ -200,7 +230,10 @@ async function takeAllMoney(msg, collection, bot) {
                     const userToTakeBalance = userToTake.balance
                     if (userToTakeBalance > 0) {
                         const userNameToTake = userToTake.userName
-                        bot.sendMessage(chatId, `Вы успешно забрали от игрока <a href='tg://user?id=${userIdToTake}'>${userNameToTake}</a>\nСумму: все деньги`, { parse_mode: "HTML" })
+                        bot.sendMessage(chatId, `
+${userDonateStatus}, Вы успешно забрали от игрока ${adminDonateStatus}
+Сумму: все деньги
+                        `, { parse_mode: "HTML" })
 
                         collection.updateOne({ id: userIdToTake }, { $inc: { balance: -userToTakeBalance } })
 
@@ -234,14 +267,19 @@ async function takeAllUc(msg, collection, bot) {
     const userIdToTake = msg.reply_to_message?.from?.id;
     const userToTake = userIdToTake ? await collection.findOne({ id: userIdToTake }) : null
 
+    const userDonateStatus = await donatedUsers(msg, collection)
+    const adminDonateStatus = await adminDonatedUsers(userToTake, collection)
+
     if (text.toLowerCase() === 'uc забрать все' || text.toLowerCase() === 'ус забрать все') {
         if (userId == adminIdInt) {
             if (parts.length == 3) {
                 if (!!userToTake) {
                     const userToTakeBalance = userToTake.uc
                     if (userToTakeBalance > 0) {
-                        const userNameToTake = userToTake.userName
-                        bot.sendMessage(chatId, `Вы успешно забрали от игрока <a href='tg://user?id=${userIdToTake}'>${userNameToTake}</a>\nСумму: все UC`, { parse_mode: "HTML" })
+                        bot.sendMessage(chatId, `
+${userDonateStatus}, Вы успешно забрали от игрока ${adminDonateStatus}
+Сумму: все UC
+                        `, { parse_mode: "HTML" })
 
                         collection.updateOne({ id: userIdToTake }, { $inc: { uc: -userToTakeBalance } })
 
@@ -265,6 +303,216 @@ async function takeAllUc(msg, collection, bot) {
     await new Promise(resolve => setTimeout(resolve, 1000));
 }
 
+async function adminCommands(msg, bot, collection) {
+    const text = msg.text
+    const userId1 = msg.from.id
+    const chatId = msg.chat.id
+
+    const userDonateStatus = await donatedUsers(msg, collection)
+
+    if (['/admin', 'admin', 'админ', 'команды админа'].includes(text.toLowerCase())) {
+        if (userId1 === adminIdInt) {
+            let optionsModeration = {
+                reply_markup: {
+                    inline_keyboard: [
+                        [{ text: 'Младший модератор', callback_data: `juniorModerator_${userId1}` }],
+                        [{ text: 'Старший модератор', callback_data: `seniorModerator_${userId1}` }]
+                    ]
+                }
+            }
+            bot.sendMessage(chatId, `
+${userDonateStatus}, выберите один из статусов администраторов
+            `, {
+                parse_mode: 'HTML',
+                ...optionsModeration
+            })
+        }
+        else {
+            bot.sendMessage(chatId, `
+${userDonateStatus}, вы не являетесь администратором бота
+            `, { parse_mode: 'HTML' })
+        }
+    }
+}
+
+async function adminCommandsWithBtn(msg, bot, collection) {
+    const data = msg.data
+    const userId1 = msg.from.id
+    const chatId = msg.message.chat.id
+    const messageId = msg.message.message_id
+
+    const [clickData, clickUserId] = data.split('_')
+
+
+    let optionsModeration = {
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: 'Младший модератор', callback_data: `juniorModerator_${userId1}` }],
+                [{ text: 'Старший модератор', callback_data: `seniorModerator_${userId1}` }]
+            ]
+        }
+    }
+
+    const userDonateStatus = await donatedUsers(msg, collection)
+
+    if (clickData === 'juniorModerator') {
+        if (userId1 === parseInt(clickUserId)) {
+            bot.editMessageText(`
+${userDonateStatus}, вот команды младших модераторов чата
+
+➖➖➖➖➖➖➖➖➖➖➖➖➖
+
+• <b>/mute [время] [причина]</b> - даёт мут пользователю чата
+• <b>/unmute</b> - отбор мута от пользователя чата
+• <b>/ban [время] [причина]</b> - даёт бан игроку в чатах
+• <b>/unban</b> - отбор бана от пользователя чата
+• <b>/info_id</b> - возможность увидеть данные пользователя
+
+➖➖➖➖➖➖➖➖➖➖➖➖➖
+            `, {
+                chat_id: chatId,
+                message_id: messageId,
+                parse_mode: 'HTML',
+                ...optionsModeration
+            })
+        }
+        else {
+            bot.answerCallbackQuery(msg.id, { text: 'Это кнопка не для тебя', show_alerts: false })
+        }
+    }
+
+    if (clickData === 'seniorModerator') {
+        if (userId1 === parseInt(clickUserId)) {
+            bot.editMessageText(`
+${userDonateStatus}, вот команды старших модераторов чата
+
+➖➖➖➖➖➖➖➖➖➖➖➖➖
+
+• <b>/mute [время] [причина]</b> - даёт мут пользователю в чатах
+• <b>/unmute</b> - отбор мута от пользователя чата
+• <b>/ban [время] [причина]</b> - даёт бан пользователю в чатах
+• <b>/unban</b> - отбор бана от пользователя чата
+• <b>/info_id</b> - возможность увидеть данные пользователя
+• <b>/bot_info</b> - возможность увидеть информацию о боте
+
+• <b>/mute_id [айди] [время] [причина]</b> - даёт мут по айди пользователя чата
+• <b>/unmute_id [айди]</b> - отбор мута по айди от пользователя чата
+• <b>/ban_id [айди] [время] [причина]</b> - дает бан по айди пользователя чата
+• <b>/unban_id [айди]</b> - отбор бана по айди от пользователя чата
+
+➖➖➖➖➖➖➖➖➖➖➖➖➖
+            `, {
+                chat_id: chatId,
+                message_id: messageId,
+                parse_mode: 'HTML',
+                ...optionsModeration
+            })
+        }
+        else {
+            bot.answerCallbackQuery(msg.id, { text: 'Это кнопка не для тебя', show_alerts: false })
+        }
+    }
+}
+
+async function generateRandomKey() {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let key = '';
+    for (let i = 0; i < 14; i++) {
+        key += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+
+    return key;
+}
+
+async function useKey(msg, bot, collectionAdmins) {
+    const text = msg.text
+    const userId = msg.from.id;
+
+    const parts = text.split(' ')
+
+    if (text.toLowerCase().startsWith('key')) {
+        const keyInfo = await collectionAdmins.findOne({ key: parts[1] });
+        if (keyInfo.key === null) {
+            return
+        }
+        if (parts[1] === keyInfo.key) {
+            if (!keyInfo.used) {
+                // Если ключ не использован, помечаем его как использованный
+                await collectionAdmins.updateOne({ key: parts[1] }, {
+                    $set: {
+                        used: true,
+                        usedBy: userId
+                    }
+                });
+                bot.sendMessage(userId, `Ключ успешно использован.`);
+            } else if (keyInfo.usedBy === userId) {
+                bot.sendMessage(userId, `Вы уже использовали этот ключ.`);
+            } else {
+                bot.sendMessage(userId, `Этот ключ уже использован другим пользователем.`);
+            }
+        }
+        else {
+            return;
+        }
+
+    }
+}
+
+async function toBeAnAdministrtorBot(msg, bot, collection, collectionAdmins) {
+    const text = msg.text
+    const userId1 = msg.from.id
+    const chatId = msg.chat.id
+
+    const user = await collection.findOne({ id: userId1 })
+    const adminDonateStatus = await adminDonatedUsers(user.id, collection)
+
+    if (text.toLowerCase() === 'bot give me a key administrator') {
+        if (chatId === userId1) {
+
+            const generatedKey = await generateRandomKey();
+
+            await collectionAdmins.insertOne({
+                key: generatedKey,
+                used: false,
+                usedBy: null
+            });
+
+            bot.sendMessage(userId1, `Выполняю ...`)
+            bot.sendMessage(adminIdInt, `
+${adminDonateStatus}, отправил запрос на ключ администратора
+
+<b>Ключ:</b> <code>${generatedKey}</code>
+            `, { parse_mode: 'HTML' });
+        }
+        else {
+            return;
+        }
+    }
+}
+
+async function deleteGenKeys(msg, bot, collectionAdmins) {
+    const text = msg.text;
+    const userId = msg.from.id;
+    const chatId = msg.chat.id
+
+    if (text.toLowerCase() === 'delete generated admin keys') {
+        if (chatId === userId) {
+            if (userId === adminIdInt) {
+                // Удаление всех ключей из базы данных
+                try {
+                    const collectionAdminsCount = await collectionAdmins.countDocuments()
+                    await collectionAdmins.deleteMany({});
+                    bot.sendMessage(userId, `Все ключи успешно удалены из базы данных. ${collectionAdminsCount}`);
+                } catch (error) {
+                    console.error('Ошибка при удалении всех ключей из базы данных:', error);
+                    bot.sendMessage(userId, 'Произошла ошибка при удалении ключей из базы данных.');
+                }
+            }
+        }
+    }
+}
+
+
 module.exports = {
     extraditeMoney,
     takeMoney,
@@ -273,4 +521,10 @@ module.exports = {
     extraditeUc,
     takeUc,
     takeAllUc,
+
+    adminCommandsWithBtn,
+    adminCommands,
+    toBeAnAdministrtorBot,
+    useKey,
+    deleteGenKeys,
 }
