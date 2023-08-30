@@ -1,3 +1,5 @@
+const { adminDonatedUsers } = require('../donate/donatedUsers');
+
 require('dotenv').config();
 const adminIdInt = parseInt(process.env.ADMIN_ID_INT)
 
@@ -11,10 +13,11 @@ const timeUnits = {
 async function mutePlayer(chatId, userId, muteDuration, muteCause, bot, collection) {
     const user = await collection.findOne({ id: userId })
 
+    const adminDonateStatus = await adminDonatedUsers(userId, collection)
     if (!!user) {
         const userName = user.userName;
         if (user.can_send_messages === false) {
-            bot.sendMessage(chatId, `<a href='tg://user?id=${userId}'>${userName}</a> уже замучен.`, {
+            bot.sendMessage(chatId, `${adminDonateStatus} уже замучен.`, {
                 parse_mode: 'HTML',
             });
             return;
@@ -55,8 +58,18 @@ async function mutePlayer(chatId, userId, muteDuration, muteCause, bot, collecti
 
         }, muteDuration);
 
-        bot.sendMessage(chatId, `Пользователь <a href='tg://user?id=${userId}'>${userName}</a> замучен на ${timeString}.\nПричина: ${muteCause}`, {
+        const optMute = {
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        { text: 'Размутить', callback_data: 'optUnmuteId'}
+                    ]
+                ]
+            }
+        }
+        bot.sendMessage(chatId, `Пользователь ${adminDonateStatus} замучен на ${timeString}.\nПричина: ${muteCause}`, {
             parse_mode: 'HTML',
+            ...optMute,
         });
     }
     else {
@@ -64,7 +77,7 @@ async function mutePlayer(chatId, userId, muteDuration, muteCause, bot, collecti
             parse_mode: 'HTML',
         });
     }
-}``
+}
 
 async function userMuteId(msg, collection, bot) {
     const chatId = msg.chat.id;
@@ -116,7 +129,6 @@ async function userMute(msg, bot, collection) {
         if (parts.length >= 3) {
             if (senderId === adminIdInt) {
                 const userIdToMute = msg.reply_to_message?.from?.id;
-                const userNameToMute = msg.reply_to_message?.from?.username;
 
                 if (userIdToMute) {
                     if (userIdToMute === senderId) {
@@ -177,7 +189,6 @@ async function userUnMute(msg, bot, collection) {
         }
     }
 }
-
 
 // Нужен только владельцу перед перезапуском объязательно испоьзуй эту команду чтобы бот когда перезапустился не стал лагать
 async function userUnMuteAll(msg, bot, collection) {

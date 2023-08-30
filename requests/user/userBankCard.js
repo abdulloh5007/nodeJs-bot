@@ -148,14 +148,18 @@ ${userDonateStatus}, вы успешно сменили свой пароль о
                     `, { parse_mode: 'HTML' })
                     collection.updateOne({ id: userId }, { $set: { "bankCard.0.cardPassword": parseInt(newCardPassword) } })
                 } else {
-                    bot.sendMessage(chatId, 'Пароль не должен совпадать со старым паролем', { parse_mode: 'HTML', reply_to_message_id: replyId })
+                    bot.sendMessage(chatId, `
+${userDonateStatus}, Пароль не должен совпадать со старым паролем
+                    `, { parse_mode: 'HTML', reply_to_message_id: replyId })
                 }
             } else {
-                bot.sendMessage(chatId, `<b>Рекомендация поставьте пароль с командой <code>+карта пароль (4-значная цифра)</code> \nТолько цифры!</b>`, { parse_mode: 'HTML', reply_to_message_id: replyId })
+                bot.sendMessage(chatId, `
+${userDonateStatus}, <b>Рекомендация поставьте пароль с командой <code>+карта пароль (4-значная цифра)</code> \nТолько цифры!</b>
+                `, { parse_mode: 'HTML', reply_to_message_id: replyId })
             }
         } else {
             bot.sendMessage(chatId, `
-Этот пароль, который вы поставили в чате, не будет использован как новый пароль
+${userDonateStatus}, Этот пароль, который вы поставили в чате, не будет использован как новый пароль
 <b>Рекомендация: поставьте пароль с командой <code>+карта пароль (4-значная цифра)</code></b> 
 
 <b>Только в лс бота поставьте пароль, иначе ваш пароль не будет безопасен</b>
@@ -172,44 +176,56 @@ async function getMoneyFromOwnCard(msg, bot, collection) {
 
     const parts = text.split(' ')
     const user = await collection.findOne({ id: userId })
+    const userDonateStatus = await donatedUsers(msg, collection)
 
-    const commandAliases = ['карта снять']
-    const isCommandValid = commandAliases.some(alias => text.toLowerCase().startsWith(alias))
+    if (text.toLowerCase().startsWith('карта снять')) {
+        const userCardBalance = user.bankCard[0].cardValue
 
-    if (!isCommandValid) {
-        return;
-    }
+        if (parts.length === 3) {
+            const moneyToGet = parseInt(parseNumber(parts[2]))
 
-    const userCardBalance = user.bankCard[0].cardValue
-    const moneyToGet = parseInt(parseNumber(parts[2]))
+            if (moneyToGet > userCardBalance) {
+                bot.sendMessage(chatId, `
+        ${userDonateStatus}, Вы не можете снять денег больше чем у вас на карте
+                `, { parse_mode: 'HTML' })
+                return;
+            }
 
-    if (moneyToGet <= 0) {
-        bot.sendMessage(chatId, `Вы не можете снять отрицательное или 0 количество денег`)
-        return;
-    }
+            if (isNaN(moneyToGet)) {
+                bot.sendMessage(chatId, `
+${userDonateStatus}, не возможно снять с карты БУКВЫ !
+                `, { parse_mode: 'HTML' })
+                return;
+            }
 
-    if (moneyToGet > userCardBalance) {
-        bot.sendMessage(chatId, `Вы не можете снять денег больше чем у вас на карте`)
-        return;
-    }
+            if (moneyToGet <= 0) {
+                bot.sendMessage(chatId, `
+${userDonateStatus}, Вы не можете снять отрицательное или 0 количество денег
+                `, { parse_mode: 'HTML' })
+                return;
+            }
 
-    const userCardNumber = user.bankCard[0].cardNumber
-    const newCardBalance = userCardBalance - moneyToGet
+            const userCardNumber = user.bankCard[0].cardNumber
+            const newCardBalance = userCardBalance - moneyToGet
 
-    const message = `
-Вы успешно сняли с вашей карты: |<code>${chatId === userId ? userCardNumber : '5444 **** **** ****'}</code>|
+            const message = `
+${userDonateStatus}, Вы успешно сняли с вашей карты: |<code>${chatId === userId ? userCardNumber : '5444 **** **** ****'}</code>|
 Сумма: ${moneyToGet.toLocaleString('de-DE')} ${formatNumberInScientificNotation(moneyToGet)}
-Баланс карты: ${newCardBalance}
-    `;
+Баланс карты: ${newCardBalance.toLocaleString('de-DE')} ${formatNumberInScientificNotation(newCardBalance)}
+            `;
 
-    if (chatId === userId) {
-        bot.sendMessage(chatId, message, { parse_mode: 'HTML' });
-    } else {
-        bot.sendMessage(chatId, message, { parse_mode: 'HTML', reply_to_message_id: replyId });
+            bot.sendMessage(chatId, message, { parse_mode: 'HTML', reply_to_message_id: replyId });
+
+            collection.updateOne({ id: userId }, { $inc: { "bankCard.0.cardValue": -moneyToGet } })
+            collection.updateOne({ id: userId }, { $inc: { balance: moneyToGet } })
+        }
+        else {
+            bot.sendMessage(chatId, `
+${userDonateStatus}, не правильно введена команда 
+Пример: <code>карта снять [сумма]</code>
+        `, { parse_mode: 'HTML' })
+        }
     }
-
-    collection.updateOne({ id: userId }, { $inc: { "bankCard.0.cardValue": -moneyToGet } })
-    collection.updateOne({ id: userId }, { $inc: { balance: moneyToGet } })
 }
 
 
@@ -221,34 +237,44 @@ async function setMoneyToCard(msg, bot, collection) {
 
     const parts = text.split(' ')
     const user = await collection.findOne({ id: userId })
+    const userDonateStatus = await donatedUsers(msg, collection)
 
-    const commandAliases = ['карта положить', 'карта пополнить']
-    const isCommandValid = commandAliases.some(alias => text.toLowerCase().startsWith(alias))
+    if (text.toLowerCase().startsWith('карта положить') || text.toLowerCase().startsWith('карта пополнить')) {
+        if (parts.length === 3) {
+            const userBalance = user.balance
+            const moneyToSet = parseInt(parseNumber(parts[2]))
 
-    if (!isCommandValid) {
-        return;
-    }
+            if (moneyToSet <= 0) {
+                bot.sendMessage(chatId, `
+${userDonateStatus}, Вы не можете положить отрицательное или 0 количество денег
+                `, { parse_mode: 'HTML' })
+                return;
+            }
 
-    const userBalance = user.balance
-    const moneyToSet = parseInt(parseNumber(parts[2]))
+            if (isNaN(moneyToSet)) {
+                bot.sendMessage(chatId, `
+${userDonateStatus}, не возможно на карту БУКВЫ !
+                `, { parse_mode: 'HTML' })
+                return;
+            }
 
-    if (moneyToSet <= 0) {
-        bot.sendMessage(chatId, `Вы не можете положить отрицательное или 0 количество денег`)
-        return;
-    }
+            if (userBalance < moneyToSet) {
+                bot.sendMessage(chatId, `
+${userDonateStatus}, Вы не можете положить денег больше чем у вас на балансе
+                `, { parse_mode: 'HTML' })
+                return;
+            }
 
-    if (userBalance < moneyToSet) {
-        bot.sendMessage(chatId, `Вы не можете положить денег больше чем у вас на балансе`)
-        return;
-    }
+            bot.sendMessage(chatId, `
+${userDonateStatus}, Вы успешно положили в свою карту
 
-    bot.sendMessage(chatId, `
-Вы успешно положили в свою карту
 Сумму: ${moneyToSet.toLocaleString('de-DE')} ${formatNumberInScientificNotation(moneyToSet)}
-    `, { reply_to_message_id: replyId })
+            `, { reply_to_message_id: replyId, parse_mode: 'HTML' })
 
-    collection.updateOne({ id: userId }, { $inc: { "bankCard.0.cardValue": moneyToSet } })
-    collection.updateOne({ id: userId }, { $inc: { balance: -moneyToSet } })
+            collection.updateOne({ id: userId }, { $inc: { "bankCard.0.cardValue": moneyToSet } })
+            collection.updateOne({ id: userId }, { $inc: { balance: -moneyToSet } })
+        }
+    }
 }
 
 module.exports = {

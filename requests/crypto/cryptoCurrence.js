@@ -1,3 +1,5 @@
+const { donatedUsers } = require('../donate/donatedUsers')
+
 require('dotenv').config()
 const adminId = parseInt(process.env.ADMIN_ID_INT)
 
@@ -97,12 +99,13 @@ async function updateCryptoToUp(msg, bot, collectionCrypto) {
     }
 }
 
-async function updateCryptoToDown(msg, bot, collectionCrypto) {
+async function updateCryptoToDown(msg, bot, collectionCrypto, collection) {
     const text = msg.text
     const userId = msg.from.id
     const chatId = msg.chat.id
 
     const parts = text.split(' ')
+    const userDonateStatus = await donatedUsers(msg, collection)
 
     let cryptoCur;
     let cryptoPrice
@@ -110,57 +113,72 @@ async function updateCryptoToDown(msg, bot, collectionCrypto) {
 
     if (text.toLowerCase().startsWith('крипта вниз')) {
         if (userId === adminId) {
-            if (parts[2].toLowerCase() == crypto.name) {
-                cryptoCur = crypto.name
-                cryptoPrice = crypto.price
-            }
-            else {
-                cryptoCur = null
-            }
+            if (!!parts[2]) {
+                if (parts[2].toLowerCase() == crypto.name) {
+                    cryptoCur = crypto.name
+                    cryptoPrice = crypto.price
+                }
+                else {
+                    cryptoCur = null
+                }
 
-            if (parts[2].toLowerCase() == cryptoCur) {
-                if (parts.length == 4) {
-                    if (parts[3] < cryptoPrice) {
-                        const price2 = cryptoPrice - parseInt(parts[3])
-                        const price = parseInt(parts[3])
-                        if (!isNaN(price)) {
-                            bot.sendMessage(chatId, `
-<b><a href='tg://user?id=${userId}'>Владелец</a> вы успешно изменили</b>
+
+                if (parts[2].toLowerCase() == cryptoCur) {
+                    if (parts.length == 4) {
+                        if (parts[3] < cryptoPrice) {
+                            const price2 = cryptoPrice - parseInt(parts[3])
+                            const price = parseInt(parts[3])
+                            if (!isNaN(price)) {
+                                bot.sendMessage(chatId, `
+${userDonateStatus}, вы успешно изменили</b>
 
 <b>Цену криптовалюты на:</b> вниз <i>${price}</i>
 <b>Время:</b> <i>${lastUpdateTime}</i>
 
 теперь 1 криптовалюта ALTCOINIDX равна ${price2}
                             `, { parse_mode: 'HTML' })
-                            collectionCrypto.updateOne({ name: cryptoCur }, { $inc: { price: -price } })
-                            collectionCrypto.updateOne({ name: cryptoCur }, { $set: { move: parts[1] } })
-                            collectionCrypto.updateOne({ name: cryptoCur }, { $set: { lastUpdateTime: lastUpdateTime } })
+                                collectionCrypto.updateOne({ name: cryptoCur }, { $inc: { price: -price } })
+                                collectionCrypto.updateOne({ name: cryptoCur }, { $set: { move: parts[1] } })
+                                collectionCrypto.updateOne({ name: cryptoCur }, { $set: { lastUpdateTime: lastUpdateTime } })
+                            }
+                            else {
+                                bot.sendMessage(chatId, `
+${userDonateStatus}, Данные введены не правильно напишите\n<code>крипта [вверх, вниз] [имя крипты] цену</code> цена только в цыфрах
+                                `, { parse_mode: "HTML" })
+                            }
                         }
                         else {
-                            bot.sendMessage(chatId, `Данные введены не правильно напишите\n<code>крипта [вверх, вниз] [имя крипты] цену</code> цена только в цыфрах`, { parse_mode: "HTML" })
+                            bot.sendMessage(chatId, `
+${userDonateStatus}, Вы не можете понизить цену крипты до отрицательной или до 0 цены`, { parse_mode: 'HTML' })
                         }
                     }
                     else {
-                        bot.sendMessage(chatId, 'Вы не можете понизить цену крипты до отрицательной или до 0 цены')
+                        bot.sendMessage(chatId, `
+${userDonateStatus}, Данные введены не правильно напишите\n<code>крипта [вверх, вниз] [имя крипты] цену</code>
+                        `, { parse_mode: "HTML" })
                     }
                 }
                 else {
-                    bot.sendMessage(chatId, `Данные введены не правильно напишите\n<code>крипта [вверх, вниз] [имя крипты] цену</code>`, { parse_mode: "HTML" })
-                }
-            }
-            else {
-                const dostupCrypto = await collectionCrypto.findOne()
-                const dostupName = dostupCrypto.name
-                console.log(dostupName);
-                bot.sendMessage(chatId, `
-Данные имя крипты введены не правильно напишите
+                    const dostupCrypto = await collectionCrypto.findOne()
+                    const dostupName = dostupCrypto.name
+                    console.log(dostupName);
+                    bot.sendMessage(chatId, `
+${userDonateStatus}, Данные имя крипты введены не правильно напишите
 <code>крипта [вверх, вниз] [имя крипты] цену</code> цена только в цыфрах
 Доступные криптовалюты <code>${dostupName}</code>
                 `, { parse_mode: "HTML" })
+                }
+            }
+            else {
+                bot.sendMessage(chatId, `
+${userDonateStatus}, отправьте имя криптовалюту и цену добавления
+                `, { parse_mode: 'HTML' })
             }
         }
         else {
-            bot.sendMessage(chatId, 'Вы не являетесь администратором')
+            bot.sendMessage(chatId, `
+${userDonateStatus}, Вы не являетесь администратором
+            `, { parse_mode: 'HTML' })
         }
     }
 }

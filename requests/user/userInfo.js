@@ -3,7 +3,6 @@ const { formatNumberWithAbbreviations, formatNumberInScientificNotation } = requ
 const { handleDailyBonus } = require("./bonusCollectBtn");
 require('dotenv').config();
 const adminIdInt = parseInt(process.env.ADMIN_ID_INT)
-const adminIdStr = process.env.ADMIN_ID
 
 async function userChangeBFunc() {
 
@@ -16,18 +15,37 @@ async function userBalance(msg, collection, bot) {
     const user = await collection.findOne({ id: userId });
 
     if (['б', 'баланс', 'счёт', 'b', 'balance', 'balanc', 'balans'].includes(text.toLowerCase())) {
-        // const balance = user.balance.toLocaleString('de-DE');
-        const balance = user.balance
-        const balanceFuncE = formatNumberInScientificNotation(balance)
-        const balanceFuncT = balance.toLocaleString('de-DE')
-        const name = user.userName;
-        const userUc = user.uc
-        const userStatusName = user.status[0].statusName
-        const userColId = user.id
+        const balance = user.balance;
+        const balanceFuncE = formatNumberInScientificNotation(balance);
+        const balanceFuncT = balance.toLocaleString('de-DE');
+        const userUc = user.uc;
+        const userStatusName = user.status[0].statusName;
 
-        const userDonateStatus = await donatedUsers(msg, collection)
-        let userStatus
-        if (userStatusName === 'standart') {
+        const userDonateStatus = await donatedUsers(msg, collection);
+
+        // bot.getUserProfilePhotos(userId, { limit: 1 })
+        //     .then((result) => {
+        //         if (result.total_count > 0) {
+        //             const photo = result.photos[0][0].file_id; // Получение идентификатора файла аватарки
+        //             console.log(photo);
+        //             // Отправка аватарки в чат
+        //             bot.sendPhoto(chatId, photo)
+        //                 .then(() => {
+        //                     console.log('Аватарка пользователя успешно отправлена.');
+        //                 })
+        //                 .catch((error) => {
+        //                     console.error('Ошибка при отправке аватарки:', error);
+        //                 });
+        //         } else {
+        //             console.log('У пользователя нет аватарки.');
+        //         }
+        //     })
+        //     .catch((error) => {
+        //         console.error('Ошибка при получении информации о пользователе:', error);
+        //     });
+
+        let userStatus;
+        if (userStatusName === 'standart' || userStatusName === 'player') {
             userStatus = `
 ${userDonateStatus}, ваш баланс
 
@@ -35,57 +53,35 @@ ${userDonateStatus}, ваш баланс
 UC | ${userUc}
 
 <b>РЕКЛАМА: Скоро</b>
-            `
-        }
-        else if (userStatusName === 'vip') {
+            `;
+        } else {
             userStatus = `
 ${userDonateStatus}, ваш баланс
 
 🪙 | Монет: ${balanceFuncT} ${balanceFuncE}
 UC | ${userUc}
-            `
+            `;
         }
-        else if (userStatusName === 'premium') {
-            userStatus = `
-${userDonateStatus}, ваш баланс
-
-🪙 | Монет: ${balanceFuncT} ${balanceFuncE}
-UC | ${userUc}
-            `
-        }
-        else {
-            userStatus = `
-${userDonateStatus}, ваш баланс
-
-🪙 | Монет: ${balanceFuncT} ${balanceFuncE}
-UC | ${userUc}
-
-<b>РЕКЛАМА: Скоро</b>
-            `
-        }
-
 
         const txt = `
 ${userStatus}
-        `
+        `;
 
-        let dayBonusOption = {
+        const dayBonusOption = {
             reply_markup: {
                 inline_keyboard: [
                     [{ text: 'Получить бонус', callback_data: `dayBonusCollect_${userId}` }]
                 ]
             }
-        }
-        bot.sendMessage(chatId, txt, { reply_to_message_id: msg.message_id, ...dayBonusOption, parse_mode: 'HTML' })
+        };
+        bot.sendMessage(chatId, txt, { reply_to_message_id: msg.message_id, ...dayBonusOption, parse_mode: 'HTML' });
     }
 }
 
 async function dayBonusCollectingBtn(msg, collection, bot) {
-    const chatId = msg.message.chat.id
     const userId = msg.from.id
     const data = msg.data
     const msgId = msg.id
-    const messageId = msg.message.message_id
 
     const [bonus, userIdClick] = data.split('_')
 
@@ -106,7 +102,6 @@ async function userEditGameId(msg, bot, collection) {
     const userId = msg.from.id;
     const chatId = msg.chat.id;
     const match = text && text.match(/сменить айди\s+(\S+)/i);
-    const user = collection.findOne({ id: userId });
 
     if (match && match[1]) {
         const newId = match[1].toUpperCase();
@@ -153,7 +148,7 @@ async function userEditGameName(msg, bot, collection) {
                 if (newName.length > 16) {
                     errorMessage += "Ник слишком длинный.\n";
                 }
-                
+
                 await bot.sendMessage(chatId, errorMessage, { reply_to_message_id: msg.message_id });
             }
         } else {
@@ -185,7 +180,6 @@ async function userEditGameName(msg, bot, collection) {
     }
 }
 
-
 async function userGameInfo(msg, bot, collection) {
     const text = msg.text;
     const userId = msg.from.id;
@@ -196,48 +190,33 @@ async function userGameInfo(msg, bot, collection) {
         const userGameId = user.gameId;
         const register_time = user.registerTime;
         const userGameBalance = user.balance;
-        const ratesAll = user.rates.map((e) => e.all);
-        const ratesWin = user.rates.map((e) => e.wins);
-        const ratesLose = user.rates.map((e) => e.loses);
-        const userBankCard = user.bankCard[0].cardNumber
-        const cryptoCurAlt = user.crypto[0].altcoinidx
-        const userUc = user.uc
-        const userStatus = user.status[0].statusName
+        const ratesAll = user.rates.map(e => e.all);
+        const ratesWin = user.rates.map(e => e.wins);
+        const ratesLose = user.rates.map(e => e.loses);
+        const userBankCard = user.bankCard[0].cardNumber;
+        const cryptoCurAlt = user.crypto[0].altcoinidx;
+        const userUc = user.uc;
+        const userStatus = user.status[0].statusName;
 
-        const balanceFuncE = formatNumberInScientificNotation(userGameBalance)
-        const balanceFuncT = userGameBalance.toLocaleString('de-DE')
-        const userDonateStatus = await donatedUsers(msg, collection)
+        const balanceFuncE = formatNumberInScientificNotation(userGameBalance);
+        const balanceFuncT = userGameBalance.toLocaleString('de-DE');
+        const userDonateStatus = await donatedUsers(msg, collection);
 
-        if (chatId == userId) {
-            await bot.sendMessage(chatId, `
-<b>Ник 👨:</b> ${userDonateStatus}
-<b>Баланс 💸:</b> ${balanceFuncT}$ ${balanceFuncE}
-<b>Uc: ${userUc}</b>
-<b>Status: ${userStatus.toUpperCase()}</b>
-<b>Игровой 🆔:</b> ${userGameId}
-<b>Карта 💳: |<code>${userBankCard}</code>|</b>
-<b>Криптовалюты 📊↓</b>
-   <b>Alt Coin IDX:</b> ${cryptoCurAlt}
+        const cardText = chatId === userId ? `Карта 💳: |<code>${userBankCard}</code>|` : `Карта 💳: |<code>5444 **** **** ****</code>|`;
 
-<b>Сыграно игр: ${ratesAll} \n    Выигрыши: ${ratesWin} \n    Проигрыши: ${ratesLose}</b>
-<b>Время регистрации 📆:</b> ${register_time}
-        `, { parse_mode: 'HTML', reply_to_message_id: msg.message_id });
-        }
-        else {
-            await bot.sendMessage(chatId, `
+        await bot.sendMessage(chatId, `
 <b>Игровой 🆔:</b> ${userGameId}
 <b>Ник 👨:</b> ${userDonateStatus}
 <b>Баланс 💸:</b> ${balanceFuncT}$ ${balanceFuncE}
 <b>Uc: ${userUc}</b>
 <b>Status: ${userStatus.toUpperCase()}</b>
-<b>Карта 💳: |<code>5444 **** **** ****</code>|</b>
+${cardText}
 <b>Криптовалюты 📊↓</b>
    <b>Alt Coin IDX:</b> ${cryptoCurAlt}
 
 <b>Сыграно игр: ${ratesAll} \n    Выигрыши: ${ratesWin} \n    Проигрыши: ${ratesLose}</b>
 <b>Время регистрации 📆:</b> ${register_time}
-        `, { parse_mode: 'HTML', reply_to_message_id: msg.message_id });
-        }
+    `, { parse_mode: 'HTML', reply_to_message_id: msg.message_id });
     }
 }
 

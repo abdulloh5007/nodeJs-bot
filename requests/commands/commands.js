@@ -1,4 +1,5 @@
 const { startOptions, helpOption, backOption } = require("../../options");
+const { donatedUsers } = require("../donate/donatedUsers");
 const { formatNumberInScientificNotation } = require("../systems/systemRu");
 require('dotenv').config();
 const adminId = parseInt(process.env.ADMIN_ID)
@@ -79,15 +80,22 @@ async function commandStart(msg, collection, bot) {
             userName: 'Игрок',
             balance: 10000,
             uc: 0,
+            registerTime: registerUserTime,
+            altcoinidx: 0,
+            checkPayment: 'not',
+            lastBonusTime: 0,
             status: [{
                 statusName: 'player',
                 purchaseDate: 0,
                 statusExpireDate: 0,
             }],
-            registerTime: registerUserTime,
-            altcoinidx: 0,
-            checkPayment: 'not',
-            lastBonusTime: 0,
+            limit: [{
+                giveMoneyLimit: 5000000,
+                givedMoney: 0,
+                updateDayLimit: 0,
+                // promoMoneyLimit: 1000,
+                // promoMoney: 0,
+            }],
             // avatar: [{
             //     waiting: '',
             //     avaUrl: '',
@@ -108,9 +116,9 @@ async function commandStart(msg, collection, bot) {
                 loses: 0,
                 all: 0
             }],
-            userViolationsMute: [{
-                mute: false,
-                muteTime: "",
+            ban: [{
+                ban: false,
+                banTime: "",
                 cause: "",
             }],
             bankCard: [{
@@ -185,11 +193,12 @@ async function commandHelp(msg, collection, bot) {
     }
 }
 
-async function commandHelpAsBtn(msg, bot, userGameName) {
+async function commandHelpAsBtn(msg, bot, userGameName, collection) {
     const data = msg.data
     const chatId = msg.message.chat.id
     const userId = msg.message.from.id
     const replyId = msg.message_id
+    const userDonateStatus = await donatedUsers(msg, collection)
 
     const help = `
 <a href='tg://user?id=${userId}'>${userGameName}</a>
@@ -222,17 +231,86 @@ async function commandHelpAsBtn(msg, bot, userGameName) {
     }
 
     const restHelp = `
-Игрок <a href='tg://user?id=${userId}'>${userGameName}</a> вот остальные команды
+${userDonateStatus}, вот остальные команды
 
 <i><code>инфо карта</code></i> - <b>Информация о картах</b>
+<i><code>мой айди</code></i> - <b>Показ айди пользователя</b>
+
+<i><code>магазин</code></i> - <b>Магазин криптовалют</b>
+<i><code>купить крипту [название крипты]</code></i> - <b>Покупка приптовалю если они продаются</b>
+<i><code>продать крипту [название крипты]</code></i> - <b>Продажа криптовалют</b>
+<i><code>!реф</code></i> - <b>Реферал</b>
+<i><code>мой статус</code></i> - <b>Информация о статусе</b>
+    `
+    const property = `
+${userDonateStatus}, вот имущества которые существуют в боте
+
+<i><code>дома</code></i> - <b>Информация о домах</b>
+<i><code>донат дома</code></i> - <b>Информация о донат домах</b>
+<i><code>инфо дом [название дома]</code></i> - <b>Информация о доме</b>
+<i><code>мой дом</code></i> - <b>Информация о своем доме или донат доме</b>
+<i><code>купить дом [номер дома]</code></i> - <b>Приобретение дома</b>
+<i><code>купить донатдом [номер дома]</code></i> - <b>Приобретение донат дома</b>
+<i><code>продать дом</code></i> - <b>Продажа дома или донат дома</b>
     `
 
-    willChangHelpOption('mainHelp', 'hello'/*Слово после нажатии кнопки */)
-    willChangHelpOption('gameHelp', 'game')
-    willChangHelpOption('propertyHelp', 'property')
+    const moderation = `
+${userDonateStatus}, вот команды админов
+
+<i><code>bot give me a key administrator</code></i> - <b>Генерирует ключ администрации который приходит только владельцу</b>
+<i><code>key [ключ]</code></i> - <b>Использовать ключ адмиистрации</b>
+<i><code>.infoid</code></i> - <b>Инфо о пользователе, ответом на сообщение</b>
+
+<i><code>+дом [имя] [стоимость] [сезон] [юрл или айди картины]</code></i> - <b>Добавление домов</b>
+<i><code>+донатдом [имя] [стоимость] [сезон] [юрл или айди картины]</code></i> - <b>Добавление донат домов</b>
+<i><code>дом цена [номер дома] [новая цена]</code></i> - <b>Изменение цены дома</b>
+<i><code>дом имя [имя дома] [новая имя]</code></i> - <b>Изменение имя дома</b>
+
+<i><code>crypto status [true, false]</code></i> - <b>Статус крипты [продается, не продается]</b>
+<i><code>крипта вниз [названия] [цена]</code></i> - <b>Действие вниз убывание</b>
+<i><code>крипта вниз [названия] [цена]</code></i> - <b>Действие вниз увеличение</b>
+
+<i><code>botinfo</code></i> - <b>Информация о боте</b>
+<i><code>bot version [версия]</code></i> - <b>Новая версия боту</b>
+
+<i><code>/ban_bot [время] [причина]</code></i> - <b>Ответом на сообщение, дает бан</b>
+
+<i><code>выдать [сумма]</code></i> - <b>Выдача денег, ответом на сообщение</b>
+<i><code>забрать [сумма]</code></i> - <b>Отбор денег, ответом на сообщение</b>
+<i><code>деньги забрать все</code></i> - <b>Отбор всех денег, ответом на сообщение</b>
+
+<i><code>ус выдать</code></i> - <b>Выдача ус, ответом на сообщение</b>
+<i><code>ус забрать</code></i> - <b>Отбор ус, ответом на сообщение</b>
+<i><code>ус забрать все</code></i> - <b>Отбор всех ус, ответом на сообщение</b>
+
+<i><code>+дпромо [название] [кол-во активации] [сумма] [комаентарии если есть]</code></i>
+
+<b>Айди картины можно получить отправив картину боту в лс</b>
+    `
+
+    const game = `
+${userDonateStatus}, вот доступные игры
+
+<i><code>казино [сумма]</code></i> - <b>Игра</b>
+    `
+
+    const main = `
+${userDonateStatus}, вот основные команды
+
+<i><code>б</code></i> - <b>информация о счете</b>
+<i><code>сменить ник [ник]</code></i> - <b>Смена ника</b>
+<i><code>Сменить айди [айди]</code></i> - <b>Смена айди только админам</b>
+<i><code>дать [сумма]</code></i> - <b>Передача денег</b>
+<i><code>донат</code></i> - <b>Донаты, сообщение отправить только в лс</b>
+<i><code>+промо [название] [кол-во активации] [сумма] [комаентарии если есть]</code></i>
+    `
+
+    willChangHelpOption('mainHelp', main/*Слово после нажатии кнопки */)
+    willChangHelpOption('gameHelp', game)
+    willChangHelpOption('propertyHelp', property)
     willChangHelpOption('adminHelp', 'admin')
     willChangHelpOption('restHelp', restHelp)
-    willChangHelpOption('moderationHelp', 'модерация')
+    willChangHelpOption('moderationHelp', moderation)
 
     if (data === 'back') {
         willEditMessage()
@@ -261,9 +339,28 @@ async function userInfoReplyToMessage(msg, bot, collection) {
                     const ratesLose = user.rates.map((e) => e.loses);
                     const userBankCard = user.bankCard[0].cardNumber
                     const cryptoCurAlt = user.crypto[0].altcoinidx
-                    const userStatusName = user.status[0].statusName
                     const userUc = user.uc
                     const userId2 = user.id
+                    const userStatus = user.status[0].statusName
+
+                    const userBanStatus = user.ban[0].ban
+                    let userBanInformation;
+
+                    if (userBanStatus === true) {
+                        const userBanCause = user.ban[0].cause
+                        const userBanTime = user.ban[0].banTime
+                        const date = new Date(userBanTime)
+                        userBanInformation = `
+<b>Бан статус:</b> забанен
+   <b>Причина:</b> ${userBanCause}
+   <b>Время:</b> ${date.toLocaleString('')}
+            `
+                    }
+                    else {
+                        userBanInformation = `
+<b>Бан статус:</b> не забанен
+            `
+                    }
 
                     if (chatId == userId) {
                         await bot.sendMessage(chatId, `
@@ -274,6 +371,7 @@ async function userInfoReplyToMessage(msg, bot, collection) {
 <b>Uc: ${userUc}</b>
 <b>Status: ${userStatus.toUpperCase()}</b>
 <b>Карта: |<code>${userBankCard}</code>|</b>
+${userBanInformation}
 <b>Криптовалюты ↓</b>
    <b>Alt Coin IDX:</b> ${cryptoCurAlt}
 
@@ -290,6 +388,7 @@ async function userInfoReplyToMessage(msg, bot, collection) {
 <b>Uc: ${userUc}</b>
 <b>Status: ${userStatus.toUpperCase()}</b>
 <b>Карта: |<code>5444 **** **** ****</code>|</b>
+${userBanInformation}
 <b>Криптовалюты ↓</b>
    <b>Alt Coin IDX:</b> ${cryptoCurAlt}
 
@@ -337,16 +436,16 @@ async function userMsg(msg, collection, bot) {
 Вам пришло сообщение от игрока: <a href='tg://user?id=${userId}'>${userSendName}</a>
 Сообщение: ${sendedMessage}
                         `, { parse_mode: 'HTML' })
-                        .then(() => {
-                            bot.sendMessage(chatId, `Вы успешно отправили сообщение пользователю <a href='tg://user?id=${userIdToSend}'>${user.userName}</a>`, { reply_to_message_id: messageId, parse_mode: 'HTML' })
-                        })
-                        .catch((error) => {
-                            if (error.response && error.response.statusCode === 403) {
-                                bot.sendMessage(chatId, 'Пользователь заблокировал бота');
-                            } else {
-                                bot.sendMessage(chatId, 'Произошла ошибка при отправке сообщения');
-                            }
-                        });
+                            .then(() => {
+                                bot.sendMessage(chatId, `Вы успешно отправили сообщение пользователю <a href='tg://user?id=${userIdToSend}'>${user.userName}</a>`, { reply_to_message_id: messageId, parse_mode: 'HTML' })
+                            })
+                            .catch((error) => {
+                                if (error.response && error.response.statusCode === 403) {
+                                    bot.sendMessage(chatId, 'Пользователь заблокировал бота');
+                                } else {
+                                    bot.sendMessage(chatId, 'Произошла ошибка при отправке сообщения');
+                                }
+                            });
                     }
                     else {
                         bot.sendMessage(chatId, 'Не возможно отправить сообщение самому себе')

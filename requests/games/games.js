@@ -8,65 +8,153 @@ async function kazino(msg, collection, bot) {
     const text = msg.text;
     const userId = msg.from.id;
     const messageId = msg.message_id;
+
+    const userDonateStatus = await donatedUsers(msg, collection)
     const user = await collection.findOne({ id: userId });
-
     const parts = text && text.split(' ');
-    const winChance = 40;
 
-    if (parts && parts[0].toLowerCase() === 'казино' && parts.length === 2) {
+    if (parts[0].toLowerCase() === 'казино') {
         const balance = user.balance;
-        const name = user.userName;
-        const userIdG = user.id;
         const value = parseInt(parseNumber(parts[1].toLowerCase()));
 
+        if (value <= 0) {
+            bot.sendMessage(chatId, `
+${userDonateStatus}, Не возможно поставить отрицательное или нулевое количество ставки
+            `, { reply_to_message_id: messageId, parse_mode: 'HTML' })
+            return;
+        }
+
+        if (parts.length !== 2) {
+            bot.sendMessage(chatId, `
+${userDonateStatus}, Не павильно введена команда 
+Пример: <code>казино 10</code>
+            `, { reply_to_message_id: messageId, parse_mode: 'HTML' })
+            return;
+        }
+
         if (balance >= value) {
-            if (value > 0) {
-                const randomNum = Math.floor(Math.random() * 100);
+            const randomNum = Math.floor(Math.random() * 100);
 
-                // Подсчет выигрышей и коэффициентов в зависимости от результата
-                let winCoefficient = 0;
-                let resultText = '';
-                if (randomNum < 20) {
-                    winCoefficient = 5;
-                    resultText = 'Вы выиграли 5x';
-                } else if (randomNum < 40) {
-                    winCoefficient = 3;
-                    resultText = 'Вы выиграли 3x';
-                } else if (randomNum < 60) {
-                    winCoefficient = 2;
-                    resultText = 'Вы выиграли 2x';
-                } else if (randomNum < 80) {
-                    winCoefficient = 1;
-                    resultText = 'Вы выиграли 1x';
-                } else {
-                    resultText = 'Вы проиграли';
-                }
+            // Подсчет выигрышей и коэффициентов в зависимости от результата
+            let winCoefficient = 0;
+            let resultText = '';
+            if (randomNum < 20) {
+                winCoefficient = 5;
+                resultText = 'Вы выиграли 5x';
+            } else if (randomNum < 40) {
+                winCoefficient = 3;
+                resultText = 'Вы выиграли 3x';
+            } else if (randomNum < 60) {
+                winCoefficient = 2;
+                resultText = 'Вы выиграли 2x';
+            } else if (randomNum < 80) {
+                winCoefficient = 1;
+                resultText = 'Вы выиграли 1x';
+            } else {
+                resultText = 'Вы проиграли';
+            }
 
-                const userStatus = await donatedUsers(msg, collection)
-                const winAmount = value * winCoefficient;
-                const newBalance = resultText.includes('выиграли') ? balance + winAmount : balance - value;
+            const userStatus = await donatedUsers(msg, collection)
+            const winAmount = value * winCoefficient;
+            const newBalance = resultText.includes('выиграли') ? balance + winAmount : balance - value;
 
-                // Отправка сообщения с результатом
-                const resultMessage = `
+            // Отправка сообщения с результатом
+            const resultMessage = `
 <b>${userStatus}</b>
 <b>${resultText} (${winCoefficient}x)</b>
-<b>${resultText} ${winAmount.toLocaleString('de-DE')} ${winCoefficient > 0 ? gameWinStickers() : gameLoseStickers()}.</b>
+<b>${winAmount.toLocaleString('de-DE')} ${winCoefficient > 0 ? gameWinStickers() : gameLoseStickers()}.</b>
                 `;
 
-                await bot.sendMessage(chatId, resultMessage, { reply_to_message_id: messageId, parse_mode: 'HTML', ...againGameOptions });
+            await bot.sendMessage(chatId, resultMessage, { reply_to_message_id: messageId, parse_mode: 'HTML', ...againGameOptions });
 
-                // Обновление данных пользователя
-                const ratesUpdate = { $inc: { "rates.0.all": 1 } };
-                if (winCoefficient > 0) {
-                    ratesUpdate.$inc["rates.0.wins"] = 1;
-                } else {
-                    ratesUpdate.$inc["rates.0.loses"] = 1;
-                }
-
-                collection.updateOne({ id: userId }, { $set: { balance: newBalance }, ...ratesUpdate });
+            // Обновление данных пользователя
+            const ratesUpdate = { $inc: { "rates.0.all": 1 } };
+            if (winCoefficient > 0) {
+                ratesUpdate.$inc["rates.0.wins"] = 1;
             } else {
-                bot.sendMessage(chatId, 'Вы не можете поставить отрицательное или 0 денег для ставки');
+                ratesUpdate.$inc["rates.0.loses"] = 1;
             }
+
+            collection.updateOne({ id: userId }, { $set: { balance: newBalance }, ...ratesUpdate });
+
+        } else {
+            await bot.sendMessage(chatId, '<b>У вас нехватает средств</b>', { reply_to_message_id: messageId, parse_mode: 'HTML' });
+        }
+    }
+}
+
+async function kazinoSIQCC(msg, bot, collection) {
+    const chatId = msg.chat.id;
+    const text = msg.text;
+    const userId = msg.from.id;
+    const messageId = msg.message_id;
+
+    const userDonateStatus = await donatedUsers(msg, collection)
+    const user = await collection.findOne({ id: userId });
+    const parts = text && text.split(' ');
+
+    if (parts[0] === '@levouJS_bot' && parts[1].toLowerCase() === 'казино') {
+        const balance = user.balance;
+        const value = parseInt(parseNumber(parts[2].toLowerCase()));
+
+        if (value <= 0) {
+            bot.sendMessage(chatId, `
+${userDonateStatus}, Не возможно поставить отрицательное или нулевое количество ставки
+            `, { reply_to_message_id: messageId, parse_mode: 'HTML' })
+            return;
+        }
+
+        if (parts.length !== 3) {
+            bot.sendMessage(chatId, `
+${userDonateStatus}, Не павильно введена команда 
+Пример: <code>казино 10</code>
+            `,{ reply_to_message_id: messageId, parse_mode: 'HTML' })
+            return;
+        }
+
+        if (balance >= value) {
+            const randomNum = Math.floor(Math.random() * 100);
+
+            // Подсчет выигрышей и коэффициентов в зависимости от результата
+            let winCoefficient = 0;
+            let resultText = '';
+            if (randomNum < 20) {
+                winCoefficient = 5;
+                resultText = 'Вы выиграли 5x';
+            } else if (randomNum < 40) {
+                winCoefficient = 3;
+                resultText = 'Вы выиграли 3x';
+            } else if (randomNum < 60) {
+                winCoefficient = 2;
+                resultText = 'Вы выиграли 2x';
+            } else if (randomNum < 80) {
+                winCoefficient = 1;
+                resultText = 'Вы выиграли 1x';
+            } else {
+                resultText = 'Вы проиграли';
+            }
+
+            const userStatus = await donatedUsers(msg, collection)
+            const winAmount = value * winCoefficient;
+            const newBalance = resultText.includes('выиграли') ? balance + winAmount : balance - value;
+
+            // Отправка сообщения с результатом
+            const resultMessage = `
+<b>${userStatus}</b>
+<b>${resultText} (${winCoefficient}x)</b>
+<b>${winAmount.toLocaleString('de-DE')} ${winCoefficient > 0 ? gameWinStickers() : gameLoseStickers()}.</b>
+                `;
+            await bot.sendMessage(chatId, resultMessage, { reply_to_message_id: messageId, parse_mode: 'HTML', ...againGameOptions });
+
+            // Обновление данных пользователя
+            const ratesUpdate = { $inc: { "rates.0.all": 1 } };
+            if (winCoefficient > 0) {
+                ratesUpdate.$inc["rates.0.wins"] = 1;
+            } else {
+                ratesUpdate.$inc["rates.0.loses"] = 1;
+            }
+
+            collection.updateOne({ id: userId }, { $set: { balance: newBalance }, ...ratesUpdate });
         } else {
             await bot.sendMessage(chatId, '<b>У вас нехватает средств</b>', { reply_to_message_id: messageId, parse_mode: 'HTML' });
         }
@@ -75,4 +163,5 @@ async function kazino(msg, collection, bot) {
 
 module.exports = {
     kazino,
+    kazinoSIQCC,
 };

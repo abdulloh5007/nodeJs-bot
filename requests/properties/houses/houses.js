@@ -247,7 +247,7 @@ async function houseBuy(msg, collection, bot, collectionHouses) {
         const houseNumberToBuy = parseInt(parts[2]);
 
         if (!isNaN(houseNumberToBuy)) {
-            const sortedHouses = await collectionHouses.find().sort({ housePrice: 1 }).toArray();
+            const sortedHouses = await collectionHouses.find({ houseDonate: false }).sort({ housePrice: 1 }).toArray();
 
             if (houseNumberToBuy >= 1 && houseNumberToBuy <= sortedHouses.length) {
                 const userBalance = user.balance
@@ -357,7 +357,7 @@ async function sellHouse(msg, bot, collection, collectionHouses) {
                 }
                 if (houseDonate === false) {
                     const sellPrice = houseToSellPrice * 0.9; // Пример: продажа за 90% от цены
-                    bot.sendMessage(chatId, `Вы успешно продали дом "${houseToSellName}" за ${sellPrice.toLocaleString('de-DE')}$ (${formatNumberInScientificNotation(sellPrice)}).`);
+                    bot.sendMessage(chatId, `Вы успешно продали дом "${houseToSellName}" за ${sellPrice.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(sellPrice)}.`);
 
                     collection.updateOne({ id: userId }, { $set: { "properties.0.house": '' } });
                     collection.updateOne({ id: userId }, { $inc: { balance: sellPrice } });
@@ -415,7 +415,7 @@ ${userStatus}, вот информация о вашем донат доме:
 ${userStatus}, вот информация о вашем доме:
 
 Название: ${userHouseName2}
-Цена: ${userHousePrice.toLocaleString('de-DE')}$ ${userHousePrice > 1000 ? `(${formatNumberInScientificNotation(userHousePrice)})` : ''}
+Цена: ${userHousePrice.toLocaleString('de-DE')}$ ${userHousePrice > 1000 ? `${formatNumberInScientificNotation(userHousePrice)}` : ''}
 Сезон: ${userHouseSeason}
     `;
                     bot.sendPhoto(chatId, userHouImg, { caption: houseInfo, parse_mode: 'HTML' });

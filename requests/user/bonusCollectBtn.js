@@ -1,3 +1,5 @@
+const { donatedUsers } = require("../donate/donatedUsers");
+
 let bonusCooldown = 24 * 60 * 60 * 1000; // 24 часа в миллисекундах
 
 // Пример функции для генерации случайного типа бонуса (монеты или UC)
@@ -22,7 +24,6 @@ async function handleDailyBonus(msg, collection, bot) {
 
     const lastBonusTime = user.lastBonusTime || 0;
     const userStatusName = user.status[0].statusName
-
     // Изменяем cooldown для VIP и Premium пользователей
     if (userStatusName === 'vip' || userStatusName === 'premium') {
         bonusCooldown = 12 * 60 * 60 * 1000; // 12 часов в миллисекундах
@@ -30,12 +31,13 @@ async function handleDailyBonus(msg, collection, bot) {
         bonusCooldown = 24 * 60 * 60 * 1000; // 24 часа в миллисекундах
     }
 
+    const userDonateStatus = await donatedUsers(msg, collection)
+
     if (currentTime - lastBonusTime >= bonusCooldown) {
         // Пользователь может получить бонус
         const bonusAmount = getRandomAmount();
         const bonusType = getRandomBonusType();
         const bonusUc = getRandomUc();
-
 
         if (bonusType === 'UC') {
             const donateX2 = bonusUc * 2
@@ -49,7 +51,7 @@ async function handleDailyBonus(msg, collection, bot) {
 
                 // Отправляем сообщение о получении бонуса
                 const bonusMessage = `
-Вы получили свой ежедневный бонус:\n${bonusUc} UC.
+${userDonateStatus}, Вы получили свой ежедневный бонус:\n${bonusUc} UC.
 <b>${userStatusName.toUpperCase()} 💎</b> 2X = ${donateX2} UC.
                 `;
                 bot.sendMessage(msg.message.chat.id, bonusMessage, { reply_to_message_id: msg.message.message_id, parse_mode: 'HTML' });
@@ -63,7 +65,7 @@ async function handleDailyBonus(msg, collection, bot) {
 
                 // Отправляем сообщение о получении бонуса
                 const bonusMessage = `
-Вы получили свой ежедневный бонус:\n${bonusUc} UC.
+${userDonateStatus}, Вы получили свой ежедневный бонус:\n${bonusUc} UC.
 <b>${userStatusName.toUpperCase()} ⭐️</b> 2X = ${donateX2} UC.
                 `;
                 bot.answerCallbackQuery(msg.id, { show_alert: false, text: 'успех' })
@@ -78,9 +80,9 @@ async function handleDailyBonus(msg, collection, bot) {
 
                 // Отправляем сообщение о получении бонуса
                 const bonusMessage = `
-Вы получили свой ежедневный бонус:\n${bonusUc} UC.
+${userDonateStatus}, Вы получили свой ежедневный бонус:\n${bonusUc} UC.
                 `;
-                bot.sendMessage(msg.message.chat.id, bonusMessage, { reply_to_message_id: msg.message.message_id });
+                bot.sendMessage(msg.message.chat.id, bonusMessage, { reply_to_message_id: msg.message.message_id, parse_mode: 'HTML' });
             }
         }
         if (bonusType === 'монеты') {
@@ -94,7 +96,7 @@ async function handleDailyBonus(msg, collection, bot) {
 
                 // Отправляем сообщение о получении бонуса
                 const bonusMessage = `
-Вы получили свой ежедневный бонус:\n${bonusAmount.toLocaleString('de-DE')} $.
+${userDonateStatus}, Вы получили свой ежедневный бонус:\n${bonusAmount.toLocaleString('de-DE')} $.
 <b>${userStatusName.toUpperCase()} 💎</b> 2X = ${donateX2.toLocaleString('de-DE')} $.
                 `;
                 bot.sendMessage(msg.message.chat.id, bonusMessage, { reply_to_message_id: msg.message.message_id, parse_mode: 'HTML' });
@@ -108,7 +110,7 @@ async function handleDailyBonus(msg, collection, bot) {
 
                 // Отправляем сообщение о получении бонуса
                 const bonusMessage = `
-Вы получили свой ежедневный бонус:\n${bonusAmount.toLocaleString('de-DE')} $.
+${userDonateStatus}, Вы получили свой ежедневный бонус:\n${bonusAmount.toLocaleString('de-DE')} $.
 <b>${userStatusName.toUpperCase()} ⭐️</b> 2X = ${donateX2.toLocaleString('de-DE')} $.
                 `;
                 bot.sendMessage(msg.message.chat.id, bonusMessage, { reply_to_message_id: msg.message.message_id, parse_mode: 'HTML' });
@@ -122,16 +124,18 @@ async function handleDailyBonus(msg, collection, bot) {
 
                 // Отправляем сообщение о получении бонуса
                 const bonusMessage = `
-Вы получили свой ежедневный бонус:\n${bonusAmount.toLocaleString('de-DE')} $.
+${userDonateStatus}, Вы получили свой ежедневный бонус:\n${bonusAmount.toLocaleString('de-DE')} $.
                 `;
-                bot.sendMessage(msg.message.chat.id, bonusMessage, { reply_to_message_id: msg.message.message_id });
+                bot.sendMessage(msg.message.chat.id, bonusMessage, { reply_to_message_id: msg.message.message_id, parse_mode: 'HTML' });
             }
         }
     } else {
         // Пользователь уже получил бонус в течение 24 часов
         const remainingTime = formatRemainingTime(bonusCooldown - (currentTime - lastBonusTime));
-        const errorMessage = `Вы уже получили бонус. Вы сможете получить следующий бонус через ${remainingTime}.`;
-        bot.sendMessage(msg.message.chat.id, errorMessage, { reply_to_message_id: msg.message.message_id });
+        const errorMessage = `
+${userDonateStatus}, Вы уже получили бонус. Вы сможете получить следующий бонус через ${remainingTime}.
+        `;
+        bot.sendMessage(msg.message.chat.id, errorMessage, { reply_to_message_id: msg.message.message_id, parse_mode: 'HTML' });
     }
 }
 
