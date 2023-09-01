@@ -394,7 +394,7 @@ ${userDonateStatus}, у вас нету бизнеса
         return;
     }
 
-    if (userBProfit < 0) {
+    if (userBProfit <= 0) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, у вас и так нету денег для снятие с бизнеса
         `, { parse_mode: 'HTML' })

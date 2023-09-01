@@ -1,3 +1,4 @@
+const { customChalk } = require("../../customChalk");
 const { donatedUsers } = require("./donatedUsers")
 
 async function sendMessage(msg, text, options = {}, bot) {
@@ -172,14 +173,41 @@ ${userDonatedStatus}, вот доступные донаты
             `, { parse_mode: 'HTML', reply_to_message_id: messageId, ...optionsDonate })
         }
         else {
-            // Проверка доступности ЛС с ботом
-            const chat = await bot.getChat(userId1);
-            if (!!chat.photo) {
-                bot.sendMessage(chatId, `
-${userDonatedStatus}, Я отправил вам донат меню в лс
-                    `, { parse_mode: 'HTML', reply_to_message_id: messageId, ...goBot })
+            //             // Проверка доступности ЛС с ботом
+            //             const chat = await bot.getChat(userId1);
+            //             if (!!chat.photo) {
+            //                 bot.sendMessage(chatId, `
+            // ${userDonatedStatus}, Я отправил вам донат меню в лс
+            //                     `, { parse_mode: 'HTML', reply_to_message_id: messageId, ...goBot })
 
-                bot.sendMessage(userId1, `
+            //                 bot.sendMessage(userId1, `
+            // ${userDonatedStatus}, вот доступные донаты
+
+            // 1 UC = 0.5 Р
+
+            // ➖➖➖➖➖➖➖➖➖➖➖➖➖
+
+            // СТАТУСЫ
+            // ДОНАТ МАШИНЫ
+            // ДОНАТ ДОМА
+
+            // ➖➖➖➖➖➖➖➖➖➖➖➖➖
+            //                     `, { parse_mode: 'HTML', ...optionsDonate })
+            //                 return;
+            //             }
+            //             else {
+            //                 bot.sendMessage(chatId, `
+            // ${userDonatedStatus}, Вы заблокировали бота не имев приватный чат с ботом вы не можете увидеть донаты
+            //                 `, { parse_mode: 'HTML', reply_to_message_id: messageId, ...goBot })
+            //             }
+
+
+            try {
+                await bot.sendMessage(chatId, `
+${userDonatedStatus}, Я отправил вам донат меню в лс
+                `, { parse_mode: 'HTML', reply_to_message_id: messageId, ...goBot })
+                
+                await bot.sendMessage(userId1, `
 ${userDonatedStatus}, вот доступные донаты
 
 1 UC = 0.5 Р
@@ -191,14 +219,19 @@ ${userDonatedStatus}, вот доступные донаты
 ДОНАТ ДОМА
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖
-                    `, { parse_mode: 'HTML', ...optionsDonate })
-                return;
-            }
-            else {
-                bot.sendMessage(chatId, `
-${userDonatedStatus}, Вы заблокировали бота не имев приватный чат с ботом вы не можете увидеть донаты
+                `, { parse_mode: 'HTML', ...optionsDonate })
+            } catch (err) {
+                if (err.response && err.response.statusCode === 403) {
+                    bot.sendMessage(chatId, `
+${userDonatedStatus}, разблокируйте меня чтобы я смог отправить его
                 `, { parse_mode: 'HTML', reply_to_message_id: messageId, ...goBot })
-                return;
+                } else if (err.response && err.response.statusCode === 400) {
+                    bot.sendMessage(chatId, `
+${userDonatedStatus}, у вас еще нету чата со мной перейдите в лс и нажмите старт
+                `, { parse_mode: 'HTML', reply_to_message_id: messageId, ...goBot })
+                } else {
+                    console.log(customChalk.colorize(`Ошибка при отправки сообщение доната: ${err.message}`, { style: 'italic', background: 'bgRed' }));
+                }
             }
         }
     }

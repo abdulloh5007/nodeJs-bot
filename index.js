@@ -141,21 +141,25 @@ function start() {
         const dice = msg.dice
         const video = msg.video
         const document = msg.document
-
+        const poll = msg.poll
+        const location = msg.location
+        const contact = msg.contact
+        const gameBot = msg.game
+        
         const user = await collection.findOne({ id: userId });
 
-        if (pinned_message || new_chat_members || new_chat_title || new_chat_photo || left_chat_member || sendedPhoto || sendGiff || sendSticker || voice || dice || video || document) {
-            return
+        if (pinned_message || new_chat_members || new_chat_title || new_chat_photo || left_chat_member || sendedPhoto || sendGiff || sendSticker || voice || dice || video || document || poll || location || contact || gameBot) {
+            return;
         }
 
         //start
         if (text.toLowerCase() === '/start' || text == '/start@levouJS_bot') {
             commandStart(msg, collection, bot)
-            log('Успешно зарегистрирован')
+            log(customChalk.colorize('Успешно зарегистрирован', { style: 'underline', background: 'bgGreen' }))
         }
 
         //ref start
-        else if (text.startsWith('/start')) {
+        else if (text.toLowerCase().startsWith('/start ref_')) {
             startWithRef(msg, bot, collection)
         }
 
@@ -338,9 +342,8 @@ function start() {
         else {
             await bot.sendMessage(chatId, `
 Сначала зарегистрируйся нажав на /start
-                `, { reply_to_message_id: messageId })
+            `, { reply_to_message_id: messageId })
         }
-
     })
 
     bot.on('callback_query', async msg => {

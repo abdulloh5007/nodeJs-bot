@@ -164,7 +164,7 @@ async function commandHelpInChats(msg, userGameName, bot) {
     await bot.sendMessage(chatId, `
 <a href='tg://user?id=${userId}'>${userGameName}</a>
 <b>🗂Разделы</b>
-<b>👨‍🔬Ownner: Corporation of The Youngs</b>
+<b>👨‍🔬Ownner: Corporation of Three Youngs</b>
 
 <i>👜 Основные✇ </i>
 <i>🌇 Имущество❃۬</i>
@@ -189,7 +189,7 @@ async function commandHelp(msg, collection, bot) {
         await bot.sendMessage(chatId, `
 <a href='tg://user?id=${userId}'>${userGameName}</a>
 <b>🗂Разделы</b>
-<b>👨‍🔬Ownner: Corporation of The Youngs</b>
+<b>👨‍🔬Ownner: Corporation of Three Youngs</b>
 
 <i>👜 Основные✇ </i>
 <i>🌇 Имущество❃۬</i>
@@ -213,7 +213,7 @@ async function commandHelpAsBtn(msg, bot, userGameName, collection) {
     const help = `
 <a href='tg://user?id=${userId}'>${userGameName}</a>
 <b>🗂Разделы</b>
-<b>👨‍🔬Ownner: Corporation of The Youngs</b>
+<b>👨‍🔬Ownner: Corporation of Three Youngs</b>
 
 <i>👜 Основные✇ </i>
 <i>🌇 Имущество❃۬</i>
@@ -262,9 +262,32 @@ ${userDonateStatus}, вот имущества которые существую
 <i><code>купить дом [номер дома]</code></i> - <b>Приобретение дома</b>
 <i><code>купить донатдом [номер дома]</code></i> - <b>Приобретение донат дома</b>
 <i><code>продать дом</code></i> - <b>Продажа дома или донат дома</b>
+
+<i><code>бизнесы</code></i> - <b>Информация о бизнесах</b>
+<i><code>инфо бработники</code></i> - <b>Информация о бизнес работниках</b>
     `
 
     const moderation = `
+В Разработке !
+    `
+
+    const game = `
+${userDonateStatus}, вот доступные игры
+
+<i><code>казино [сумма]</code></i> - <b>Игра</b>
+    `
+
+    const main = `
+${userDonateStatus}, вот основные команды
+
+<i><code>б</code></i> - <b>информация о счете</b>
+<i><code>сменить ник [ник]</code></i> - <b>Смена ника</b>
+<i><code>Сменить айди [айди]</code></i> - <b>Смена айди только админам</b>
+<i><code>дать [сумма]</code></i> - <b>Передача денег</b>
+<i><code>донат</code></i> - <b>Донаты, сообщение отправить только в лс</b>
+<i><code>+промо [название] [кол-во активации] [сумма] [комаентарии если есть]</code></i>
+    `
+    const adminCommands = `
 ${userDonateStatus}, вот команды админов
 
 <i><code>bot give me a key administrator</code></i> - <b>Генерирует ключ администрации который приходит только владельцу</b>
@@ -298,27 +321,10 @@ ${userDonateStatus}, вот команды админов
 <b>Айди картины можно получить отправив картину боту в лс</b>
     `
 
-    const game = `
-${userDonateStatus}, вот доступные игры
-
-<i><code>казино [сумма]</code></i> - <b>Игра</b>
-    `
-
-    const main = `
-${userDonateStatus}, вот основные команды
-
-<i><code>б</code></i> - <b>информация о счете</b>
-<i><code>сменить ник [ник]</code></i> - <b>Смена ника</b>
-<i><code>Сменить айди [айди]</code></i> - <b>Смена айди только админам</b>
-<i><code>дать [сумма]</code></i> - <b>Передача денег</b>
-<i><code>донат</code></i> - <b>Донаты, сообщение отправить только в лс</b>
-<i><code>+промо [название] [кол-во активации] [сумма] [комаентарии если есть]</code></i>
-    `
-
-    willChangHelpOption('mainHelp', main/*Слово после нажатии кнопки */)
+    willChangHelpOption('mainHelp', main /*Слово после нажатии кнопки */)
     willChangHelpOption('gameHelp', game)
     willChangHelpOption('propertyHelp', property)
-    willChangHelpOption('adminHelp', 'admin')
+    willChangHelpOption('adminHelp', adminCommands)
     willChangHelpOption('restHelp', restHelp)
     willChangHelpOption('moderationHelp', moderation)
 

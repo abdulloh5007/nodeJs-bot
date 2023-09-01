@@ -1,3 +1,4 @@
+const { customChalk } = require("../../customChalk");
 const { startOptions } = require("../../options");
 
 const date = new Date()
@@ -42,12 +43,13 @@ async function referral(msg, bot, collection) {
         // Отправка пользователю ссылки для приглашения
         const referralLink = `https://t.me/levouJS_bot?start=${referralCode}`;
         bot.sendMessage(chatId, `
-Вот ваша ссылка для приглашения новых пользователей: ${referralLink}
-Приглашая пользователей через реферальной ссылкой вы получаете за каждого регистрированного
-пользователя по 1.000 $
+<b>Приглашая пользователей через реферальной ссылкой вы получаете за каждого регистрированного
+пользователя по 1.000 $</b>
 
-<b>Ваши рефералы:</b> ${refAmount}
-        `, { parse_mode: "HTML", reply_to_message_id: messageId });
+<u><b>Ваши рефералы:</b> <i>${refAmount}</i></u>
+
+<b>Вот ваша ссылка для приглашения новых пользователей:</b> <i>${referralLink}</i>
+        `, { parse_mode: "HTML", reply_to_message_id: messageId, disable_web_page_preview: true });
     }
 }
 
@@ -69,19 +71,19 @@ async function startWithRef(msg, bot, collection) {
         const user = await collection.findOne({ id: userId })
 
         if (user) {
-            const user = await collection.findOne({ id: userId })
-            const register_time = user.registerTime
+            return;
 
-            await bot.sendMessage(chatId, `
-Привет, <a href='tg://user?id=${userId}'>Игрок</a> \n
-<b>Ты уже добавлен в базу</b>
-<i>Дата ${register_time}</i>
-            `, { parse_mode: 'HTML', ...startOptions, reply_to_message_id: msg.message_id })
+//             await bot.sendMessage(chatId, `
+// Привет, <a href='tg://user?id=${userId}'>Игрок</a> \n
+// <b>Ты уже добавлен в базу</b>
+// <i>Дата ${register_time}</i>
+//             `, { parse_mode: 'HTML', ...startOptions, reply_to_message_id: msg.message_id })
         }
         else {
             // ЕСЛИ ВСЁ ТАКИ ХОЧЕШЬ ОТПРАВИТЬ СТИКЕР
-            await collection.updateOne({ id: referringUser.id }, { $inc: { balance: 10000 } }); // Пример: выдача 10000 денег рефереру
+            await collection.updateOne({ id: referringUser.id }, { $inc: { balance: 1000 } }); // Пример: выдача 1000 денег рефереру
             await collection.updateOne({ id: referringUser.id }, { $inc: { "referral.0.amount": 1 } })
+            // console.log(referralCode);
 
             await bot.sendSticker(chatId, 'CAACAgIAAxkBAAEJuehkthTWSWEaOSTzdOjdX5T1rpuFEgACSQADQbVWDGATQ6Y8j8OALwQ')
                 .then(() => {
@@ -111,10 +113,42 @@ async function startWithRef(msg, bot, collection) {
                 id: userId,
                 gameId: onlyUsersId,
                 userName: 'Игрок',
-                balance: 1000,
+                balance: 10000,
+                uc: 0,
                 registerTime: registerUserTime,
                 altcoinidx: 0,
                 checkPayment: 'not',
+                lastBonusTime: 0,
+                status: [{
+                    statusName: 'player',
+                    purchaseDate: 0,
+                    statusExpireDate: 0,
+                }],
+                limit: [{
+                    giveMoneyLimit: 5000000,
+                    givedMoney: 0,
+                    updateDayLimit: 0,
+                    // promoMoneyLimit: 1000,
+                    // promoMoney: 0,
+                }],
+                business: [{
+                    bHave: false,
+                    bName: "",
+                    bWorkers: 0,
+                    bMaxWorkers: 0,
+                    bProfit: 0,
+                    bWorkersProfit: 0,
+                    bTax: 0,
+                    lastUpdTime: 0,
+                }],
+                // avatar: [{
+                //     waiting: '',
+                //     avaUrl: '',
+                // }],
+                properties: [{
+                    house: '',
+                    car: '',
+                }],
                 referral: [{
                     code: '',
                     amount: 0,
@@ -127,9 +161,9 @@ async function startWithRef(msg, bot, collection) {
                     loses: 0,
                     all: 0
                 }],
-                userViolationsMute: [{
-                    mute: false,
-                    muteTime: "",
+                ban: [{
+                    ban: false,
+                    banTime: "",
                     cause: "",
                 }],
                 bankCard: [{
@@ -143,6 +177,20 @@ async function startWithRef(msg, bot, collection) {
                 }]
             })
 
+            try {
+                await bot.sendMessage(referringUser.id, `
+<b>С вашей реферальной ссылке был зарегистрирован пользоватаель</b>
+<b>Вам добавлены деньги в баланс !</b>
+                `, { parse_mode: 'HTML' })
+            }catch (err){
+                if (err.response && err.response.statusCode === 403) {
+                    console.log(customChalk.colorize(`Пользователь ${referringUser.id} заблокировал бота`, { style: 'italic', background: 'bgRed' }));
+                } else if (err.response && err.response.statusCode === 400) {
+                    console.log(customChalk.colorize(`Пользователя ${referringUser.id} нет чата с ботом`, { style: 'italic', background: 'bgYellow' }))
+                } else {
+                    console.log(customChalk.colorize(`Ошибка при отправки сообщение рефа к рефферу: ${err.message}`, { style: 'italic', background: 'bgRed' }));
+                }
+            }
         }
 
     }
