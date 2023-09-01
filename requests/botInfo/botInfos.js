@@ -42,10 +42,10 @@ async function botVersionChange(msg, bot, collectionBot) {
 
     const parts = text.split(' ');
 
-    if (text.toLowerCase().startsWith('bot version') && userId === adminIdInt) {
+    if (text.toLowerCase().startsWith('botversion') && userId === adminIdInt) {
         if (userId === adminIdInt) {
-            if (parts[3] !== undefined && parts[2] !== undefined && parts.length === 4) {
-                const versionBot = parts[2] + ' ' + parts[3].toUpperCase();
+            if (parts[2] !== undefined && parts[1] !== undefined && parts.length >= 3) {
+                const versionBot = text.slice(parts[0].length + 1);
                 bot.sendMessage(chatId, `Версия бота успешно обновлена до ${versionBot}`);
                 collectionBot.updateOne({ id: adminIdInt }, { $set: { botVersion: versionBot } });
             } else {
