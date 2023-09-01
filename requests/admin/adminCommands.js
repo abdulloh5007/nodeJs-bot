@@ -223,13 +223,12 @@ async function takeAllMoney(msg, collection, bot) {
     const userDonateStatus = await donatedUsers(msg, collection)
     const adminDonateStatus = await adminDonatedUsers(userToTake, collection)
 
-    if (text.toLowerCase() == 'деньги забрать все') {
+    if (text.toLowerCase() === 'деньги забрать все') {
         if (userId == adminIdInt) {
-            if (parts.length == 2) {
+            if (parts.length == 3) {
                 if (!!userToTake) {
                     const userToTakeBalance = userToTake.balance
                     if (userToTakeBalance > 0) {
-                        const userNameToTake = userToTake.userName
                         bot.sendMessage(chatId, `
 ${userDonateStatus}, Вы успешно забрали от игрока ${adminDonateStatus}
 Сумму: все деньги

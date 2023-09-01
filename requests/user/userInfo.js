@@ -5,25 +5,7 @@ require('dotenv').config();
 const adminIdInt = parseInt(process.env.ADMIN_ID_INT)
 
 async function userChangeBFunc() {
-
-}
-
-async function userBalance(msg, collection, bot) {
-    const chatId = msg.chat.id;
-    const text = msg.text;
-    const userId = msg.from.id;
-    const user = await collection.findOne({ id: userId });
-
-    if (['б', 'баланс', 'счёт', 'b', 'balance', 'balanc', 'balans'].includes(text.toLowerCase())) {
-        const balance = user.balance;
-        const balanceFuncE = formatNumberInScientificNotation(balance);
-        const balanceFuncT = balance.toLocaleString('de-DE');
-        const userUc = user.uc;
-        const userStatusName = user.status[0].statusName;
-
-        const userDonateStatus = await donatedUsers(msg, collection);
-
-        // bot.getUserProfilePhotos(userId, { limit: 1 })
+// bot.getUserProfilePhotos(userId, { limit: 1 })
         //     .then((result) => {
         //         if (result.total_count > 0) {
         //             const photo = result.photos[0][0].file_id; // Получение идентификатора файла аватарки
@@ -43,6 +25,27 @@ async function userBalance(msg, collection, bot) {
         //     .catch((error) => {
         //         console.error('Ошибка при получении информации о пользователе:', error);
         //     });
+}
+
+async function userBalance(msg, collection, bot, collectionAddvert) {
+    const chatId = msg.chat.id;
+    const text = msg.text;
+    const userId = msg.from.id;
+    const user = await collection.findOne({ id: userId });
+    const addvert = await collectionAddvert.findOne({}, { sort: { addvertTime: -1 } });
+
+    if (['б', 'баланс', 'счёт', 'b', 'balance', 'balanc', 'balans'].includes(text.toLowerCase())) {
+        const balance = user.balance;
+        const balanceFuncE = formatNumberInScientificNotation(balance);
+        const balanceFuncT = balance.toLocaleString('de-DE');
+        const userUc = user.uc;
+        const userStatusName = user.status[0].statusName;
+
+        const userDonateStatus = await donatedUsers(msg, collection);
+
+        const addvertText = addvert ? addvert.addvertText : 'НЕТУ'
+        const addvertTime = addvert ? addvert.addvertTime : ''
+        const convertedTime = new Date(addvertTime)
 
         let userStatus;
         if (userStatusName === 'standart' || userStatusName === 'player') {
@@ -52,7 +55,8 @@ ${userDonateStatus}, ваш баланс
 🪙 | Монет: ${balanceFuncT} ${balanceFuncE}
 UC | ${userUc}
 
-<b>РЕКЛАМА: Скоро</b>
+<b>РЕКЛАМА:</b> ${addvertText}
+${addvertTime != '' ? `<b>ДАТА:</b> ${convertedTime.toLocaleDateString()}` : ''}
             `;
         } else {
             userStatus = `

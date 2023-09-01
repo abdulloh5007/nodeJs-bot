@@ -96,6 +96,16 @@ async function commandStart(msg, collection, bot) {
                 // promoMoneyLimit: 1000,
                 // promoMoney: 0,
             }],
+            business: [{
+                bHave: false,
+                bName: "",
+                bWorkers: 0,
+                bMaxWorkers: 0,
+                bProfit: 0,
+                bWorkersProfit: 0,
+                bTax: 0,
+                lastUpdTime: 0,
+            }],
             // avatar: [{
             //     waiting: '',
             //     avaUrl: '',

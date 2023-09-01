@@ -123,8 +123,9 @@ ${userDonateStatus}, не правильно введена команда,
             `, { parse_mode: 'HTML', reply_to_message_id: messageId })
         }
     }
+    const txt = '@levouJS_bot купить крипту'
 
-    if (parts[0] === '@levouJS_bot' && parts[1].toLowerCase() === 'купить' && parts[2].toLowerCase() === 'крипту') {
+    if (text.toLowerCase().startsWith(txt.toLocaleLowerCase())) {
         if (parts.length === 5) {
             const crypto = await collectionCrypto.findOne({ name: parts[3] })
             if (!!crypto) {

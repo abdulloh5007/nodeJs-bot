@@ -1,5 +1,6 @@
 const TelegramBot = require('node-telegram-bot-api');
 require('dotenv').config();
+const cron = require('node-cron');
 
 const botToken = process.env.BOT_TOKEN
 const mongoDbUrl = process.env.MONGO_DB_URL
@@ -8,7 +9,7 @@ const adminId = parseInt(process.env.ADMIN_ID)
 const { MongoClient, ObjectId } = require('mongodb');
 const client = new MongoClient(mongoDbUrl);
 
-const { kazino, kazinoSIQCC } = require('./requests/games/games');
+const { kazino, } = require('./requests/games/games');
 const { commandStart, commandHelp, commandHelpAsBtn, commandHelpInChats, deleteAllUsers, userInfoReplyToMessage, userMsg } = require('./requests/commands/commands');
 const { userBalance, userEditGameId, userGameInfo, userEditGameName, myId, dayBonusCollectingBtn } = require('./requests/user/userInfo');
 const { userUnMuteAll, } = require('./requests/violations/userMute');
@@ -28,13 +29,17 @@ const { limitations, removeLimit, updateDayLimitAtUTC9 } = require('./requests/u
 const { cars, donateCars, CarAdd, CarDonateAdd, findCarByName, carBuy, carDonateBuy, myCarInfo, changeCarPrice, changeCarName, sellCar, btnCars } = require('./requests/properties/cars/cars');
 const { customChalk } = require('./customChalk');
 const { buyCryptoCurrence, payTransactions, cryptoShop, } = require('./requests/shop/cryptoShop');
+const { mailing } = require('./requests/mailing/mailing');
+const { addAddvert, addverts, deleteAdd, deleteAllAddverts } = require('./requests/advert/advertising');
+const { addBusiness, listBusinesses, buyBusiness, infoBusiness, workersInfo, buyWorkers, addProfitEveryOneHour, pulloffBusiness, payTaxForBusiness } = require('./requests/properties/business/business');
 
 client.connect()
-.then(() => {
-    console.log(customChalk.colorize('SUCCESSFULLY CONNECTED TO DATABASE', { style: 'italic', background: 'bgGreen' }));
-}).catch((error) => {
-    console.log(customChalk.colorize('ERROR CONNECTING TO DATABASE', { style: 'italic', background: 'bgRed' }));
-})
+    .then(() => {
+        console.log(customChalk.colorize('SUCCESSFULLY CONNECTED TO DATABASE', { style: 'italic', background: 'bgGreen' }));
+    }).catch((error) => {
+        console.log(customChalk.colorize(`ERROR CONNECTING TO DATABASE ${error}`, { style: 'italic', background: 'bgRed' }));
+    })
+
 const db = client.db('bot');
 const collection = db.collection('users');
 const collectionBot = db.collection('botInfo')
@@ -43,48 +48,32 @@ const collectionHouses = db.collection('houses')
 const collectionAdmins = db.collection('administrators')
 const collectionPromo = db.collection('promo')
 const collectionCars = db.collection('cars')
+const collectionAddvert = db.collection('addvertising')
 
 const bot = new TelegramBot(botToken, { polling: true });
-
-let isBotActive = true;
 
 function log(e) {
     console.log(e)
 }
+const botLastIncludedTime = new Date()
 
-const date = new Date()
-const year = date.getFullYear()
-const month = date.getMonth()
-const day = date.getDate()
-const hours = date.getHours()
-const minutes = date.getMinutes()
-const botLastIncludedTime = `${day}-${month}-${year} ${hours}:${minutes}`
+// async function sendMsgWhenBotStarts() {
+//     const [botInn, botInnOwner] = await Promise.all([
+//         collectionBot.findOne({ id: adminId }),
+//         collection.findOne({ id: adminId })
+//     ]);
 
-async function sendMsgWhenBotStarts() {
-    const [botInn, botInnOwner] = await Promise.all([
-        collectionBot.findOne({ id: adminId }),
-        collection.findOne({ id: adminId })
-    ]);
+//     const ownerGameId = botInnOwner.gameId;
+//     const updateUserBotInfo = await collection.countDocuments();
+//     await collectionBot.updateOne({}, { $set: { registeredUsers: updateUserBotInfo } });
 
-    const ownerGameId = botInnOwner.gameId;
-    const updateUserBotInfo = await collection.countDocuments();
-    await collectionBot.updateOne({}, { $set: { registeredUsers: updateUserBotInfo } });
-
-    bot.sendMessage(adminId, `
-<b>Игровой айди Владельца бота: <a href='tg://user?id=${botInnOwner.id}'>${ownerGameId}</a></b>
-<b>Количество пользователей: ${updateUserBotInfo}</b>
-<b>Последнее время запуска бота или обновление бота: ${botLastIncludedTime}</b>
-<b>Версия: ${botInn.botVersion}</b>
-        `, { parse_mode: 'HTML' });
-}
-
-// Использовать когда хотите что бы бот отправил сообщение когда его включали
-// sendMsgWhenBotStarts()
-
-async function hasUserStartedDialog(userId) {
-    const user = await collection.findOne({ id: userId });
-    return !!user; // Вернет true, если пользователь начал диалог с ботом
-}
+//     bot.sendMessage(adminId, `
+// <b>Игровой айди Владельца бота: <a href='tg://user?id=${botInnOwner.id}'>${ownerGameId}</a></b>
+// <b>Количество пользователей: ${updateUserBotInfo}</b>
+// <b>Последнее время запуска бота или обновление бота: ${botLastIncludedTime}</b>
+// <b>Версия: ${botInn.botVersion}</b>
+//         `, { parse_mode: 'HTML' });
+// }
 
 function start() {
     bot.setMyCommands([
@@ -159,8 +148,6 @@ function start() {
             return
         }
 
-        const userStartedDialog = await hasUserStartedDialog(userId);
-
         //start
         if (text.toLowerCase() === '/start' || text == '/start@levouJS_bot') {
             commandStart(msg, collection, bot)
@@ -173,6 +160,22 @@ function start() {
         }
 
         else if (!!user) {
+            // businesses
+            addBusiness(msg, bot)
+            listBusinesses(msg, bot, collection)
+            buyBusiness(msg, bot, collection)
+            infoBusiness(msg, bot, collection)
+            workersInfo(msg, bot, collection)
+            buyWorkers(msg, bot, collection)
+            pulloffBusiness(msg, bot, collection)
+            payTaxForBusiness(msg, bot, collection)
+
+            //addvert
+            addAddvert(msg, bot, collectionAddvert, collection)
+            addverts(msg, bot, collection, collectionAddvert)
+            deleteAdd(msg, bot, collection, collectionAddvert)
+            deleteAllAddverts(msg, bot, collectionAddvert, collection)
+
             // crypto currencies
             cryptoCurrenceLaunch(msg, bot, collectionCrypto)
             updateCryptoToUp(msg, bot, collectionCrypto)
@@ -190,11 +193,10 @@ function start() {
             referral(msg, bot, collection)
 
             // balance
-            userBalance(msg, collection, bot)
+            userBalance(msg, collection, bot, collectionAddvert)
 
             // kazino
             kazino(msg, collection, bot)
-            kazinoSIQCC(msg, bot, collection)
 
             // info
             userGameInfo(msg, bot, collection)
@@ -206,10 +208,7 @@ function start() {
             userEditGameName(msg, bot, collection)
 
             // MUTE            
-            // userMute(msg, bot, collection)
-            // userUnMute(msg, bot, collection)
             userUnMuteAll(msg, bot, collection)
-            // userMuteId(msg, collection, bot)
 
             // BAN
             handleBan(msg, bot, collection)
@@ -220,7 +219,7 @@ function start() {
             botVersionChange(msg, bot, collectionBot)
 
             // Give Money
-            giveMoney(msg, bot, collection)
+            giveMoney(msg, bot);
 
             // Func /msg
             userMsg(msg, collection, bot,)
@@ -245,12 +244,12 @@ function start() {
             takeAllUc(msg, collection, bot)
 
             // Пластик карты
+            infoAboutCards(msg, bot);
             generateCardNumber(msg, bot, collection);
-            cardInfo(msg, bot, collection)
-            createUpdateCardPassword(msg, bot, collection)
-            setMoneyToCard(msg, bot, collection)
-            getMoneyFromOwnCard(msg, bot, collection)
-            infoAboutCards(msg, bot, collection)
+            cardInfo(msg, bot);
+            createUpdateCardPassword(msg, bot);
+            setMoneyToCard(msg, bot, collection);
+            getMoneyFromOwnCard(msg, bot, collection);
 
             // Tops
             tops(msg, bot, collection)
@@ -304,6 +303,9 @@ function start() {
             limitations(msg, bot, collection)
             removeLimit(msg, bot, collection, ObjectId)
 
+            // Рассылка
+            mailing(msg, bot, collection)
+
             if (text == 'testEditingStatusesDeleting') {
                 bot.sendChatAction(chatId, 'typing')
                 await collection.updateMany({ _id: ObjectId }, {
@@ -318,11 +320,16 @@ function start() {
                 bot.sendChatAction(chatId, 'typing')
                 await collection.updateMany({ _id: ObjectId }, {
                     $set: {
-                        limit: [{
-                            giveMoneyLimit: 5000000,
-                            givedMoney: 0,
-                            updateDayLimit: 0
-                        }]
+                        business: [{
+                            bHave: false,
+                            bName: "",
+                            bWorkers: 0,
+                            bMaxWorkers: 0,
+                            bProfit: 0,
+                            bWorkersProfit: 0,
+                            bTax: 0,
+                            lastUpdTime: 0,
+                        }],
                     }
                 });
                 bot.sendMessage(chatId, 'Успешна обновлена датабаза')
@@ -390,15 +397,21 @@ function start() {
     })
 }
 
-const desiredUpdateHour = 15;
-const desiredUpdateMinute = 21;
-const currentTime = new Date();
-const currentHour = currentTime.getHours();
-const currentMinute = currentTime.getMinutes();
-if (currentHour == desiredUpdateHour && currentMinute == desiredUpdateMinute) {
-    updateDayLimitAtUTC9(bot, collection)
-    log(customChalk.colorize('ok', { style: 'bold', background: 'bgRed' }))
-}
+// Обновление лимита и добавление прибыля на бизнесы будут изменятся каждый день в 9 утра
+
+cron.schedule('0 9 * * *', () => {
+    updateDayLimitAtUTC9(bot, collection).catch(err => {
+        console.error('Ошибка при обновлении лимита:', err);
+    });
+    log(customChalk.colorize('Успешно изменены лимиты', { style: 'bold', background: 'bgRed' }))
+});
+
+cron.schedule('0 9 * * *', () => {
+    console.log('Добавление прибыли на бизнесы...');
+    addProfitEveryOneHour(collection).catch(err => {
+        console.error('Ошибка при добавлении прибыли на бизнесы:', err);
+    });
+});
 
 start()
 collectionBot.updateOne({}, { $set: { botLastIncTime: botLastIncludedTime } })

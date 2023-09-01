@@ -265,7 +265,7 @@ async function carBuy(msg, collection, bot, collectionCars) {
                         bot.sendPhoto(chatId, selectedCar.carImg, { caption: carInfo, parse_mode: 'HTML' });
                         collection.updateOne({ id: userId }, { $set: { "properties.0.car": selectedCar.carName } })
 
-                        collection.findOne({ id: userId }, { $inc: -selectedCar.carPrice })
+                        collection.updateOne({ id: userId }, { $inc: -selectedCar.carPrice })
                     } else {
                         bot.sendMessage(chatId, 'У вас не хватает средств для покупку этой машины')
                     }

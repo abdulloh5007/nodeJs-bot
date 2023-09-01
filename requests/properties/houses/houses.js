@@ -266,7 +266,7 @@ async function houseBuy(msg, collection, bot, collectionHouses) {
                         bot.sendPhoto(chatId, selectedHouse.houseImg, { caption: houseInfo, parse_mode: 'HTML' });
                         collection.updateOne({ id: userId }, { $set: { "properties.0.house": selectedHouse.houseName } })
 
-                        collection.findOne({ id: userId }, { $inc: -selectedHouse.housePrice })
+                        collection.updateOne({ id: userId }, { $inc: -selectedHouse.housePrice })
                     } else {
                         bot.sendMessage(chatId, 'У вас не хватает средств для покупку этого дома')
                     }

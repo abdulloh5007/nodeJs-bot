@@ -1,5 +1,13 @@
 const { donatedUsers } = require("../donate/donatedUsers")
 const { parseNumber, formatNumberInScientificNotation } = require("../systems/systemRu")
+require('dotenv').config();
+const mongoDbUrl = process.env.MONGO_DB_URL
+const { MongoClient, ObjectId } = require('mongodb');
+const client = new MongoClient(mongoDbUrl);
+
+async function connecting() {
+    await client.connect();
+}
 
 async function generateCardNumber(msg, bot, collection) {
     const text = msg.text
@@ -54,7 +62,10 @@ function generateRandomCardNumber() {
 }
 
 
-async function infoAboutCards(msg, bot, collection) {
+async function infoAboutCards(msg, bot) {
+    const db = client.db('bot');
+    const collection = db.collection('users');
+
     const text = msg.text
     const chatId = msg.chat.id
     const replyId = msg.message_id
@@ -62,7 +73,7 @@ async function infoAboutCards(msg, bot, collection) {
     const userDonateStatus = await donatedUsers(msg, collection)
 
     if (text.toLowerCase() == 'инфо карта') {
-        bot.sendMessage(chatId, `
+        await bot.sendMessage(chatId, `
 ${userDonateStatus}, вот информация о картах:
 
 • <code>Карта создать</code> - <b>создать свою банковскую карту Master Card.</b>
@@ -80,7 +91,10 @@ ${userDonateStatus}, вот информация о картах:
     }
 }
 
-async function cardInfo(msg, bot, collection) {
+async function cardInfo(msg, bot) {
+    const db = client.db('bot');
+    const collection = db.collection('users');
+
     const text = msg.text
     const userId = msg.from.id
     const chatId = msg.chat.id
@@ -125,7 +139,10 @@ ${isChatIdSameAsUserId ? '' : '<b>Напишите в лс бота чтобы �
     }
 }
 
-async function createUpdateCardPassword(msg, bot, collection) {
+async function createUpdateCardPassword(msg, bot) {
+    const db = client.db('bot');
+    const collection = db.collection('users');
+    
     const text = msg.text
     const userId = msg.from.id
     const chatId = msg.chat.id
