@@ -27,6 +27,7 @@ async function botInfo(msg, collectionBot, bot, collection) {
 <b>Игровой айди Владельца бота: <a href='tg://user?id=${botInnOwner.id}'>${ownerGameId}</a></b>
 <b>Количество пользователей: ${updateUserBotInfo}</b>
 <b>Последнее время запуска бота или обновление бота: ${botLastIncludedTime}</b>
+
 <b>Версия: ${botInn.botVersion}</b>
             `, { parse_mode: 'HTML', reply_to_message_id: msg.message_id });
         } else {

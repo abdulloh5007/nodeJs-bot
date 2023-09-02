@@ -19,12 +19,12 @@ async function addBusiness(msg, bot) {
 
     if (text.toLowerCase() === 'testadd business') {
         collectionBusiness.insertOne({
-            bName: 'louis vuitton2',
-            bPrice: 9000,
-            bImg: 'AgACAgEAAxkBAAIfa2Twc2xXc5x-EBcRpEfDJo5N7U4kAAIvrDEbHVWBR0qAt37FpyCaAQADAgADcwADMAQ',
-            bMaxWorkers: 150,
-            bWorkersProfit: 230,
-            bTax: 1200,
+            name: 'louis vuitton2',
+            price: 9000,
+            img: 'AgACAgEAAxkBAAIfa2Twc2xXc5x-EBcRpEfDJo5N7U4kAAIvrDEbHVWBR0qAt37FpyCaAQADAgADcwADMAQ',
+            maxWorkers: 150,
+            workersProfit: 230,
+            tax: 1200,
         })
         bot.sendMessage(chatId, `Успешно был добавлен бизнес`)
     }
@@ -38,10 +38,10 @@ async function listBusinesses(msg, bot, collection) {
     const chatId = msg.chat.id
 
     const userDonateStatus = await donatedUsers(msg, collection)
-    const business = await collectionBusiness.find({}).sort({ bPrice: 1 }).toArray()
+    const business = await collectionBusiness.find({}).sort({ price: 1 }).toArray()
     const sortedBusinesses = business.map((e, i) => {
         return `
-${i + 1}. ${e.bName} - ${e.bPrice.toLocaleString('de-DE')} ${formatNumberInScientificNotation(e.bPrice)}`
+${i + 1}. ${e.name} - ${e.price.toLocaleString('de-DE')} ${formatNumberInScientificNotation(e.price)}`
     })
 
     let businessOptions = {
@@ -66,7 +66,7 @@ ${sortedBusinesses}
 async function buyBusiness(msg, bot, collection) {
     const db = client.db('bot');
     const collectionBusiness = db.collection('businesses')
-    const business = await collectionBusiness.find({}).sort({ bPrice: 1 }).toArray()
+    const business = await collectionBusiness.find({}).sort({ price: 1 }).toArray()
 
     const text = msg.text
     const chatId = msg.chat.id
@@ -105,7 +105,7 @@ ${userDonateStatus}, номер бизнеса не должно состоят�
     const bNumToBuy = parts[glLength]
     const selectedBusiness = business[bNumToBuy - 1]
     const userBalance = user.balance
-    const userBusiness = user.business[0].bName
+    const userBusiness = user.business[0].name
 
     if (userBusiness !== '') {
         bot.sendMessage(chatId, `
@@ -114,7 +114,7 @@ ${userDonateStatus}, У вас уже имеется бизнес под наз�
         return;
     }
 
-    if (userBalance < selectedBusiness.bPrice) {
+    if (userBalance < selectedBusiness.price) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, У вас недостаточно средств на счету для покупки данного бизнеса
         `, { parse_mode: 'HTML' })
@@ -122,11 +122,11 @@ ${userDonateStatus}, У вас недостаточно средств на сч
     }
 
     bot.sendMessage(chatId, `
-${userDonateStatus}, вы успешно приобрели новый бизнес под названием ${selectedBusiness.bName}
+${userDonateStatus}, вы успешно приобрели новый бизнес под названием ${selectedBusiness.name}
     `, { parse_mode: "HTML" })
 
-    await collection.updateOne({ id: userId1 }, { $set: { "business.0.bName": selectedBusiness.bName, "business.0.bMaxWorkers": selectedBusiness.bMaxWorkers, "business.0.bWorkersProfit": selectedBusiness.bWorkersProfit, "business.0.bTax": selectedBusiness.bTax, "business.0.bHave": true } })
-    await collection.updateOne({ id: userId1 }, { $inc: { balance: -selectedBusiness.bPrice } })
+    await collection.updateOne({ id: userId1 }, { $set: { "business.0.name": selectedBusiness.name, "business.0.maxWorkers": selectedBusiness.maxWorkers, "business.0.workersProfit": selectedBusiness.workersProfit, "business.0.tax": selectedBusiness.tax, "business.0.have": true } })
+    await collection.updateOne({ id: userId1 }, { $inc: { balance: -selectedBusiness.price } })
 }
 
 async function infoBusiness(msg, bot, collection) {
@@ -139,7 +139,7 @@ async function infoBusiness(msg, bot, collection) {
 
     const userDonateStatus = await donatedUsers(msg, collection)
     const user = await collection.findOne({ id: userId1 })
-    const userBusiness = user.business[0].bName
+    const userBusiness = user.business[0].name
 
     if (text.toLowerCase() === 'мой бизнес') {
 
@@ -155,16 +155,16 @@ ${userDonateStatus}, У вас нет бизнеса
         return;
     }
 
-    const business = await collectionBusiness.findOne({ bName: userBusiness })
-    const bPhoto = business.bImg
-    const bMaxWorkers = business.bMaxWorkers
-    const bWorkersProfit = business.bWorkersProfit
-    const bTax = user.business[0].bTax
+    const business = await collectionBusiness.findOne({ name: userBusiness })
+    const bPhoto = business.img
+    const maxWorkers = business.maxWorkers
+    const workersProfit = business.workersProfit
+    const tax = user.business[0].tax
 
-    const bProfit = user.business[0].bProfit
-    const bWorkers = user.business[0].bWorkers
-    const bWorkersProfitHour = bWorkersProfit * bWorkers
-    const localedStringProfitWorkers = `${bWorkersProfitHour.toLocaleString('de-DE')} ${formatNumberInScientificNotation(bWorkersProfitHour)}`
+    const profit = user.business[0].profit
+    const workers = user.business[0].workers
+    const workersProfitHour = workersProfit * workers
+    const localedStringProfitWorkers = `${workersProfitHour.toLocaleString('de-DE')} ${formatNumberInScientificNotation(workersProfitHour)}`
 
     bot.sendPhoto(chatId, bPhoto, {
         parse_mode: 'HTML',
@@ -172,14 +172,14 @@ ${userDonateStatus}, У вас нет бизнеса
 ${userDonateStatus}, вот информация о вашем бизнесе
 
 <b>Название бизнеса:</b> ${userBusiness}
-<b>Кол-во работников:</b> ${bWorkers}
-<b>Макс кол-во работников:</b> ${bMaxWorkers}
-<b>Прибыль в день:</b> ${bWorkers >= 1 ? localedStringProfitWorkers : 0}
+<b>Кол-во работников:</b> ${workers}
+<b>Макс кол-во работников:</b> ${maxWorkers}
+<b>Прибыль в день:</b> ${workers >= 1 ? localedStringProfitWorkers : 0}
 
-<b>Общий прибыль:</b> ${bProfit.toLocaleString('de-DE')} ${formatNumberInScientificNotation(bProfit)}
-<b>Налоги:</b> ${bTax.toLocaleString('de-DE')} ${formatNumberInScientificNotation(bTax)}
+<b>Общий прибыль:</b> ${profit.toLocaleString('de-DE')} ${formatNumberInScientificNotation(profit)}
+<b>Налоги:</b> ${tax.toLocaleString('de-DE')} ${formatNumberInScientificNotation(tax)}
 
-<b>Прибыль от каждого работника будет состоять по:</b> ${bWorkersProfit.toLocaleString('de-DE')} ${formatNumberInScientificNotation(bWorkersProfit)}
+<b>Прибыль от каждого работника будет состоять по:</b> ${workersProfit.toLocaleString('de-DE')} ${formatNumberInScientificNotation(workersProfit)}
 <b>Чтобы узнать о работниках напишите:</b> <code>инфо бработники</code>
         `
     })
@@ -195,17 +195,17 @@ async function workersInfo(msg, bot, collection) {
 
     const user = await collection.findOne({ id: userId1 })
     const userDonateStatus = await donatedUsers(msg, collection)
-    const userBusiness = user.business[0].bName
+    const userBusiness = user.business[0].name
 
     let haveB = true;
     if (userBusiness === '') {
         haveB = false;
     }
 
-    const business = await collectionBusiness.findOne({ bName: userBusiness })
-    const bWorkersProfit = haveB === true ? business.bWorkersProfit : null
-    const procent20 = Math.floor((bWorkersProfit / 100) * 20)
-    const bWorkersPrice = bWorkersProfit + procent20
+    const business = await collectionBusiness.findOne({ name: userBusiness })
+    const workersProfit = haveB === true ? business.workersProfit : null
+    const procent20 = Math.floor((workersProfit / 100) * 20)
+    const workersPrice = workersProfit + procent20
 
     let messageB = `
 У вас не существует базнеса
@@ -214,12 +214,12 @@ async function workersInfo(msg, bot, collection) {
     if (haveB === true) {
         messageB = `
 <b>Ваш бизнес:</b> ${userBusiness}
-<b>Стоимость работников:</b> ${bWorkersPrice}
-<b>Прибыль работника:</b> ${bWorkersProfit}
+<b>Стоимость работников:</b> ${workersPrice}
+<b>Прибыль работника:</b> ${workersProfit}
         `
     }
 
-    let bWorkersOptions = {
+    let workersOptions = {
         reply_markup: {
             inline_keyboard: [
                 [{ text: 'Купить бработников', switch_inline_query_current_chat: 'купить бработников ' }]
@@ -233,9 +233,8 @@ ${userDonateStatus}, работники каждого бизнеса не по�
 
 Цена работников увеличивается смотря на цену бизнеса 
 Какой у вас лучший бизнес и там будут работать работники именно того бизнеса
-
 ${messageB}
-        `, { parse_mode: 'HTML', ...bWorkersOptions })
+        `, { parse_mode: 'HTML', ...workersOptions })
     }
 }
 
@@ -249,11 +248,11 @@ async function buyWorkers(msg, bot, collection) {
 
     const userDonateStatus = await donatedUsers(msg, collection)
     const user = await collection.findOne({ id: userId1 })
-    const userBName = user.business[0].bName
+    const username = user.business[0].name
     const userBalance = user.balance
     const userStatus = user.status[0].statusName
-    const userBWorkers = user.business[0].bWorkers
-    const userBMaxWorkers = user.business[0].bMaxWorkers
+    const userworkers = user.business[0].workers
+    const usermaxWorkers = user.business[0].maxWorkers
 
     const parts = text.split(' ')
     const txt = '@levouJS_bot купить бработников'
@@ -277,7 +276,7 @@ ${userDonateStatus}, введите количество бизнес работ
         return;
     }
 
-    if (userBName === '') {
+    if (username === '') {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, у вас не существует бизнеса чтобы купить для него бработников
 
@@ -286,10 +285,10 @@ ${userDonateStatus}, у вас не существует бизнеса чтоб
         return;
     }
 
-    const amountBWorkers = parts[glLength]
-    const amountToBuyWorkersAndBWorkers = parseInt(amountBWorkers) + parseInt(userBWorkers)
+    const amountworkers = parts[glLength]
+    const amountToBuyWorkersAndworkers = parseInt(amountworkers) + parseInt(userworkers)
 
-    if (isNaN(amountBWorkers) || amountBWorkers < 0) {
+    if (isNaN(amountworkers) || amountworkers < 0) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, не возможно купить количество букв или отрицательное количество бработников
 
@@ -298,7 +297,7 @@ ${userDonateStatus}, не возможно купить количество б�
         return;
     }
 
-    if (amountToBuyWorkersAndBWorkers > userBMaxWorkers) {
+    if (amountToBuyWorkersAndworkers > usermaxWorkers) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, количество бработников который вы хотите купить, превышает 
 максимальное кол-во работников бизнеса
@@ -310,61 +309,61 @@ ${userDonateStatus}, количество бработников который 
         return;
     }
 
-    const business = await collectionBusiness.findOne({ bName: userBName })
-    const bWorkersProfit = business.bWorkersProfit
-    let procent20 = Math.floor((bWorkersProfit / 100) * 20)
+    const business = await collectionBusiness.findOne({ name: username })
+    const workersProfit = business.workersProfit
+    let procent20 = Math.floor((workersProfit / 100) * 20)
 
     let message;
     if (userStatus === 'premium') {
-        procent20 = Math.floor((bWorkersProfit / 100) * 10)
+        procent20 = Math.floor((workersProfit / 100) * 10)
         message = `
 <i>${userStatus.toUpperCase()}</i> <b>10% скидка от каждого работника</b>`
     }
     else if (userStatus === 'vip') {
-        procent20 = Math.floor((bWorkersProfit / 100) * 13)
+        procent20 = Math.floor((workersProfit / 100) * 13)
         message = `
 <i>${userStatus.toUpperCase()}</i> <b>7% скидка от каждого работника</b>`
     }
     else if (userStatus === 'standart') {
-        procent20 = Math.floor((bWorkersProfit / 100) * 15)
+        procent20 = Math.floor((workersProfit / 100) * 15)
         message = `
 <i>${userStatus.toUpperCase()}</i> <b>5% скидка от каждого работника</b>`
     }
 
-    const bWorkersPrice = Math.floor(bWorkersProfit + procent20)
-    const possibleBuyBWorkers = Math.floor(userBalance / bWorkersPrice)
-    const finishedToBuyBWorkers = bWorkersPrice * amountBWorkers
+    const workersPrice = Math.floor(workersProfit + procent20)
+    const possibleBuyworkers = Math.floor(userBalance / workersPrice)
+    const finishedToBuyworkers = workersPrice * amountworkers
 
-    if (userBalance < finishedToBuyBWorkers) {
+    if (userBalance < finishedToBuyworkers) {
         bot.sendMessage(chatId, `
-${userDonateStatus}, у вас не хватает средств для покупки ${amountBWorkers} 
+${userDonateStatus}, у вас не хватает средств для покупки ${amountworkers} 
 бработников
 
-<b>Вы можете купить:</b> ${possibleBuyBWorkers}
+<b>Вы можете купить:</b> ${possibleBuyworkers}
         `, { parse_mode: 'HTML' })
         return;
     }
 
     bot.sendMessage(chatId, `
-${userDonateStatus}, вы успешно купили ${amountBWorkers} бработников
-<b>Сумма:</b> ${finishedToBuyBWorkers.toLocaleString('de-DE')} ${formatNumberInScientificNotation(finishedToBuyBWorkers)}
+${userDonateStatus}, вы успешно купили ${amountworkers} бработников
+<b>Сумма:</b> ${finishedToBuyworkers.toLocaleString('de-DE')} ${formatNumberInScientificNotation(finishedToBuyworkers)}
 ${message}
     `, { parse_mode: 'HTML' })
 
-    await collection.updateOne({ id: userId1 }, { $inc: { "business.0.bWorkers": parseInt(amountBWorkers), balance: -finishedToBuyBWorkers } })
+    await collection.updateOne({ id: userId1 }, { $inc: { "business.0.workers": parseInt(amountworkers), balance: -finishedToBuyworkers } })
 }
 
 async function addProfitEveryOneHour(collection) {
-    const users = await collection.find({ "business.0.bHave": true }).toArray()
+    const users = await collection.find({ "business.0.have": true }).toArray()
 
     for (let i = 0; i < users.length; i++) {
         const el = users[i];
-        const userBWorkers = el.business[0].bWorkers
-        const userBWorkersProfit = el.business[0].bWorkersProfit
-        const addToProfit = userBWorkers * userBWorkersProfit
-        const userBTax = el.business[0].bTax
+        const userworkers = el.business[0].workers
+        const userworkersProfit = el.business[0].workersProfit
+        const addToProfit = userworkers * userworkersProfit
+        const usertax = el.business[0].tax
 
-        collection.updateOne({ id: el.id }, { $inc: { "business.0.bProfit": parseInt(addToProfit), "business.0.bTax": parseInt(Math.floor(userBTax / 2)) } })
+        collection.updateOne({ id: el.id }, { $inc: { "business.0.profit": parseInt(addToProfit), "business.0.tax": parseInt(Math.floor(usertax / 2)) } })
     }
     return;
 }
@@ -376,8 +375,8 @@ async function pulloffBusiness(msg, bot, collection) {
 
     const userDonateStatus = await donatedUsers(msg, collection)
     const user = await collection.findOne({ id: userId1 })
-    const userBProfit = user.business[0].bProfit
-    const userBName = user.business[0].bName
+    const userprofit = user.business[0].profit
+    const username = user.business[0].name
 
     if (text.toLowerCase() === 'бизнес снять') {
     }
@@ -385,7 +384,7 @@ async function pulloffBusiness(msg, bot, collection) {
         return;
     }
 
-    if (userBName === '') {
+    if (username === '') {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, у вас нету бизнеса
 
@@ -394,7 +393,7 @@ ${userDonateStatus}, у вас нету бизнеса
         return;
     }
 
-    if (userBProfit <= 0) {
+    if (userprofit <= 0) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, у вас и так нету денег для снятие с бизнеса
         `, { parse_mode: 'HTML' })
@@ -403,10 +402,10 @@ ${userDonateStatus}, у вас и так нету денег для снятие
 
     bot.sendMessage(chatId, `
 ${userDonateStatus}, вы успешно сняли с бизнеса 
-<b>Сумму:</b> ${userBProfit.toLocaleString('de-DE')} ${formatNumberInScientificNotation(userBProfit)}
+<b>Сумму:</b> ${userprofit.toLocaleString('de-DE')} ${formatNumberInScientificNotation(userprofit)}
     `, { parse_mode: 'HTML' })
 
-    await collection.updateOne({ id: userId1 }, { $inc: { "business.0.bProfit": -userBProfit, balance: userBProfit } })
+    await collection.updateOne({ id: userId1 }, { $inc: { "business.0.profit": -userprofit, balance: userprofit } })
 }
 
 async function payTaxForBusiness(msg, bot, collection) {
@@ -417,19 +416,19 @@ async function payTaxForBusiness(msg, bot, collection) {
     const userDonateStatus = await donatedUsers(msg, collection)
     const user = await collection.findOne({ id: userId1 })
     const userBalance = user.balance
-    const userBTax = user.business[0].bTax
+    const usertax = user.business[0].tax
 
     if (text.toLowerCase() === 'бизнес налоги') {
     } else { return }
 
-    if (userBTax === 0) {
+    if (usertax === 0) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, у вас еще нету налогов бизнеса
         `, { parse_mode: "HTML" })
         return;
     }
 
-    if (userBalance < userBTax) {
+    if (userBalance < usertax) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, у вас не хватает средств для оплаты налогов бизнеса
         `, { parse_mode: "HTML" })
@@ -438,9 +437,9 @@ ${userDonateStatus}, у вас не хватает средств для опл�
 
     bot.sendMessage(chatId, `
 ${userDonateStatus}, вы успешно оплатили налоги бизнеса
-<b>Сумму:</b> ${userBTax.toLocaleString('de-DE')} ${formatNumberInScientificNotation(userBTax)}
+<b>Сумму:</b> ${usertax.toLocaleString('de-DE')} ${formatNumberInScientificNotation(usertax)}
     `, { parse_mode: "HTML" })
-    await collection.updateOne({ id: userId1 }, { $inc: { balance: -userBTax, "business.0.bTax": -userBTax } })
+    await collection.updateOne({ id: userId1 }, { $inc: { balance: -usertax, "business.0.tax": -usertax } })
 }
 
 module.exports = {

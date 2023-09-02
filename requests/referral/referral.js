@@ -146,8 +146,8 @@ async function startWithRef(msg, bot, collection) {
                 //     avaUrl: '',
                 // }],
                 properties: [{
-                    house: '',
-                    car: '',
+                    houses: '',
+                    cars: '',
                 }],
                 referral: [{
                     code: '',

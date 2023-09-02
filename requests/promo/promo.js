@@ -215,7 +215,7 @@ async function usingPromo(msg, bot, collection, collectionPromo) {
                 if (!promoUsedBy.includes(user.id)) {
                     if (promoActivision > 0) {
                         const promoDonated = promo.promoDonate;
-                        const promoComment = promo.promoComment || 'Нету коментарий';
+                        const promoComment = promo.promoComent || 'Нету коментарий';
 
                         const floorMoneyForOnePlayer = Math.floor(moneyForOnePlayer);
                         const newBalanceIncrement = promoDonated ? { uc: floorMoneyForOnePlayer } : { balance: floorMoneyForOnePlayer };
@@ -236,20 +236,20 @@ async function usingPromo(msg, bot, collection, collectionPromo) {
                             { $inc: newBalanceIncrement }
                         );
 
-                        const userNewBalance = userBalance + moneyForOnePlayer;
-                        const currency = promoDonated ? 'UC' : 'баланс';
-
                         bot.sendMessage(chatId, `
-${userDonateStatus}, вы успешно активировали ${promoDonated ? 'донат ' : ''}промокод <b>${promoName}</b>
-и получили в свой ${currency} <i>${floorMoneyForOnePlayer.toLocaleString('de-DE')} ${currency}</i>
-<b>Коментарии:</b> ${promoComment}
+${userDonateStatus}, вы успешно активировали 
 
-<b>Ваш ${currency}:</b> <i>${userNewBalance.toLocaleString('de-DE')} ${currency}</i>
+<b>${promoDonated ? 'донат ' : ''}Промокод Название:</b> <i>${promoName}</i>
+<b>И получили в свой счет:</b> <i>${floorMoneyForOnePlayer.toLocaleString('de-DE')}</i>
+
+<b>Коментарии:</b> <u>${promoComment}</u>
                         `, { parse_mode: 'HTML' });
                     } else {
                         bot.sendMessage(chatId, `
 ${userDonateStatus}, этот промокод уже активировали максимальное количество пользователей
-                        `);
+                        `, {
+                            parse_mode: 'HTML',
+                        });
                     }
                 } else {
                     bot.sendMessage(chatId, `

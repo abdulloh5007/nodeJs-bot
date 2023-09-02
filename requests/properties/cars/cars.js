@@ -20,8 +20,8 @@ async function CarAdd(msg, bot, collectionCars) {
                 const carSeason = parseInt(parts[3])
                 const carImg = parts[4]
 
-                const existingCarByName = await collectionCars.findOne({ carName: carName });
-                const existingCarByImg = await collectionCars.findOne({ carImg: carImg });
+                const existingCarByName = await collectionCars.findOne({ name: carName });
+                const existingCarByImg = await collectionCars.findOne({ img: carImg });
 
                 if (existingCarByName || existingCarByImg) {
                     bot.sendMessage(chatId, 'Машина с таким названием или айди картиной уже существует.');
@@ -33,16 +33,16 @@ async function CarAdd(msg, bot, collectionCars) {
                         if (!!carSeason) {
                             if (!!carImg) {
                                 collectionCars.insertOne({
-                                    carName: carName,
-                                    carPrice: carPrice,
-                                    carSeason: carSeason,
-                                    carImg: carImg,
-                                    carDonate: false,
+                                    name: carName,
+                                    price: carPrice,
+                                    season: carSeason,
+                                    img: carImg,
+                                    donate: false,
                                 })
                                 const txt = `
 Успешно была добавлена машина 
 Название: ${carName}
-Цена: ${carPrice.toLocaleString('de-DE')} (${formatNumberInScientificNotation(carPrice)})
+Цена: ${carPrice.toLocaleString('de-DE')} ${formatNumberInScientificNotation(carPrice)}
 Сезон: ${carSeason}
 `
                                 bot.sendPhoto(chatId, carImg, { caption: txt, parse_mode: 'HTML' })
@@ -90,8 +90,8 @@ async function CarDonateAdd(msg, bot, collectionCars) {
                 const carSeason = parseInt(parts[3])
                 const carImg = parts[4]
 
-                const existingCarByName = await collectionCars.findOne({ carName: carName });
-                const existingCarByImg = await collectionCars.findOne({ carImg: carImg });
+                const existingCarByName = await collectionCars.findOne({ name: carName });
+                const existingCarByImg = await collectionCars.findOne({ img: carImg });
 
                 if (existingCarByName || existingCarByImg) {
                     bot.sendMessage(chatId, 'Машина с таким названием или айди картиной уже существует.');
@@ -103,11 +103,11 @@ async function CarDonateAdd(msg, bot, collectionCars) {
                         if (!!carSeason) {
                             if (!!carImg) {
                                 collectionCars.insertOne({
-                                    carName: carName,
-                                    carPrice: carPrice,
-                                    carSeason: carSeason,
-                                    carImg: carImg,
-                                    carDonate: true,
+                                    name: carName,
+                                    price: carPrice,
+                                    season: carSeason,
+                                    img: carImg,
+                                    donate: true,
                                 })
                                 const txt = `
 Успешно был добавлен донат машина
@@ -159,8 +159,8 @@ async function donateCars(msg, collection, bot, collectionCars) {
                 ],
             },
         };
-        const sortedCars = await collectionCars.find({ carDonate: true }).sort({ carPrice: 1 }).toArray();
-        const carNamesString = sortedCars.map((car, index) => `${index + 1}. ${car.carName} - ${car.carPrice.toLocaleString('de-DE')} UC`).join('\n');
+        const sortedCars = await collectionCars.find({ donate: true }).sort({ price: 1 }).toArray();
+        const carNamesString = sortedCars.map((car, index) => `${index + 1}. ${car.name} - ${car.price.toLocaleString('de-DE')} UC`).join('\n');
         bot.sendMessage(chatId, `
 ${userStatus}, вот доступные машины (отсортированы по цене):
 
@@ -188,8 +188,8 @@ async function cars(msg, collection, bot, collectionCars) {
                 ],
             },
         };
-        const sortedCars = await collectionCars.find({ carDonate: false }).sort({ carPrice: 1 }).toArray();
-        const carNamesString = sortedCars.map((car, index) => `${index + 1}. ${car.carName} - ${car.carPrice.toLocaleString('de-DE')}$ (${formatNumberInScientificNotation(car.carPrice)})`).join('\n');
+        const sortedCars = await collectionCars.find({ donate: false }).sort({ price: 1 }).toArray();
+        const carNamesString = sortedCars.map((car, index) => `${index + 1}. ${car.name} - ${car.price.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(car.price)}`).join('\n');
         bot.sendMessage(chatId, `
 ${userStatus}, вот доступные машины (отсортированы по цене):
 
@@ -213,18 +213,18 @@ async function findCarByName(msg, collection, bot, collectionCars) {
         const carNameToSearch = parts[2] // Убираем префикс "дом "
 
         if (parts.length === 3) {
-            const car = await collectionCars.findOne({ carName: carNameToSearch });
+            const car = await collectionCars.findOne({ name: carNameToSearch });
             const userStatus = await donatedUsers(msg, collection)
             if (car) {
                 const carInfo = `
 ${userStatus}, вот доступные машины:
 
-Название: ${car.carName}
-Цена: ${car.carPrice.toLocaleString('de-DE')} (${formatNumberInScientificNotation(car.carPrice)})
-Сезон: ${car.carSeason}
+Название: ${car.name}
+Цена: ${car.price.toLocaleString('de-DE')} ${formatNumberInScientificNotation(car.price)}
+Сезон: ${car.season}
                 `;
 
-                bot.sendPhoto(chatId, car.carImg, { caption: carInfo, parse_mode: 'HTML' });
+                bot.sendPhoto(chatId, car.img, { caption: carInfo, parse_mode: 'HTML' });
             } else {
                 bot.sendMessage(chatId, `Машина с названием "${carNameToSearch}" не найдены.`);
             }
@@ -246,26 +246,26 @@ async function carBuy(msg, collection, bot, collectionCars) {
         const carNumberToBuy = parseInt(parts[2]);
 
         if (!isNaN(carNumberToBuy)) {
-            const sortedCars = await collectionCars.find({ carDonate: false }).sort({ carPrice: 1 }).toArray();
+            const sortedCars = await collectionCars.find({ donate: false }).sort({ price: 1 }).toArray();
 
             if (carNumberToBuy >= 1 && carNumberToBuy <= sortedCars.length) {
                 const userBalance = user.balance
-                const userCar = user.properties[0].car
+                const userCar = user.properties[0].cars
 
                 const selectedCar = sortedCars[carNumberToBuy - 1];
                 if (userCar === '') {
-                    if (userBalance >= selectedCar.carPrice) {
+                    if (userBalance >= selectedCar.price) {
                         const carInfo = `
 Вы успешно сделали покупку машину информацию о машине №${carNumberToBuy}:
 
-Название: ${selectedCar.carName}
-Цена: ${selectedCar.carPrice.toLocaleString('de-DE')} $
-Сезон: ${selectedCar.carSeason}
+Название: ${selectedCar.name}
+Цена: ${selectedCar.price.toLocaleString('de-DE')} $
+Сезон: ${selectedCar.season}
                         `;
-                        bot.sendPhoto(chatId, selectedCar.carImg, { caption: carInfo, parse_mode: 'HTML' });
-                        collection.updateOne({ id: userId }, { $set: { "properties.0.car": selectedCar.carName } })
+                        bot.sendPhoto(chatId, selectedCar.img, { caption: carInfo, parse_mode: 'HTML' });
+                        collection.updateOne({ id: userId }, { $set: { "properties.0.cars": selectedCar.name } })
 
-                        collection.updateOne({ id: userId }, { $inc: -selectedCar.carPrice })
+                        collection.updateOne({ id: userId }, { $inc: { balance: -selectedCar.price } })
                     } else {
                         bot.sendMessage(chatId, 'У вас не хватает средств для покупку этой машины')
                     }
@@ -293,26 +293,26 @@ async function carDonateBuy(msg, collection, bot, collectionCars) {
         const carNumberToBuy = parseInt(parts[2]);
 
         if (!isNaN(carNumberToBuy)) {
-            const sortedCars = await collectionCars.find({ carDonate: true }).sort({ carPrice: 1 }).toArray();
+            const sortedCars = await collectionCars.find({ donate: true }).sort({ price: 1 }).toArray();
 
             if (carNumberToBuy >= 1 && carNumberToBuy <= sortedCars.length) {
                 const userUc = user.uc
-                const userCar = user.properties[0].car
+                const userCar = user.properties[0].cars
 
                 const selectedCar = sortedCars[carNumberToBuy - 1];
                 if (userCar === '') {
-                    if (userUc >= selectedCar.carPrice) {
+                    if (userUc >= selectedCar.price) {
                         const carInfo = `
 Вы успешно совершили покупку донат машина информацию о машине №${carNumberToBuy}:
 
-Название: ${selectedCar.carName}
-Цена: ${selectedCar.carPrice.toLocaleString('de-DE')} UC
-Сезон: ${selectedCar.carSeason}
+Название: ${selectedCar.name}
+Цена: ${selectedCar.price.toLocaleString('de-DE')} UC
+Сезон: ${selectedCar.season}
                         `;
-                        bot.sendPhoto(chatId, selectedCar.carImg, { caption: carInfo, parse_mode: 'HTML' });
-                        collection.updateOne({ id: userId }, { $set: { "properties.0.car": selectedCar.carName } })
+                        bot.sendPhoto(chatId, selectedCar.img, { caption: carInfo, parse_mode: 'HTML' });
+                        collection.updateOne({ id: userId }, { $set: { "properties.0.cars": selectedCar.name } })
 
-                        collection.updateOne({ id: userId }, { $inc: { uc: -selectedCar.carPrice } })
+                        collection.updateOne({ id: userId }, { $inc: { uc: -selectedCar.price } })
                     } else {
                         bot.sendMessage(chatId, 'У вас не хватает UC для покупку этой донатной машины')
                     }
@@ -336,29 +336,29 @@ async function sellCar(msg, bot, collection, collectionCars) {
     const user = await collection.findOne({ id: userId });
 
     if (text.toLowerCase() === 'продать машину') {
-        const userCar = user.properties[0].car
+        const userCar = user.properties[0].cars
 
         if (userCar) {
-            const carToSell = await collection.findOne({ id: userId }, { "properties.0.car": userCar });
+            const carToSell = await collection.findOne({ id: userId }, { "properties.0.cars": userCar });
             const carToSellName = carToSell.properties[0].car
-            const car = await collectionCars.findOne({ "carName": carToSellName })
+            const car = await collectionCars.findOne({ "name": carToSellName })
 
-            const carToSellPrice = car.carPrice
-            const carDonate = car.carDonate
+            const carToSellPrice = car.price
+            const carDonate = car.donate
 
             if (carToSell) {
                 if (carDonate === true) {
                     const sellPrice = carToSellPrice * 1; // Пример: продажа за 90% от цены
                     bot.sendMessage(chatId, `Вы успешно продали свою донат машину "${carToSellName}" за ${sellPrice.toLocaleString('de-DE')} UC.`);
 
-                    collection.updateOne({ id: userId }, { $set: { "properties.0.car": '' } });
+                    collection.updateOne({ id: userId }, { $set: { "properties.0.cars": '' } });
                     collection.updateOne({ id: userId }, { $inc: { uc: sellPrice } });
                 }
                 if (carDonate === false) {
                     const sellPrice = carToSellPrice * 0.9; // Пример: продажа за 90% от цены
                     bot.sendMessage(chatId, `Вы успешно продали свою машину "${carToSellName}" за ${sellPrice.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(sellPrice)}.`);
 
-                    collection.updateOne({ id: userId }, { $set: { "properties.0.car": '' } });
+                    collection.updateOne({ id: userId }, { $set: { "properties.0.cars": '' } });
                     collection.updateOne({ id: userId }, { $inc: { balance: sellPrice } });
                 }
 
@@ -383,18 +383,18 @@ async function myCarInfo(msg, collection, bot, collectionCars) {
         const userCarName = user.properties[0].car;
 
         if (userCarName) {
-            const userCar = await collection.findOne({ "properties.0.car": userCarName });
+            const userCar = await collection.findOne({ "properties.0.cars": userCarName });
             const userCarName2 = userCar.properties[0].car
 
-            const car = await collectionCars.findOne({ "carName": userCarName2 })
-            const carName = car.carName
-            const carDonate = car.carDonate
+            const car = await collectionCars.findOne({ "name": userCarName2 })
+            const carName = car.name
+            const carDonate = car.donate
 
             if (carName !== '') {
                 if (carDonate === true) {
-                    const userCarPrice = car.carPrice
-                    const userCarSeason = car.carSeason
-                    const userHouImg = car.carImg
+                    const userCarPrice = car.price
+                    const userCarSeason = car.season
+                    const userHouImg = car.img
 
                     const carInfo = `
 ${userStatus}, вот информация о вашей донат машине:
@@ -406,9 +406,9 @@ ${userStatus}, вот информация о вашей донат машине
                     bot.sendPhoto(chatId, userHouImg, { caption: carInfo, parse_mode: 'HTML' });
                 }
                 else {
-                    const userCarPrice = car.carPrice
-                    const userCarSeason = car.carSeason
-                    const userHouImg = car.carImg
+                    const userCarPrice = car.price
+                    const userCarSeason = car.season
+                    const userHouImg = car.img
 
                     const carInfo = `
 ${userStatus}, вот информация о вашей машине:
@@ -442,15 +442,15 @@ async function changeCarPrice(msg, bot, collectionCars) {
                 const newPrice = parseInt(parseNumber(parts[3]));
 
                 if (!isNaN(carNumber) && !isNaN(newPrice) && newPrice > 0) {
-                    const sortedCars = await collectionCars.find().sort({ carPrice: 1 }).toArray();
+                    const sortedCars = await collectionCars.find().sort({ price: 1 }).toArray();
 
                     if (carNumber >= 1 && carNumber <= sortedCars.length) {
                         const carToUpdate = sortedCars[carNumber - 1];
 
-                        bot.sendMessage(chatId, `Цена для машины "${carToUpdate.carName}" успешно изменена на ${newPrice.toLocaleString('de-DE')}$ (${formatNumberInScientificNotation(newPrice)})`);
+                        bot.sendMessage(chatId, `Цена для машины "${carToUpdate.name}" успешно изменена на ${newPrice.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(newPrice)}`);
 
                         // Обновляем цену в общем списке домов
-                        await collectionCars.updateOne({ _id: carToUpdate._id }, { $set: { carPrice: newPrice } });
+                        await collectionCars.updateOne({ _id: carToUpdate._id }, { $set: { price: newPrice } });
 
                     } else {
                         bot.sendMessage(chatId, 'Неверный номер машины. Пожалуйста, используйте номер из списка доступных машин.');
@@ -481,20 +481,20 @@ async function changeCarName(msg, bot, collectionCars) {
                 const newcarName = parts.slice(3).join(' ');
 
                 if (!isNaN(carNumber) && newcarName) {
-                    const sortedCars = await collectionCars.find({ carDonate: false }).sort({ carPrice: 1 }).toArray();
+                    const sortedCars = await collectionCars.find({ donate: false }).sort({ price: 1 }).toArray();
 
                     if (carNumber >= 1 && carNumber <= sortedCars.length) {
                         const carToUpdate = sortedCars[carNumber - 1];
 
                         // Проверка, что имя машина не существует
-                        const existingcar = await collectionCars.findOne({ carName: newcarName });
+                        const existingcar = await collectionCars.findOne({ name: newcarName });
                         if (existingcar) {
                             bot.sendMessage(chatId, `Машина с именем "${newcarName}" уже существует.`);
                         } else {
-                            bot.sendMessage(chatId, `Имя для стандартной машины "${carToUpdate.carName}" успешно изменено на "${newcarName}".`);
+                            bot.sendMessage(chatId, `Имя для стандартной машины "${carToUpdate.name}" успешно изменено на "${newcarName}".`);
 
                             // Обновляем имя машина
-                            await collectionCars.updateOne({ _id: carToUpdate._id }, { $set: { carName: newcarName } });
+                            await collectionCars.updateOne({ _id: carToUpdate._id }, { $set: { name: newcarName } });
                         }
                     } else {
                         bot.sendMessage(chatId, 'Неверный номер машины. Пожалуйста, используйте номер из списка доступных машин.');
@@ -519,7 +519,7 @@ async function btnCars(msg, bot, collection, collectionCars) {
     if (data === 'donateCars') {
         const userStatus = await donatedUsers(msg, collection)
 
-        const sortedCars = await collectionCars.find({ carDonate: true }).sort({ carPrice: 1 }).toArray();
+        const sortedCars = await collectionCars.find({ donate: true }).sort({ price: 1 }).toArray();
         let options = {
             reply_markup: {
                 inline_keyboard: [
@@ -528,7 +528,7 @@ async function btnCars(msg, bot, collection, collectionCars) {
                 ],
             },
         };
-        const carNamesString = sortedCars.map((car, index) => `${index + 1}. ${car.carName} - ${car.carPrice.toLocaleString('de-DE')} UC`).join('\n');
+        const carNamesString = sortedCars.map((car, index) => `${index + 1}. ${car.name} - ${car.price.toLocaleString('de-DE')} UC`).join('\n');
         bot.editMessageText(`
 ${userStatus}, вот доступные донат машины (отсортированы по цене):
 
@@ -553,8 +553,8 @@ ${carNamesString}
                 ],
             },
         };
-        const sortedCars = await collectionCars.find({ carDonate: false }).sort({ carPrice: 1 }).toArray();
-        const carNamesString = sortedCars.map((car, index) => `${index + 1}. ${car.carName} - ${car.carPrice.toLocaleString('de-DE')}$ (${formatNumberInScientificNotation(car.carPrice)})`).join('\n');
+        const sortedCars = await collectionCars.find({ donate: false }).sort({ price: 1 }).toArray();
+        const carNamesString = sortedCars.map((car, index) => `${index + 1}. ${car.name} - ${car.price.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(car.price)}`).join('\n');
 
         bot.editMessageText(`
 ${userStatus}, вот доступные машины (отсортированы по цене):

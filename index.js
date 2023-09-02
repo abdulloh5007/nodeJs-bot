@@ -32,6 +32,8 @@ const { buyCryptoCurrence, payTransactions, cryptoShop, } = require('./requests/
 const { mailing } = require('./requests/mailing/mailing');
 const { addAddvert, addverts, deleteAdd, deleteAllAddverts } = require('./requests/advert/advertising');
 const { addBusiness, listBusinesses, buyBusiness, infoBusiness, workersInfo, buyWorkers, addProfitEveryOneHour, pulloffBusiness, payTaxForBusiness } = require('./requests/properties/business/business');
+const { addContainers, listPriceMoneyContainers, buyPriceMoneyContainer, donateContainers } = require('./requests/containers/containers');
+const { autoCreatePromoCodes, manualCreatePromoCodes } = require('./requests/auto/autoPromoAdd');
 
 client.connect()
     .then(() => {
@@ -145,7 +147,7 @@ function start() {
         const location = msg.location
         const contact = msg.contact
         const gameBot = msg.game
-        
+
         const user = await collection.findOne({ id: userId });
 
         if (pinned_message || new_chat_members || new_chat_title || new_chat_photo || left_chat_member || sendedPhoto || sendGiff || sendSticker || voice || dice || video || document || poll || location || contact || gameBot) {
@@ -164,6 +166,14 @@ function start() {
         }
 
         else if (!!user) {
+            // manual create
+            manualCreatePromoCodes(msg, bot, collection)
+
+            // CTY -> Ccntainers
+            addContainers(msg)
+            listPriceMoneyContainers(msg, bot, collection)
+            buyPriceMoneyContainer(msg, bot, collection)
+
             // businesses
             addBusiness(msg, bot)
             listBusinesses(msg, bot, collection)
@@ -287,10 +297,6 @@ function start() {
             // donates
             donateMenu(msg, bot, collection)
             donateInfo(msg, bot, collection)
-            // Вызывайте эту функцию регулярно, например, каждый день или час
-            setTimeout(() => {
-                checkAndUpdateDonations(collection, bot, msg);
-            }, 6 * 60 * 60 * 1000); // 24 часа или 12 часа или 6
 
             // admin commands
             adminCommands(msg, bot, collection)
@@ -325,18 +331,25 @@ function start() {
                 await collection.updateMany({ _id: ObjectId }, {
                     $set: {
                         business: [{
-                            bHave: false,
-                            bName: "",
-                            bWorkers: 0,
-                            bMaxWorkers: 0,
-                            bProfit: 0,
-                            bWorkersProfit: 0,
-                            bTax: 0,
+                            have: false,
+                            name: "",
+                            workers: 0,
+                            maxWorkers: 0,
+                            profit: 0,
+                            workersProfit: 0,
+                            tax: 0,
                             lastUpdTime: 0,
                         }],
                     }
                 });
                 bot.sendMessage(chatId, 'Успешна обновлена датабаза')
+            }
+            if (text === 'renameUpdHauses') {
+                await collection.updateMany({ _id: ObjectId }, {
+                    $rename: {
+                        
+                    }
+                })
             }
         }
         else {
@@ -357,6 +370,9 @@ function start() {
             commandHelpAsBtn(msg, bot, userGameName, collection)
             shopCryptoCallback(msg, bot, collectionCrypto, collection)
             topWithBtns(msg, bot, collection)
+
+            // conts
+            donateContainers(msg, bot)
 
             // crypto currence
             payTransactions(msg, bot, collection)
@@ -415,6 +431,16 @@ cron.schedule('0 9 * * *', () => {
         console.error('Ошибка при добавлении прибыли на бизнесы:', err);
     });
 });
+
+cron.schedule('0 */12 * * *', () => {
+    // auto create promo
+    autoCreatePromoCodes(bot)
+})
+
+// Вызывайте эту функцию регулярно, например, каждый день или час
+setTimeout(() => {
+    checkAndUpdateDonations(collection);
+}, 6 * 60 * 60 * 1000); // 24 часа или 12 часа или 6
 
 start()
 collectionBot.updateOne({}, { $set: { botLastIncTime: botLastIncludedTime } })
