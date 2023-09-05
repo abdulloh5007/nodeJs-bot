@@ -10,14 +10,13 @@ const { MongoClient, ObjectId } = require('mongodb');
 const client = new MongoClient(mongoDbUrl);
 
 const { kazino, } = require('./requests/games/games');
-const { commandStart, commandHelp, commandHelpAsBtn, commandHelpInChats, deleteAllUsers, userInfoReplyToMessage, userMsg } = require('./requests/commands/commands');
+const { commandStart, commandHelp, commandHelpAsBtn, deleteAllUsers, userInfoReplyToMessage, userMsg } = require('./requests/commands/commands');
 const { userBalance, userEditGameId, userGameInfo, userEditGameName, myId, dayBonusCollectingBtn } = require('./requests/user/userInfo');
 const { userUnMuteAll, } = require('./requests/violations/userMute');
 const { botInfo, deleteMessageBot, botVersionChange } = require('./requests/botInfo/botInfos');
 const { giveMoney } = require('./requests/user/giveMoney');
 const { extraditeMoney, takeMoney, takeAllMoney, extraditeUc, takeUc, takeAllUc, adminCommands, adminCommandsWithBtn, toBeAnAdministrtorBot, useKey, deleteGenKeys } = require('./requests/admin/adminCommands');
 const { generateCardNumber, cardInfo, createUpdateCardPassword, setMoneyToCard, getMoneyFromOwnCard, infoAboutCards } = require('./requests/user/userBankCard');
-const { cryptoCurrenceLaunch, updateCryptoToUp, updateCryptoToDown, cryptoStatus, cryptoShopWithBtn, shopCryptoCallback } = require('./requests/crypto/cryptoCurrence');
 const { tops, topWithBtns } = require('./requests/tops/tops');
 const { referral, startWithRef } = require('./requests/referral/referral');
 const { houses, HouseAdd, findHouseByName, houseBuy, myHouseInfo, changeHousePrice, sellHouse, donateHouses, houseDonateBuy, btnHouses, HouseDonateAdd, changeHouseName, } = require('./requests/properties/houses/houses');
@@ -28,12 +27,14 @@ const { handleBan } = require('./requests/violations/userBan');
 const { limitations, removeLimit, updateDayLimitAtUTC9 } = require('./requests/user/userLimitation');
 const { cars, donateCars, CarAdd, CarDonateAdd, findCarByName, carBuy, carDonateBuy, myCarInfo, changeCarPrice, changeCarName, sellCar, btnCars } = require('./requests/properties/cars/cars');
 const { customChalk } = require('./customChalk');
-const { buyCryptoCurrence, payTransactions, cryptoShop, } = require('./requests/shop/cryptoShop');
 const { mailing } = require('./requests/mailing/mailing');
 const { addAddvert, addverts, deleteAdd, deleteAllAddverts } = require('./requests/advert/advertising');
 const { addBusiness, listBusinesses, buyBusiness, infoBusiness, workersInfo, buyWorkers, addProfitEveryOneHour, pulloffBusiness, payTaxForBusiness } = require('./requests/properties/business/business');
 const { addContainers, listPriceMoneyContainers, buyPriceMoneyContainer, donateContainers } = require('./requests/containers/containers');
 const { autoCreatePromoCodes, manualCreatePromoCodes } = require('./requests/auto/autoPromoAdd');
+const { avatarMenu, addAvatar, avaChekAdmins } = require('./requests/avatar/avatar');
+const { calcInfo, calc } = require('./requests/calc/calc');
+const { botCommands } = require('./requests/botCommands/botCommands');
 
 client.connect()
     .then(() => {
@@ -83,7 +84,7 @@ function start() {
             command: '/help', description: 'Помощь'
         },
         {
-            command: '/admin', description: 'Помощь'
+            command: '/admin', description: 'Админ'
         },
     ])
 
@@ -118,6 +119,28 @@ function start() {
         deleteMessageBot(msg, bot);
     })
 
+    bot.on('video', async msg => {
+        const video = msg.video.file_id
+        const userId = msg.from.id
+        const messageId = msg.message_id
+
+        bot.sendMessage(userId, `<code>${video}</code>`, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+    })
+
+    bot.on('voice', async msg => {
+        const voice = msg.voice.file_id
+        const userId = msg.from.id
+        const messageId = msg.message_id
+
+        bot.sendMessage(userId, `<code>${voice}</code>`, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+    })
+
     bot.on('photo', msg => {
         const photo = msg.photo[0].file_id
         const userId = msg.from.id
@@ -148,12 +171,16 @@ function start() {
         const contact = msg.contact
         const gameBot = msg.game
 
-        const user = await collection.findOne({ id: userId });
-
         if (pinned_message || new_chat_members || new_chat_title || new_chat_photo || left_chat_member || sendedPhoto || sendGiff || sendSticker || voice || dice || video || document || poll || location || contact || gameBot) {
             return;
         }
 
+        const user = await collection.findOne({ id: userId });
+        
+        if (!botCommands.includes(text.toLowerCase()) && !user) {
+            return;
+        }
+        
         //start
         if (text.toLowerCase() === '/start' || text == '/start@levouJS_bot') {
             commandStart(msg, collection, bot)
@@ -166,161 +193,403 @@ function start() {
         }
 
         else if (!!user) {
+
+            const userBanStatus = user.ban[0].ban
+            if (userBanStatus === true) {
+                if (botCommands.includes(text.toLowerCase())) {
+                    if (chatId === userId) {
+                        try {
+                            await bot.sendMessage(user.id, `
+Вы были забанены в боте
+                        `, {
+                                parse_mode: 'HTML',
+                            })
+                        }
+                        catch (err) {
+                            if (err.response.status === 403) {
+                                console.log('пользователь заблокировал бота');
+                            }
+                            else {
+                                console.log("err send ban status " + err);
+                            }
+                        }
+                    }
+                    else {
+                        const dateBan = new Date(user.ban[0].banTime)
+                        await bot.sendMessage(chatId, `
+Вы были забанены в боте
+<b>Причина:</b> ${user.ban[0].cause}
+<b>Время бана:</b> ${dateBan.toLocaleDateString()}
+<b>Время до:</b> ${user.ban[0].unbanTime === null ? 'Навсегда' : user.ban[0].unbanTime}
+                        `, {
+                            parse_mode: 'HTML',
+                            reply_to_message_id: messageId,
+                        })
+                    }
+                }
+                return;
+            }
+
+            //
+            const parts = text.split(' ')
+            const txtConts = '@levouJS_bot открыть контейнер'.toLowerCase()
+            const txtAva = '@levouJS_bot +ава'.toLowerCase()
+            const txtBuyBusiness = '@levouJS_bot купить бизнес'.toLowerCase()
+            const txtBuyBWorkers = '@levouJS_bot купить бработников'.toLowerCase()
+            const txtCasino = '@levouJS_bot казино'.toLowerCase()
+
+            //calc
+            if (['calc', 'cl'].includes(text.toLowerCase())) {
+                calcInfo(msg, bot)
+            }
+
+            else if (text.toLowerCase().startsWith('кт')) {
+                calc(msg, bot)
+            }
+
+            // avatar
+            else if (text.toLowerCase() === 'ава') {
+                avatarMenu(msg, bot)
+            }
+            else if (text.toLowerCase().startsWith('+ава')) {
+                let glLengthAvatarAdd = 1
+                addAvatar(msg, bot, glLengthAvatarAdd)
+            }
+            else if (text.toLowerCase().startsWith(txtAva)) {
+                let glLengthAvatarAdd = 2
+                addAvatar(msg, bot, glLengthAvatarAdd)
+            }
+
             // manual create
-            manualCreatePromoCodes(msg, bot, collection)
+            else if (text.toLowerCase() === 'manualpromo' || text === 'mP') {
+                manualCreatePromoCodes(msg, bot, collection)
+            }
 
             // CTY -> Ccntainers
-            addContainers(msg)
-            listPriceMoneyContainers(msg, bot, collection)
-            buyPriceMoneyContainer(msg, bot, collection)
+            else if (text === 'addingContainer') {
+                addContainers(msg)
+            }
+            else if (['конты', 'контейнеры', 'conts', 'containers'].includes(text.toLowerCase())) {
+                listPriceMoneyContainers(msg, bot, collection)
+            }
+            else if (text.toLowerCase().startsWith('открыть контейнер')) {
+                let glLengthBuyCont = 2
+                buyPriceMoneyContainer(msg, bot, collection, glLengthBuyCont)
+            }
+            else if (text.toLowerCase().startsWith(txtConts)) {
+                let glLengthBuyCont = 3
+                buyPriceMoneyContainer(msg, bot, collection, glLengthBuyCont)
+            }
 
             // businesses
-            addBusiness(msg, bot)
-            listBusinesses(msg, bot, collection)
-            buyBusiness(msg, bot, collection)
-            infoBusiness(msg, bot, collection)
-            workersInfo(msg, bot, collection)
-            buyWorkers(msg, bot, collection)
-            pulloffBusiness(msg, bot, collection)
-            payTaxForBusiness(msg, bot, collection)
+            else if (text.toLowerCase() === 'testadd business') {
+                addBusiness(msg, bot)
+            }
+            else if (text.toLowerCase() === 'бизнесы') {
+                listBusinesses(msg, bot, collection)
+            }
+            else if (text.toLowerCase().startsWith(txtBuyBusiness)) {
+                let glLengthBuyB = 3
+                buyBusiness(msg, bot, collection, glLengthBuyB)
+            }
+            else if (text.toLowerCase().startsWith('купить бизнес')) {
+                let glLengthBuyB = 2
+                buyBusiness(msg, bot, collection, glLengthBuyB)
+            }
+            else if (text.toLowerCase() === 'мой бизнес') {
+                infoBusiness(msg, bot, collection)
+            }
+            else if (text.toLowerCase() === 'инфо бработники') {
+                workersInfo(msg, bot, collection)
+            }
+            else if (text.toLowerCase().startsWith(txtBuyBWorkers)) {
+                let glLengthBWorkers = 3
+                buyWorkers(msg, bot, collection, glLengthBWorkers)
+            }
+            else if (text.toLowerCase().startsWith('купить бработников')) {
+                let glLengthBWorkers = 2
+                buyWorkers(msg, bot, collection, glLengthBWorkers)
+            }
+            else if (text.toLowerCase() === 'бизнес снять') {
+                pulloffBusiness(msg, bot, collection)
+            }
+            else if (text.toLowerCase() === 'бизнес налоги') {
+                payTaxForBusiness(msg, bot, collection)
+            }
 
             //addvert
-            addAddvert(msg, bot, collectionAddvert, collection)
-            addverts(msg, bot, collection, collectionAddvert)
-            deleteAdd(msg, bot, collection, collectionAddvert)
-            deleteAllAddverts(msg, bot, collectionAddvert, collection)
-
-            // crypto currencies
-            cryptoCurrenceLaunch(msg, bot, collectionCrypto)
-            updateCryptoToUp(msg, bot, collectionCrypto)
-            cryptoShop(msg, bot, collectionCrypto, collection)
-            updateCryptoToDown(msg, bot, collectionCrypto, collection)
-            cryptoStatus(msg, bot, collectionCrypto)
-            cryptoShopWithBtn(msg, bot, collection, collectionCrypto)
-
-            buyCryptoCurrence(msg, bot, collection, collectionCrypto)
+            if (parts[0] === '@levouJS_bot') {
+                if (['!+add', '!+рек', '!+реклама'].includes(parts[1].toLowerCase())) {
+                    let globLength = 2
+                    let toSliceLength = parts[0] + " " + parts[1]
+                    addAddvert(msg, bot, collectionAddvert, collection, globLength, toSliceLength)
+                }
+            }
+            else if (['!+add', '!+рек', '!+реклама'].includes(parts[0].toLowerCase())) {
+                let globLength = 1
+                let toSliceLength = parts[0]
+                addAddvert(msg, bot, collectionAddvert, collection, globLength, toSliceLength)
+            }
+            else if (['рекламы', 'adds', 'рекы'].includes(text.toLowerCase())) {
+                addverts(msg, bot, collection, collectionAddvert)
+            }
+            else if (parts[0] === '@levouJS_bot') {
+                if (['!-add', '!-рек', '!-реклама'].includes(parts[1].toLowerCase())) {
+                    let globLengthAdd = 2
+                    deleteAdd(msg, bot, collection, collectionAddvert, globLengthAdd)
+                }
+            }
+            else if (['!-add', '!-рек', '!-реклама'].includes(parts[0].toLowerCase())) {
+                let globLengthAdd = 1
+                deleteAdd(msg, bot, collection, collectionAddvert, globLengthAdd)
+            }
+            else if (['!add -all', '!рек -все'].includes(text.toLowerCase())) {
+                deleteAllAddverts(msg, bot, collectionAddvert, collection)
+            }
 
             // help
-            commandHelp(msg, collection, bot)
+            else if (text.toLowerCase() === '/help' || text.toLowerCase() === 'помощь' || text === '/help@levouJS_bot') {
+                commandHelp(msg, collection, bot)
+            }
 
             // ref
-            referral(msg, bot, collection)
+            else if (['ref', '!ref', 'реф', '!реф'].includes(text.toLowerCase())) {
+                referral(msg, bot, collection)
+            }
 
             // balance
-            userBalance(msg, collection, bot, collectionAddvert)
+            else if (['б', 'баланс', 'b', 'balance'].includes(text.toLowerCase())) {
+                userBalance(msg, collection, bot, collectionAddvert)
+            }
 
             // kazino
-            kazino(msg, collection, bot)
+            if (text.toLowerCase().startsWith(txtCasino)) {
+                let valueIndex = 2
+                kazino(msg, collection, bot, valueIndex)
+            }
+            else if (text.toLowerCase().startsWith('казино')) {
+                let valueIndex = 1
+                kazino(msg, collection, bot, valueIndex)
+            }
 
             // info
-            userGameInfo(msg, bot, collection)
+            else if (['инфо', 'профиль'].includes(text.toLowerCase())) {
+                userGameInfo(msg, bot, collection)
+            }
 
             // Edit game ID
-            userEditGameId(msg, bot, collection)
+            else if (text.toLowerCase().startsWith('сменить айди')) {
+                userEditGameId(msg, bot, collection)
+            }
 
             //Edit game NAME
-            userEditGameName(msg, bot, collection)
+            else if (text.toLowerCase().startsWith('сменить ник')) {
+                userEditGameName(msg, bot, collection)
+            }
 
-            // MUTE            
-            userUnMuteAll(msg, bot, collection)
+            // MUTE  
+            else if (text === '/unmuteall') {
+                userUnMuteAll(msg, bot, collection)
+            }
 
             // BAN
-            handleBan(msg, bot, collection)
+            else if (text.toLowerCase().startsWith('/ban_bot')) {
+                handleBan(msg, bot, collection)
+            }
 
             //Bot Info
-            botInfo(msg, collectionBot, bot, collection)
-            // botInfo2(msg, collectionBot, bot, collection)
-            botVersionChange(msg, bot, collectionBot)
+            else if (text.toLowerCase() === 'botinfo') {
+                botInfo(msg, collectionBot, bot, collection)
+            }
+            else if (text.toLowerCase().startsWith('botversion')) {
+                botVersionChange(msg, bot, collectionBot, collection)
+            }
 
             // Give Money
-            giveMoney(msg, bot);
+            else if (text.toLowerCase().startsWith('дать')) {
+                giveMoney(msg, bot);
+            }
 
             // Func /msg
-            userMsg(msg, collection, bot,)
+            // userMsg(msg, collection, bot,)
 
             //delete All Users = это функцию можешь использовать когда обновляешь бота или добавляешь что-то новое в датабазу MONGODB
-            deleteAllUsers(msg, collection, bot, ObjectId)
+            else if (text.toLowerCase() === 'удалить всех пользователей' || text.toLowerCase() === 'увп') {
+                deleteAllUsers(msg, collection, bot, ObjectId)
+            }
 
             //my ID
-            myId(msg, bot, collection)
+            else if (['айди', 'мой айди', 'my id', 'myid', 'id'].includes(text.toLowerCase())) {
+                myId(msg, bot, collection)
+            }
 
             //info ID
-            userInfoReplyToMessage(msg, bot, collection)
+            else if (text.toLowerCase() == '.infoid') {
+                userInfoReplyToMessage(msg, bot, collection)
+            }
 
             //Выдача отбор денег
-            extraditeMoney(msg, collection, bot)
-            takeMoney(msg, collection, bot)
-            takeAllMoney(msg, collection, bot)
+            else if (text.toLowerCase().startsWith('выдать')) {
+                extraditeMoney(msg, collection, bot)
+            }
+            else if (text.toLowerCase().startsWith('забрать')) {
+                takeMoney(msg, collection, bot)
+            }
+            else if (text.toLowerCase() === 'деньги забрать все') {
+                takeAllMoney(msg, collection, bot)
+            }
 
             // Выдача отбор UC
-            extraditeUc(msg, collection, bot)
-            takeUc(msg, collection, bot)
-            takeAllUc(msg, collection, bot)
+            else if (text.toLowerCase().startsWith('uc выдать') || text.toLowerCase().startsWith('ус выдать')) {
+                extraditeUc(msg, collection, bot)
+            }
+            else if (text.toLowerCase().startsWith('ус забрать') || text.toLowerCase().startsWith('uc забрать')) {
+                takeUc(msg, collection, bot)
+            }
+            else if (text.toLowerCase() === 'uc забрать все' || text.toLowerCase() === 'ус забрать все') {
+                takeAllUc(msg, collection, bot)
+            }
 
             // Пластик карты
-            infoAboutCards(msg, bot);
-            generateCardNumber(msg, bot, collection);
-            cardInfo(msg, bot);
-            createUpdateCardPassword(msg, bot);
-            setMoneyToCard(msg, bot, collection);
-            getMoneyFromOwnCard(msg, bot, collection);
+            else if (text.toLowerCase() == 'инфо карта') {
+                infoAboutCards(msg, bot);
+            }
+            else if (text.toLowerCase() === 'карта создать') {
+                generateCardNumber(msg, bot, collection);
+            }
+            else if (text.toLowerCase() === 'моя карта') {
+                cardInfo(msg, bot);
+            }
+            else if (text.toLowerCase().startsWith('+карта пароль')) {
+                createUpdateCardPassword(msg, bot);
+            }
+            else if (text.toLowerCase().startsWith('карта положить') || text.toLowerCase().startsWith('карта пополнить')) {
+                setMoneyToCard(msg, bot, collection);
+            }
+            else if (text.toLowerCase().startsWith('карта снять')) {
+                getMoneyFromOwnCard(msg, bot, collection);
+            }
 
             // Tops
-            tops(msg, bot, collection)
+            if (text.toLowerCase() === 'топ') {
+                tops(msg, bot, collection)
+            }
 
             //house
-            houses(msg, collection, bot, collectionHouses)
-            donateHouses(msg, collection, bot, collectionHouses)
-            HouseAdd(msg, bot, collectionHouses)
-            HouseDonateAdd(msg, bot, collectionHouses)
-            findHouseByName(msg, collection, bot, collectionHouses)
-            houseBuy(msg, collection, bot, collectionHouses)
-            houseDonateBuy(msg, collection, bot, collectionHouses)
-            myHouseInfo(msg, collection, bot, collectionHouses)
-            changeHousePrice(msg, bot, collectionHouses)
-            changeHouseName(msg, bot, collectionHouses)
-            sellHouse(msg, bot, collection, collectionHouses)
+            else if (text.toLowerCase() === 'дома') {
+                houses(msg, collection, bot, collectionHouses)
+            }
+            else if (text.toLowerCase() === 'донат дома') {
+                donateHouses(msg, collection, bot, collectionHouses)
+            }
+            else if (text.toLowerCase().startsWith('+дом')) {
+                HouseAdd(msg, bot, collectionHouses)
+            }
+            else if (text.toLowerCase().startsWith('+донатдом')) {
+                HouseDonateAdd(msg, bot, collectionHouses)
+            }
+            else if (text.toLowerCase().startsWith('купить дом')) {
+                houseBuy(msg, collection, bot, collectionHouses)
+            }
+            else if (text.toLowerCase().startsWith('купить донатдом')) {
+                houseDonateBuy(msg, collection, bot, collectionHouses)
+            }
+            else if (text.toLowerCase() === 'мой дом') {
+                myHouseInfo(msg, collection, bot, collectionHouses)
+            }
+            else if (text.toLowerCase().startsWith('дом цена')) {
+                changeHousePrice(msg, bot, collectionHouses)
+            }
+            else if (text.toLowerCase().startsWith('дом имя')) {
+                changeHouseName(msg, bot, collectionHouses, collection)
+            }
+            else if (text.toLowerCase() === 'продать дом') {
+                sellHouse(msg, bot, collection, collectionHouses)
+            }
 
             // cars
-            cars(msg, collection, bot, collectionCars)
-            donateCars(msg, collection, bot, collectionCars)
-            CarAdd(msg, bot, collectionCars)
-            CarDonateAdd(msg, bot, collectionCars)
-            findCarByName(msg, collection, bot, collectionCars)
-            carBuy(msg, collection, bot, collectionCars)
-            carDonateBuy(msg, collection, bot, collectionCars)
-            myCarInfo(msg, collection, bot, collectionCars)
-            changeCarPrice(msg, bot, collectionCars)
-            changeCarName(msg, bot, collectionCars)
-            sellCar(msg, bot, collection, collectionCars)
+            if (text.toLowerCase() === 'машины') {
+                cars(msg, collection, bot, collectionCars)
+            }
+            else if (text.toLowerCase() === 'донат машины') {
+                donateCars(msg, collection, bot, collectionCars)
+            }
+            else if (text.toLowerCase().startsWith('+машина')) {
+                CarAdd(msg, bot, collectionCars)
+            }
+            else if (text.toLowerCase().startsWith('+донатмашина')) {
+                CarDonateAdd(msg, bot, collectionCars)
+            }
+            else if (text.toLowerCase().startsWith('купить машину')) {
+                carBuy(msg, collection, bot, collectionCars)
+            }
+            else if (text.toLowerCase().startsWith('купить донатмашину')) {
+                carDonateBuy(msg, collection, bot, collectionCars)
+            }
+            else if (text.toLowerCase() === 'моя машина') {
+                myCarInfo(msg, collection, bot, collectionCars)
+            }
+            else if (text.toLowerCase().startsWith('машина цена')) {
+                changeCarPrice(msg, bot, collectionCars)
+            }
+            else if (text.toLowerCase().startsWith('машина имя')) {
+                changeCarName(msg, bot, collectionCars)
+            }
+            else if (text.toLowerCase() === 'продать машину') {
+                sellCar(msg, bot, collection, collectionCars)
+            }
 
             // donates
-            donateMenu(msg, bot, collection)
-            donateInfo(msg, bot, collection)
+            if (text.toLowerCase() === 'донат') {
+                donateMenu(msg, bot, collection)
+            }
+            else if (text.toLowerCase() === 'мой статус') {
+                donateInfo(msg, bot, collection)
+            }
 
             // admin commands
-            adminCommands(msg, bot, collection)
-            toBeAnAdministrtorBot(msg, bot, collection, collectionAdmins)
-            useKey(msg, bot, collectionAdmins)
-            deleteGenKeys(msg, bot, collectionAdmins)
+            if (['/admin', 'admin', 'админ', 'команды админа'].includes(text.toLowerCase())) {
+                adminCommands(msg, bot, collection)
+            }
+            else if (text.toLowerCase() === 'bot give me a key administrator') {
+                toBeAnAdministrtorBot(msg, bot, collection, collectionAdmins)
+            }
+            else if (text.toLowerCase().startsWith('key')) {
+                useKey(msg, bot, collectionAdmins)
+            }
+            else if (text.toLowerCase() === 'delete generated admin keys') {
+                deleteGenKeys(msg, bot, collectionAdmins)
+            }
 
             //promo
-            createPromo(msg, bot, collection, collectionPromo)
-            createDonatePromo(msg, bot, collection, collectionPromo)
-            usingPromo(msg, bot, collection, collectionPromo)
+            if (text.toLowerCase().startsWith('+промо')) {
+                createPromo(msg, bot, collection, collectionPromo)
+            }
+            else if (text.toLowerCase().startsWith('+дпромо')) {
+                createDonatePromo(msg, bot, collection, collectionPromo)
+            }
+            else if (text.toLowerCase().startsWith('промо')) {
+                usingPromo(msg, bot, collection, collectionPromo)
+            }
 
             // Лимиты
-            limitations(msg, bot, collection)
-            removeLimit(msg, bot, collection, ObjectId)
+            if (text.toLowerCase() === 'лимит') {
+                limitations(msg, bot, collection)
+            }
+            else if (text.toLowerCase() === 'упдлимиты') {
+                removeLimit(msg, bot, collection, ObjectId)
+            }
 
             // Рассылка
-            mailing(msg, bot, collection)
+            if (['!рас', '!mail', '!рассылка'].includes(parts[0].toLowerCase())) {
+                mailing(msg, bot, collection)
+            }
 
             if (text == 'testEditingStatusesDeleting') {
                 bot.sendChatAction(chatId, 'typing')
                 await collection.updateMany({ _id: ObjectId }, {
                     $unset: {
-                        limit: []
+                        ban: []
                     }
                 });
                 bot.sendMessage(chatId, 'Успешна обновлена датабаза')
@@ -330,15 +599,11 @@ function start() {
                 bot.sendChatAction(chatId, 'typing')
                 await collection.updateMany({ _id: ObjectId }, {
                     $set: {
-                        business: [{
-                            have: false,
-                            name: "",
-                            workers: 0,
-                            maxWorkers: 0,
-                            profit: 0,
-                            workersProfit: 0,
-                            tax: 0,
-                            lastUpdTime: 0,
+                        ban: [{
+                            ban: false,
+                            cause: '',
+                            banTime: 0,
+                            unbanTime: 0,
                         }],
                     }
                 });
@@ -347,7 +612,7 @@ function start() {
             if (text === 'renameUpdHauses') {
                 await collection.updateMany({ _id: ObjectId }, {
                     $rename: {
-                        
+
                     }
                 })
             }
@@ -368,14 +633,17 @@ function start() {
         if (!!user) {
             const userGameName = user.userName
             commandHelpAsBtn(msg, bot, userGameName, collection)
-            shopCryptoCallback(msg, bot, collectionCrypto, collection)
+            // shopCryptoCallback(msg, bot, collectionCrypto, collection)
             topWithBtns(msg, bot, collection)
+
+            // avatar
+            avaChekAdmins(msg, bot)
 
             // conts
             donateContainers(msg, bot)
 
             // crypto currence
-            payTransactions(msg, bot, collection)
+            // payTransactions(msg, bot, collection)
 
             btnHouses(msg, bot, collection, collectionHouses)
             btnCars(msg, bot, collection, collectionCars)
@@ -394,24 +662,6 @@ function start() {
 Сначала зарегистрируйся нажав на /start
             `)
             log(user)
-        }
-    })
-
-    bot.onText(/\/help/, async msg => {
-        const userId = msg.from.id
-        const chatId = msg.chat.id
-        const user = await collection.findOne({ id: userId })
-
-        if (!!user) {
-            if (chatId != userId) {
-                const userGameName = user.userName
-                commandHelpInChats(msg, userGameName, bot)
-            }
-        }
-        else {
-            bot.sendMessage(chatId, `
-Сначала зарегистрируйся нажав на /start
-            `)
         }
     })
 }

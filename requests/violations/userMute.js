@@ -1,4 +1,4 @@
-const { adminDonatedUsers } = require('../donate/donatedUsers');
+const { adminDonatedUsers, donatedUsers } = require('../donate/donatedUsers');
 
 require('dotenv').config();
 const adminIdInt = parseInt(process.env.ADMIN_ID_INT)
@@ -62,7 +62,7 @@ async function mutePlayer(chatId, userId, muteDuration, muteCause, bot, collecti
             reply_markup: {
                 inline_keyboard: [
                     [
-                        { text: 'Размутить', callback_data: 'optUnmuteId'}
+                        { text: 'Размутить', callback_data: 'optUnmuteId' }
                     ]
                 ]
             }
@@ -204,22 +204,20 @@ async function userUnMuteAll(msg, bot, collection) {
 
     // Преобразуем массив айди в строку для вывода в чат
     const mutedUserIdsString = mutedUserIds.join(', ');
+    const userDonateStatus = await donatedUsers(msg, collection)
 
     // Выводим айди замученных пользователей в чат
 
-    if (text === '/unmuteall') {
-        if (userId === adminIdInt) {
+    if (userId === adminIdInt) {
 
-            await mutedUserIds.forEach(async (e) => {
-                const userIds = e;
-                await bot.restrictChatMember(chatId, userIds, { can_send_messages: true, until_date: 0 });
-            })
-            bot.sendMessage(adminIdInt, `Все пользователи были размучены ${mutedUserIdsString}`)
-        } else {
-            bot.sendMessage(chatId, 'Ошибка: у вас нет прав для выполнения этой команды.');
-        }
+        await mutedUserIds.forEach(async (e) => {
+            const userIds = e;
+            await bot.restrictChatMember(chatId, userIds, { can_send_messages: true, until_date: 0 });
+        })
+        bot.sendMessage(adminIdInt, `${userDonateStatus}, Все пользователи были размучены ${mutedUserIdsString}`)
+    } else {
+        bot.sendMessage(chatId, `${userDonateStatus}, Ошибка: у вас нет прав для выполнения этой команды.`);
     }
-
 }
 
 module.exports = {

@@ -17,17 +17,15 @@ async function addBusiness(msg, bot) {
     const text = msg.text
     const chatId = msg.chat.id
 
-    if (text.toLowerCase() === 'testadd business') {
-        collectionBusiness.insertOne({
-            name: 'louis vuitton2',
-            price: 9000,
-            img: 'AgACAgEAAxkBAAIfa2Twc2xXc5x-EBcRpEfDJo5N7U4kAAIvrDEbHVWBR0qAt37FpyCaAQADAgADcwADMAQ',
-            maxWorkers: 150,
-            workersProfit: 230,
-            tax: 1200,
-        })
-        bot.sendMessage(chatId, `Успешно был добавлен бизнес`)
-    }
+    collectionBusiness.insertOne({
+        name: 'louis vuitton2',
+        price: 9000,
+        img: 'AgACAgEAAxkBAAIfa2Twc2xXc5x-EBcRpEfDJo5N7U4kAAIvrDEbHVWBR0qAt37FpyCaAQADAgADcwADMAQ',
+        maxWorkers: 150,
+        workersProfit: 230,
+        tax: 1200,
+    })
+    bot.sendMessage(chatId, `Успешно был добавлен бизнес`)
 }
 
 async function listBusinesses(msg, bot, collection) {
@@ -52,18 +50,16 @@ ${i + 1}. ${e.name} - ${e.price.toLocaleString('de-DE')} ${formatNumberInScienti
         }
     }
 
-    if (text.toLowerCase() === 'бизнесы') {
-        bot.sendMessage(chatId, `
+    bot.sendMessage(chatId, `
 ${userDonateStatus}, вот доступные бизнесы
 
 ${sortedBusinesses}
 
 <b>Чтобы купить бизнес напишите:</b> <code>купить бизнес [номер]</code>
-        `, { parse_mode: 'HTML', ...businessOptions })
-    }
+    `, { parse_mode: 'HTML', ...businessOptions })
 }
 
-async function buyBusiness(msg, bot, collection) {
+async function buyBusiness(msg, bot, collection, glLength) {
     const db = client.db('bot');
     const collectionBusiness = db.collection('businesses')
     const business = await collectionBusiness.find({}).sort({ price: 1 }).toArray()
@@ -75,18 +71,6 @@ async function buyBusiness(msg, bot, collection) {
     const user = await collection.findOne({ id: userId1 })
     const userDonateStatus = await donatedUsers(msg, collection)
     const parts = text.split(' ')
-    const txt = '@levouJS_bot купить бизнес'
-
-    let glLength = 2
-    if (text.toLowerCase().startsWith(txt.toLocaleLowerCase())) {
-        glLength = 3
-    }
-    else if (text.toLowerCase().startsWith('купить бизнес')) {
-        glLength = 2
-    }
-    else {
-        return;
-    }
 
     if (parts.length === glLength) {
         bot.sendMessage(chatId, `
@@ -140,13 +124,6 @@ async function infoBusiness(msg, bot, collection) {
     const userDonateStatus = await donatedUsers(msg, collection)
     const user = await collection.findOne({ id: userId1 })
     const userBusiness = user.business[0].name
-
-    if (text.toLowerCase() === 'мой бизнес') {
-
-    }
-    else {
-        return;
-    }
 
     if (userBusiness === '') {
         bot.sendMessage(chatId, `
@@ -227,18 +204,16 @@ async function workersInfo(msg, bot, collection) {
         }
     }
 
-    if (text.toLowerCase() === 'инфо бработники') {
-        bot.sendMessage(chatId, `
+    bot.sendMessage(chatId, `
 ${userDonateStatus}, работники каждого бизнеса не похожи друг другу
 
 Цена работников увеличивается смотря на цену бизнеса 
 Какой у вас лучший бизнес и там будут работать работники именно того бизнеса
 ${messageB}
-        `, { parse_mode: 'HTML', ...workersOptions })
-    }
+    `, { parse_mode: 'HTML', ...workersOptions })
 }
 
-async function buyWorkers(msg, bot, collection) {
+async function buyWorkers(msg, bot, collection, glLength) {
     const db = client.db('bot');
     const collectionBusiness = db.collection('businesses')
 
@@ -248,24 +223,13 @@ async function buyWorkers(msg, bot, collection) {
 
     const userDonateStatus = await donatedUsers(msg, collection)
     const user = await collection.findOne({ id: userId1 })
-    const username = user.business[0].name
+    const userBname = user.business[0].name
     const userBalance = user.balance
     const userStatus = user.status[0].statusName
     const userworkers = user.business[0].workers
     const usermaxWorkers = user.business[0].maxWorkers
 
     const parts = text.split(' ')
-    const txt = '@levouJS_bot купить бработников'
-
-    let glLength = 2
-    if (text.toLowerCase().startsWith(txt.toLocaleLowerCase())) {
-        glLength = 3
-    }
-    else if (text.toLowerCase().startsWith('купить бработников')) {
-    }
-    else {
-        return;
-    }
 
     if (parts.length === glLength) {
         bot.sendMessage(chatId, `
@@ -276,7 +240,7 @@ ${userDonateStatus}, введите количество бизнес работ
         return;
     }
 
-    if (username === '') {
+    if (userBname === '') {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, у вас не существует бизнеса чтобы купить для него бработников
 
@@ -309,7 +273,7 @@ ${userDonateStatus}, количество бработников который 
         return;
     }
 
-    const business = await collectionBusiness.findOne({ name: username })
+    const business = await collectionBusiness.findOne({ name: userBname })
     const workersProfit = business.workersProfit
     let procent20 = Math.floor((workersProfit / 100) * 20)
 
@@ -378,12 +342,6 @@ async function pulloffBusiness(msg, bot, collection) {
     const userprofit = user.business[0].profit
     const username = user.business[0].name
 
-    if (text.toLowerCase() === 'бизнес снять') {
-    }
-    else {
-        return;
-    }
-
     if (username === '') {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, у вас нету бизнеса
@@ -417,9 +375,6 @@ async function payTaxForBusiness(msg, bot, collection) {
     const user = await collection.findOne({ id: userId1 })
     const userBalance = user.balance
     const usertax = user.business[0].tax
-
-    if (text.toLowerCase() === 'бизнес налоги') {
-    } else { return }
 
     if (usertax === 0) {
         bot.sendMessage(chatId, `

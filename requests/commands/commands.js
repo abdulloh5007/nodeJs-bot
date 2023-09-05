@@ -106,10 +106,10 @@ async function commandStart(msg, collection, bot) {
                 bTax: 0,
                 lastUpdTime: 0,
             }],
-            // avatar: [{
-            //     waiting: '',
-            //     avaUrl: '',
-            // }],
+            avatar: [{
+                waiting: '',
+                avaUrl: '',
+            }],
             properties: [{
                 houses: '',
                 cars: '',
@@ -128,8 +128,9 @@ async function commandStart(msg, collection, bot) {
             }],
             ban: [{
                 ban: false,
-                banTime: "",
                 cause: "",
+                banTime: 0,
+                unbanTime: 0,
             }],
             bankCard: [{
                 cardHave: true,
@@ -156,11 +157,13 @@ async function commandStart(msg, collection, bot) {
 
 }
 
-async function commandHelpInChats(msg, userGameName, bot) {
+async function commandHelp(msg, collection, bot) {
     const chatId = msg.chat.id
     const userId = msg.from.id
+    const user = await collection.findOne({ id: userId })
     const replyId = msg.message_id
 
+    const userGameName = user.userName
     await bot.sendMessage(chatId, `
 <a href='tg://user?id=${userId}'>${userGameName}</a>
 <b>🗂Разделы</b>
@@ -175,32 +178,7 @@ async function commandHelpInChats(msg, userGameName, bot) {
 
 🗄 Беседа - официальные чаты и канал бота.
     `, { parse_mode: 'HTML', ...helpOption, reply_to_message_id: replyId })
-}
 
-async function commandHelp(msg, collection, bot) {
-    const chatId = msg.chat.id
-    const userId = msg.from.id
-    const text = msg.text
-    const user = await collection.findOne({ id: userId })
-    const replyId = msg.message_id
-
-    if (text && text.toLowerCase() === '/help' || text && text.toLowerCase() === 'помощь') {
-        const userGameName = user.userName
-        await bot.sendMessage(chatId, `
-<a href='tg://user?id=${userId}'>${userGameName}</a>
-<b>🗂Разделы</b>
-<b>👨‍🔬Ownner: Corporation of Three Youngs</b>
-
-<i>👜 Основные✇ </i>
-<i>🌇 Имущество❃۬</i>
-<i>🛡 Для ✄Админов</i>
-<i>🤹‍♂ Игры✺</i>
-<i>☎️ Модерация㋡</i>
-<i>📓 Развлекательное❒</i>
-
-🗄 Беседа - официальные чаты и канал бота.
-        `, { parse_mode: 'HTML', ...helpOption, reply_to_message_id: replyId })
-    }
 }
 
 async function commandHelpAsBtn(msg, bot, userGameName, collection) {
@@ -292,35 +270,42 @@ ${userDonateStatus}, вот остальные команды
     const adminCommands = `
 ${userDonateStatus}, вот команды админов
 
-<i><code>bot give me a key administrator</code></i> - <b>Генерирует ключ администрации который приходит только владельцу</b>
-<i><code>key [ключ]</code></i> - <b>Использовать ключ адмиистрации</b>
-<i><code>.infoid</code></i> - <b>Инфо о пользователе, ответом на сообщение</b>
+🤖<i><code>bot give me a key administrator</code></i> - <b>Генерирует ключ администрации который приходит только владельцу</b>🤵
+🗝<i><code>key [ключ]</code></i> - <b>Использовать ключ адмиистрации</b>
+<i><code>.infoid</code></i> - <b>Инфо о пользователе, ответом на сообщение</b>👥
+<i><code>manual promo</code></i> - <b>Добавление авто промокода в ручную</b>
 
-<i><code>+дом [имя] [стоимость] [сезон] [юрл или айди картины]</code></i> - <b>Добавление домов</b>
-<i><code>+донатдом [имя] [стоимость] [сезон] [юрл или айди картины]</code></i> - <b>Добавление донат домов</b>
-<i><code>дом цена [номер дома] [новая цена]</code></i> - <b>Изменение цены дома</b>
-<i><code>дом имя [имя дома] [новая имя]</code></i> - <b>Изменение имя дома</b>
+🏢<i><code>+дом [имя] [стоимость] [сезон] [айди картины]</code></i> - <b>Добавление домов</b>🏗
+🏬<i><code>+донатдом [имя] [стоимость] [сезон] [айди картины]</code></i> - <b>Добавление донат домов</b>🏗
+<i><code>+машина [имя] [стоимость] [сезон] [айди картины]</code></i> - <b>Добавление машин</b>
+<i><code>+донатмашина [имя] [стоимость] [сезон] [айди картины]</code></i> - <b>Добавление донат машин</b>
 
-<i><code>crypto status [true, false]</code></i> - <b>Статус крипты [продается, не продается]</b>
-<i><code>крипта вниз [названия] [цена]</code></i> - <b>Действие вниз убывание</b>
-<i><code>крипта вниз [названия] [цена]</code></i> - <b>Действие вниз увеличение</b>
+🏘<i><code>дом цена [номер дома] [новая цена]</code></i> - <b>Изменение цены дома</b>
+🏚<i><code>дом имя [имя дома] [новая имя]</code></i> - <b>Изменение имя дома</b>
 
-<i><code>botinfo</code></i> - <b>Информация о боте</b>
-<i><code>bot version [версия]</code></i> - <b>Новая версия боту</b>
+<i><code>машина цена [номер дома] [новая цена]</code></i> - <b>Изменение цены машины</b>
+<i><code>машина имя [имя дома] [новая имя]</code></i> - <b>Изменение имя машины</b>
 
-<i><code>/ban_bot [время] [причина]</code></i> - <b>Ответом на сообщение, дает бан</b>
+🎗<i><code>crypto status [true, false]</code></i> - <b>Статус крипты [продается, не продается]</b>
+<i><code>крипта вниз [названия] [цена]</code></i> - <b>Действие вниз убывание</b>⬇️
+<i><code>крипта вниз [названия] [цена]</code></i> - <b>Действие вниз увеличение</b>⬆️
 
-<i><code>выдать [сумма]</code></i> - <b>Выдача денег, ответом на сообщение</b>
-<i><code>забрать [сумма]</code></i> - <b>Отбор денег, ответом на сообщение</b>
+🛜<i><code>botinfo</code></i> - <b>Информация о боте</b>
+🔊<i><code>bot version [версия]</code></i> - <b>Новая версия боту</b>
+
+📛<i><code>/ban_bot [время] [причина]</code></i> - <b>Ответом на сообщение, дает бан</b>
+
+💸<i><code>выдать [сумма]</code></i> - <b>Выдача денег, ответом на сообщение</b>
+🫳<i><code>забрать [сумма]</code></i> - <b>Отбор денег, ответом на сообщение</b>
 <i><code>деньги забрать все</code></i> - <b>Отбор всех денег, ответом на сообщение</b>
 
-<i><code>ус выдать</code></i> - <b>Выдача ус, ответом на сообщение</b>
-<i><code>ус забрать</code></i> - <b>Отбор ус, ответом на сообщение</b>
-<i><code>ус забрать все</code></i> - <b>Отбор всех ус, ответом на сообщение</b>
+🫱<i><code>ус выдать</code></i> - <b>Выдача ус, ответом на сообщение</b>
+🫴<i><code>ус забрать</code></i> - <b>Отбор ус, ответом на сообщение</b>
+🫳<i><code>ус забрать все</code></i> - <b>Отбор всех ус, ответом на сообщение</b>
 
-<i><code>+дпромо [название] [кол-во активации] [сумма] [комаентарии если есть]</code></i>
+📠<i><code>+дпромо [название] [кол-во активации] [сумма] [комаентарии если есть]</code></i>
 
-<b>Айди картины можно получить отправив картину боту в лс</b>
+🖼<b>Айди картины можно получить отправив картину боту в лс</b>
     `
 
     willChangHelpOption('mainHelp', main /*Слово после нажатии кнопки */)
@@ -344,44 +329,43 @@ async function userInfoReplyToMessage(msg, bot, collection) {
 
     const user = userIdToGet ? await collection.findOne({ id: userIdToGet }) : null
 
-    if (text.toLowerCase() == '.infoid') {
-        if (userId === adminId) {
-            if (!!user) {
-                if (userIdToGet) {
-                    const userGameId = user.gameId;
-                    const userGameName = user.userName;
-                    const register_time = user.registerTime;
-                    const userGameBalance = user.balance;
-                    const ratesAll = user.rates.map((e) => e.all);
-                    const ratesWin = user.rates.map((e) => e.wins);
-                    const ratesLose = user.rates.map((e) => e.loses);
-                    const userBankCard = user.bankCard[0].cardNumber
-                    const cryptoCurAlt = user.crypto[0].altcoinidx
-                    const userUc = user.uc
-                    const userId2 = user.id
-                    const userStatus = user.status[0].statusName
+    if (userId === adminId) {
+        if (!!user) {
+            if (userIdToGet) {
+                const userGameId = user.gameId;
+                const userGameName = user.userName;
+                const register_time = user.registerTime;
+                const userGameBalance = user.balance;
+                const ratesAll = user.rates.map((e) => e.all);
+                const ratesWin = user.rates.map((e) => e.wins);
+                const ratesLose = user.rates.map((e) => e.loses);
+                const userBankCard = user.bankCard[0].cardNumber
+                const cryptoCurAlt = user.crypto[0].altcoinidx
+                const userUc = user.uc
+                const userId2 = user.id
+                const userStatus = user.status[0].statusName
 
-                    const userBanStatus = user.ban[0].ban
-                    let userBanInformation;
+                const userBanStatus = user.ban[0].ban
+                let userBanInformation;
 
-                    if (userBanStatus === true) {
-                        const userBanCause = user.ban[0].cause
-                        const userBanTime = user.ban[0].banTime
-                        const date = new Date(userBanTime)
-                        userBanInformation = `
+                if (userBanStatus === true) {
+                    const userBanCause = user.ban[0].cause
+                    const userBanTime = user.ban[0].banTime
+                    const date = new Date(userBanTime)
+                    userBanInformation = `
 <b>Бан статус:</b> забанен
    <b>Причина:</b> ${userBanCause}
    <b>Время:</b> ${date.toLocaleString('')}
             `
-                    }
-                    else {
-                        userBanInformation = `
+                }
+                else {
+                    userBanInformation = `
 <b>Бан статус:</b> не забанен
             `
-                    }
+                }
 
-                    if (chatId == userId) {
-                        await bot.sendMessage(chatId, `
+                if (chatId == userId) {
+                    await bot.sendMessage(chatId, `
 <b>Телеграм 🆔</b> <code><i>${user.id}</i></code>
 <b>Игровой 🆔:</b> ${userGameId}
 <b>Ник 👨:</b> <a href='tg://user?id=${userId2}'>${userGameName}</a>
@@ -396,9 +380,9 @@ ${userBanInformation}
 <b>Сыграно игр: ${ratesAll} \n    Выигрыши: ${ratesWin} \n    Проигрыши: ${ratesLose}</b>
 <b>Время регистрации 📆:</b> ${register_time}
                         `, { parse_mode: 'HTML', reply_to_message_id: msg.message_id });
-                    }
-                    else {
-                        await bot.sendMessage(chatId, `
+                }
+                else {
+                    await bot.sendMessage(chatId, `
 <b>Телеграм 🆔</b> <code><i>${user.id}</i></code>
 <b>Игровой 🆔:</b> ${userGameId}
 <b>Ник 👨:</b> <a href='tg://user?id=${userId2}'>${userGameName}</a>
@@ -413,19 +397,18 @@ ${userBanInformation}
 <b>Сыграно игр: ${ratesAll} \n    Выигрыши: ${ratesWin} \n    Проигрыши: ${ratesLose}</b>
 <b>Время регистрации 📆:</b> ${register_time}
                         `, { parse_mode: 'HTML', reply_to_message_id: msg.message_id });
-                    }
-                }
-                else {
-                    bot.sendMessage(chatId, 'Ответьте сообщением на пользователя который вы хотите увидеть данные')
                 }
             }
             else {
-                bot.sendMessage(chatId, 'Этот пользователь не регистрирован в боте')
+                bot.sendMessage(chatId, 'Ответьте сообщением на пользователя который вы хотите увидеть данные')
             }
         }
         else {
-            bot.sendMessage(chatId, 'Вы не являетесь администратором бота', { reply_to_message_id: messageId })
+            bot.sendMessage(chatId, 'Этот пользователь не регистрирован в боте')
         }
+    }
+    else {
+        bot.sendMessage(chatId, 'Вы не являетесь администратором бота', { reply_to_message_id: messageId })
     }
 }
 async function userMsg(msg, collection, bot) {
@@ -485,22 +468,20 @@ async function deleteAllUsers(msg, collection, bot, ObjectId) {
     const text = msg.text
     const userId = msg.from.id
 
-    if (text.toLowerCase() === 'удалить всех пользователей' || text.toLowerCase() === 'увп') {
-        if (userId === adminId) {
-            const user = await collection.find({ _id: ObjectId })
-            const deletedUsers = await user.map((doc) => doc.id).toArray();
-            const allUsers = await collection.countDocuments() - 1
+    if (userId === adminId) {
+        const user = await collection.find({ _id: ObjectId })
+        const deletedUsers = await user.map((doc) => doc.id).toArray();
+        const allUsers = await collection.countDocuments() - 1
 
-            bot.sendMessage(chatId, `Успешно удалено ${allUsers}, но вы остаетесь\nХозяин <a href='tg://user?id=${adminId}'>Владелец</a>`, { parse_mode: 'HTML' })
-            await deletedUsers.forEach(async (e) => {
-                if (e != adminId) {
-                    await collection.deleteOne({ id: e })
-                }
-            })
-        }
-        else {
-            bot.sendMessage(userId, 'Вы не являетесь администратором бота')
-        }
+        bot.sendMessage(chatId, `Успешно удалено ${allUsers}, но вы остаетесь\nХозяин <a href='tg://user?id=${adminId}'>Владелец</a>`, { parse_mode: 'HTML' })
+        await deletedUsers.forEach(async (e) => {
+            if (e != adminId) {
+                await collection.deleteOne({ id: e })
+            }
+        })
+    }
+    else {
+        bot.sendMessage(userId, 'Вы не являетесь администратором бота')
     }
 }
 
@@ -508,7 +489,6 @@ module.exports = {
     commandStart,
     commandHelp,
     commandHelpAsBtn,
-    commandHelpInChats,
     userMsg,
     deleteAllUsers,
     userInfoReplyToMessage,

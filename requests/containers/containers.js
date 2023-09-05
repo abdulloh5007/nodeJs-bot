@@ -15,20 +15,18 @@ async function addContainers(msg) {
 
     const text = msg.text
 
-    if (text === 'addingContainer') {
-        await collectionContainers.insertOne({
-            cName: 'CTY -> Houses',
-            cPrice: 30000,
-            cPriceType: 'money',
-            cType: 'houses',
-            cInfo: `С этого контейнера будет выпадать рандомно дома`,
-            cImg: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-RiPE1nqnrJgy8IvsrrquWDO6wngqpGjzYQ&usqp=CAU',
-        }).then(() => {
-            console.log('ok');
-        }).catch((err) => {
-            console.log('ошибка при добавлении кейсов ' + err);
-        })
-    }
+    await collectionContainers.insertOne({
+        cName: 'CTY -> Houses',
+        cPrice: 30000,
+        cPriceType: 'money',
+        cType: 'houses',
+        cInfo: `С этого контейнера будет выпадать рандомно дома`,
+        cImg: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-RiPE1nqnrJgy8IvsrrquWDO6wngqpGjzYQ&usqp=CAU',
+    }).then(() => {
+        console.log('ok');
+    }).catch((err) => {
+        console.log('ошибка при добавлении кейсов ' + err);
+    })
 }
 
 async function listPriceMoneyContainers(msg, bot, collection) {
@@ -73,7 +71,7 @@ ${sortedContainers}
     }
 }
 
-async function buyPriceMoneyContainer(msg, bot, collection) {
+async function buyPriceMoneyContainer(msg, bot, collection, glLength) {
     const db = client.db('bot');
     const collectionContainers = db.collection('containers');
 
@@ -87,18 +85,6 @@ async function buyPriceMoneyContainer(msg, bot, collection) {
     const userDonateStatus = await donatedUsers(msg, collection)
 
     const parts = text.split(' ')
-    const txt = '@levouJS_bot открыть контейнер'.toLowerCase()
-    const txt2 = txt.slice(txt.split(' ')[0].length + 1)
-
-    let glLength = 2
-    if (text.toLowerCase().startsWith(txt)) {
-        glLength = 3
-    }
-    else if (text.toLowerCase().startsWith(txt2)) {
-    }
-    else {
-        return;
-    }
 
     if (parts.length === glLength) {
         bot.sendMessage(chatId, `

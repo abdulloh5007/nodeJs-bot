@@ -130,7 +130,7 @@ ${userDonatedStatus}, вот доступные донаты
             chat_id: chatId,
             message_id: messageId,
             parse_mode: 'HTML',
-            ...optionsDonateWithOutBack
+            ...optionsDonateWithOutBack,
         })
     }
 }
@@ -150,17 +150,16 @@ async function donateMenu(msg, bot, collection) {
         }
     }
 
-    if (text.toLowerCase() === 'донат') {
-        let goBot = {
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: 'Открыть лс', url: 'https://t.me/levouJS_bot' }],
-                ]
-            }
+    let goBot = {
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: 'Открыть лс', url: 'https://t.me/levouJS_bot' }],
+            ]
         }
-        if (chatId === userId1) {
+    }
+    if (chatId === userId1) {
 
-            await bot.sendMessage(chatId, `
+        await bot.sendMessage(chatId, `
 ${userDonatedStatus}, вот доступные донаты
 
 1 UC = 0.5 Р
@@ -171,43 +170,43 @@ ${userDonatedStatus}, вот доступные донаты
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖
             `, { parse_mode: 'HTML', reply_to_message_id: messageId, ...optionsDonate })
-        }
-        else {
-            //             // Проверка доступности ЛС с ботом
-            //             const chat = await bot.getChat(userId1);
-            //             if (!!chat.photo) {
-            //                 bot.sendMessage(chatId, `
-            // ${userDonatedStatus}, Я отправил вам донат меню в лс
-            //                     `, { parse_mode: 'HTML', reply_to_message_id: messageId, ...goBot })
+    }
+    else {
+        //             // Проверка доступности ЛС с ботом
+        //             const chat = await bot.getChat(userId1);
+        //             if (!!chat.photo) {
+        //                 bot.sendMessage(chatId, `
+        // ${userDonatedStatus}, Я отправил вам донат меню в лс
+        //                     `, { parse_mode: 'HTML', reply_to_message_id: messageId, ...goBot })
 
-            //                 bot.sendMessage(userId1, `
-            // ${userDonatedStatus}, вот доступные донаты
+        //                 bot.sendMessage(userId1, `
+        // ${userDonatedStatus}, вот доступные донаты
 
-            // 1 UC = 0.5 Р
+        // 1 UC = 0.5 Р
 
-            // ➖➖➖➖➖➖➖➖➖➖➖➖➖
+        // ➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-            // СТАТУСЫ
-            // ДОНАТ МАШИНЫ
-            // ДОНАТ ДОМА
+        // СТАТУСЫ
+        // ДОНАТ МАШИНЫ
+        // ДОНАТ ДОМА
 
-            // ➖➖➖➖➖➖➖➖➖➖➖➖➖
-            //                     `, { parse_mode: 'HTML', ...optionsDonate })
-            //                 return;
-            //             }
-            //             else {
-            //                 bot.sendMessage(chatId, `
-            // ${userDonatedStatus}, Вы заблокировали бота не имев приватный чат с ботом вы не можете увидеть донаты
-            //                 `, { parse_mode: 'HTML', reply_to_message_id: messageId, ...goBot })
-            //             }
+        // ➖➖➖➖➖➖➖➖➖➖➖➖➖
+        //                     `, { parse_mode: 'HTML', ...optionsDonate })
+        //                 return;
+        //             }
+        //             else {
+        //                 bot.sendMessage(chatId, `
+        // ${userDonatedStatus}, Вы заблокировали бота не имев приватный чат с ботом вы не можете увидеть донаты
+        //                 `, { parse_mode: 'HTML', reply_to_message_id: messageId, ...goBot })
+        //             }
 
 
-            try {
-                await bot.sendMessage(chatId, `
+        try {
+            await bot.sendMessage(chatId, `
 ${userDonatedStatus}, Я отправил вам донат меню в лс
                 `, { parse_mode: 'HTML', reply_to_message_id: messageId, ...goBot })
-                
-                await bot.sendMessage(userId1, `
+
+            await bot.sendMessage(userId1, `
 ${userDonatedStatus}, вот доступные донаты
 
 1 UC = 0.5 Р
@@ -220,18 +219,17 @@ ${userDonatedStatus}, вот доступные донаты
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖
                 `, { parse_mode: 'HTML', ...optionsDonate })
-            } catch (err) {
-                if (err.response && err.response.statusCode === 403) {
-                    bot.sendMessage(chatId, `
+        } catch (err) {
+            if (err.response && err.response.statusCode === 403) {
+                bot.sendMessage(chatId, `
 ${userDonatedStatus}, разблокируйте меня чтобы я смог отправить его
                 `, { parse_mode: 'HTML', reply_to_message_id: messageId, ...goBot })
-                } else if (err.response && err.response.statusCode === 400) {
-                    bot.sendMessage(chatId, `
+            } else if (err.response && err.response.statusCode === 400) {
+                bot.sendMessage(chatId, `
 ${userDonatedStatus}, у вас еще нету чата со мной перейдите в лс и нажмите старт
                 `, { parse_mode: 'HTML', reply_to_message_id: messageId, ...goBot })
-                } else {
-                    console.log(customChalk.colorize(`Ошибка при отправки сообщение доната: ${err.message}`, { style: 'italic', background: 'bgRed' }));
-                }
+            } else {
+                console.log(customChalk.colorize(`Ошибка при отправки сообщение доната: ${err.message}`, { style: 'italic', background: 'bgRed' }));
             }
         }
     }
@@ -589,15 +587,13 @@ async function donateInfo(msg, bot, collection) {
         userStatus = `У вас не приобретен донат статус`
     }
 
-    if (text.toLowerCase() === 'мой статус') {
-        const userDonateStatues = await donatedUsers(msg, collection)
-        bot.sendMessage(chatId, `
+    const userDonateStatues = await donatedUsers(msg, collection)
+    bot.sendMessage(chatId, `
 ${userDonateStatues}, Вот данные за ваш статус
 
 <b>Статус:</b> ${userStatusName.toUpperCase()} ${userStatusSticker}
 ${userStatus}
-        `, { parse_mode: 'HTML', reply_to_message_id: messageId, })
-    }
+    `, { parse_mode: 'HTML', reply_to_message_id: messageId, })
 }
 
 module.exports = {

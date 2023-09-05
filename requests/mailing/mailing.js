@@ -12,37 +12,35 @@ async function mailing(msg, bot, collection) {
     const userDonateStatus = await donatedUsers(msg, collection)
     const parts = text.split(' ')
 
-    if (['!рас', '!mail', '!рассылка'].includes(parts[0].toLowerCase())) {
-        const users = await collection.find().toArray();
-        if (userId1 !== adminId) {
-            bot.sendMessage(chatId, `
+    const users = await collection.find().toArray();
+    if (userId1 !== adminId) {
+        bot.sendMessage(chatId, `
 ${userDonateStatus}, вы не являетесь администратором бота
             `, { parse_mode: 'HTML' })
-            return;
-        }
+        return;
+    }
 
-        if (parts.length === 1) {
-            bot.sendMessage(chatId, `
+    if (parts.length === 1) {
+        bot.sendMessage(chatId, `
 ${userDonateStatus}, текст рассылки не должно быть пустым
             `, { parse_mode: 'HTML' })
-            return;
-        }
+        return;
+    }
 
-        for (let i = 0; i < users.length; i++) {
-            const el = users[i];
+    for (let i = 0; i < users.length; i++) {
+        const el = users[i];
 
-            try {
-                let formattedText = text.slice(parts[0].length + 1);
-                // Попытка отправить сообщение
-                await bot.sendMessage(el.id, formattedText, { parse_mode: 'HTML' });
-            } catch (error) {
-                if (error.response && error.response.statusCode === 403) {
-                    console.log(customChalk.colorize(`Пользователь ${el.id} заблокировал бота`, { style: 'italic', background: 'bgRed' }));
-                } else if (error.response && error.response.statusCode === 400) {
-                    console.log(customChalk.colorize(`Пользователя ${el.id} нет чата с ботом`, { style: 'italic', background: 'bgYellow' }))
-                } else {
-                    console.log(customChalk.colorize(`Ошибка при отправке сообщения пользователю ${el.id}: ${error.message}`, { style: 'italic', background: 'bgRed' }));
-                }
+        try {
+            let formattedText = text.slice(parts[0].length + 1);
+            // Попытка отправить сообщение
+            await bot.sendMessage(el.id, formattedText, { parse_mode: 'HTML' });
+        } catch (error) {
+            if (error.response && error.response.statusCode === 403) {
+                console.log(customChalk.colorize(`Пользователь ${el.id} заблокировал бота`, { style: 'italic', background: 'bgRed' }));
+            } else if (error.response && error.response.statusCode === 400) {
+                console.log(customChalk.colorize(`Пользователя ${el.id} нет чата с ботом`, { style: 'italic', background: 'bgYellow' }))
+            } else {
+                console.log(customChalk.colorize(`Ошибка при отправке сообщения пользователю ${el.id}: ${error.message}`, { style: 'italic', background: 'bgRed' }));
             }
         }
     }

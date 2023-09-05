@@ -3,7 +3,7 @@ const { donatedUsers } = require("../donate/donatedUsers");
 const { formatNumberWithAbbreviations } = require("../systems/systemRu");
 
 function getStatusSticker(status) {
-    if(status === 'standart'){
+    if (status === 'standart') {
         return '🎁'
     }
     else if (status === 'vip') {
@@ -183,10 +183,10 @@ async function topWithBtns(msg, bot, collection) {
     if (data === 'top_balance') {
         getTopPlayersBalance(msg, bot, collection)
     }
-    if(data === 'top_game'){
+    if (data === 'top_game') {
         getTopPlayersRates(msg, bot, collection)
     }
-    if(data === 'top_card'){
+    if (data === 'top_card') {
         getTopPlayersCard(msg, bot, collection)
     }
 }
@@ -197,14 +197,12 @@ async function tops(msg, bot, collection) {
 
     const userStatus = await donatedUsers(msg, collection);
 
-    if (text.toLowerCase() === 'топ') {
-        bot.sendMessage(chatId, `
+    bot.sendMessage(chatId, `
 <b>${userStatus}</b>, Выберите категорю топа
         `, {
-            parse_mode: "HTML",
-            ...topOptions
-        })
-    }
+        parse_mode: "HTML",
+        ...topOptions
+    })
 }
 
 module.exports = {

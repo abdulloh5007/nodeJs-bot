@@ -3,7 +3,7 @@ const { donatedUsers } = require("../donate/donatedUsers");
 const { parseNumber, formatNumberInScientificNotation } = require("../systems/systemRu");
 const { gameWinStickers, gameLoseStickers } = require("./gameStickers");
 
-async function kazino(msg, collection, bot) {
+async function kazino(msg, collection, bot, valueIndex) {
     const chatId = msg.chat.id;
     const text = msg.text;
     const userId = msg.from.id;
@@ -11,18 +11,13 @@ async function kazino(msg, collection, bot) {
 
     const userDonateStatus = await donatedUsers(msg, collection)
     const user = await collection.findOne({ id: userId });
-    const parts = text && text.split(' ');
+    const parts = text.split(' ');
 
-    let valueIndex = 1;
-    if (parts[0] === '@levouJS_bot') {
-        if (parts[1].toLowerCase() === 'казино') {
-            valueIndex = 2;
-        } else {
-            // Неправильная команда
-            return;
-        }
-    } else if (parts[0].toLowerCase() !== 'казино') {
-        // Неправильная команда
+    if (parts.length <= valueIndex) {
+        bot.sendMessage(chatId, `
+    ${userDonateStatus}, Не павильно введена команда 
+Пример: <code>казино 10</code>
+        `, { reply_to_message_id: messageId, parse_mode: 'HTML' })
         return;
     }
 
@@ -32,14 +27,6 @@ async function kazino(msg, collection, bot) {
     if (value <= 0) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, Не возможно поставить отрицательное или нулевое количество ставки
-            `, { reply_to_message_id: messageId, parse_mode: 'HTML' })
-        return;
-    }
-
-    if (parts.length !== valueIndex + 1) {
-        bot.sendMessage(chatId, `
-${userDonateStatus}, Не павильно введена команда 
-Пример: <code>казино 10</code>
             `, { reply_to_message_id: messageId, parse_mode: 'HTML' })
         return;
     }

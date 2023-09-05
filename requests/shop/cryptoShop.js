@@ -28,7 +28,7 @@ async function buyCryptoCurrence(msg, bot, collection, collectionCrypto) {
 
     if (text.toLowerCase().startsWith('купить крипту')) {
         if (parts.length === 4) {
-            const crypto = await collectionCrypto.findOne({ name: parts[2] })
+            const crypto = await collectionCrypto.findOne({ name: parts[2].toLowerCase() })
             if (!!crypto) {
                 const cryptoPrice = crypto.price
                 const cryptoStatus = crypto.status
@@ -66,6 +66,14 @@ ${userDonateStatus}, Не возможно купить отрицательно
                     discount = `${amountCrypto}`
                 }
 
+                let againBuy = {
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{ text: 'Купить', switch_inline_query_current_chat: `купить крипту ${globalNameCrypto} [кол-во]` }]
+                        ]
+                    }
+                }
+
                 if (cryptoStatus === true) {
                     globalNameCrypto = parts[2]
                     globalCountCrypto = parts[3]
@@ -78,14 +86,6 @@ ${userDonateStatus}, Подтвердите оплату нажав на кно�
 
 После 6 секунд сообщение удалиться !
                     `, { parse_mode: 'HTML', reply_to_message_id: messageId, ...payButton }).then((message) => {
-                        let againBuy = {
-                            reply_markup: {
-                                inline_keyboard: [
-                                    [{ text: 'Купить', switch_inline_query_current_chat: `купить крипту ${globalNameCrypto} [кол-во]` }]
-                                ]
-                            }
-                        }
-                        
                         setTimeout(() => {
                             if (globalPermission === false) {
                                 return;
@@ -127,7 +127,7 @@ ${userDonateStatus}, не правильно введена команда,
 
     if (text.toLowerCase().startsWith(txt.toLocaleLowerCase())) {
         if (parts.length === 5) {
-            const crypto = await collectionCrypto.findOne({ name: parts[3] })
+            const crypto = await collectionCrypto.findOne({ name: parts[3].toLowerCase() })
             if (!!crypto) {
                 const cryptoPrice = crypto.price
                 const cryptoStatus = crypto.status
@@ -168,8 +168,8 @@ ${userDonateStatus}, Не возможно купить отрицательно
                 }
 
                 if (cryptoStatus === true) {
-                    globalNameCrypto = parts[2]
-                    globalCountCrypto = parts[3]
+                    globalNameCrypto = parts[3]
+                    globalCountCrypto = parts[4]
 
                     bot.sendMessage(chatId, `
 ${userDonateStatus}, Подтвердите оплату нажав на кнопку ниже
@@ -186,7 +186,7 @@ ${userDonateStatus}, Подтвердите оплату нажав на кно�
                                 ]
                             }
                         }
-                        
+
                         setTimeout(() => {
                             if (globalPermission === false) {
                                 return;

@@ -69,10 +69,9 @@ async function manualCreatePromoCodes(msg, bot, collection) {
     const randomAmount = generateRandomNumber(70000)
     const promoComents = 'Спасибо что вы с нами'
 
-    if (text.toLowerCase() === 'manualpromo' || text === 'mP') {
-        if(userId1 === adminId){
-            let channelId = '@sbi_promos'
-            bot.sendMessage(channelId, `
+    if (userId1 === adminId) {
+        let channelId = '@sbi_promos'
+        bot.sendMessage(channelId, `
 <b>Промокод от бота ↓</b>
 
 <b>Название:</b> <code>${randomPromoName}</code>
@@ -80,25 +79,24 @@ async function manualCreatePromoCodes(msg, bot, collection) {
 <b>Приз:</b> ${randomAmount.toLocaleString('de-DE')} $ ${formatNumberInScientificNotation(randomAmount)}
 <b>Коментарии</b> <u>${promoComents}</u>
             `, {
-                parse_mode: 'HTML',
-            })
-            await collectionPromo.insertOne({
-                promoName: randomPromoName,
-                promoActivision: parseInt(randomActivation),
-                promoMoney: parseInt(randomAmount),
-                promoDonate: false,
-                promoComent: promoComents,
-                promoUsedBy: []
-            })
-        }
-        else {
-            bot.sendMessage(chatId, `
+            parse_mode: 'HTML',
+        })
+        await collectionPromo.insertOne({
+            promoName: randomPromoName,
+            promoActivision: parseInt(randomActivation),
+            promoMoney: parseInt(randomAmount),
+            promoDonate: false,
+            promoComent: promoComents,
+            promoUsedBy: []
+        })
+    }
+    else {
+        bot.sendMessage(chatId, `
 ${userDonateStatus}, Простите но вы не являетесь администратором бота
             `, {
-                parse_mode: 'HTML',
-                reply_to_message_id: messageId,
-            })
-        }
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
     }
 }
 

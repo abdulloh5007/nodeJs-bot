@@ -14,19 +14,18 @@ async function limitations(msg, bot, collection) {
 
     const user = await collection.findOne({ id: userId1 })
     const userDonateStatus = await donatedUsers(msg, collection)
-    if (text.toLowerCase() === 'лимит') {
-        const userGiveMoneyLimit = user.limit[0].giveMoneyLimit
-        const userGivedMoney = user.limit[0].givedMoney
-        const userLimitTime = user.limit[0].updateDayLimit
-        const remainingTime = formatRemainingTime(giveCooldown - (currentTime - userLimitTime));
-        bot.sendMessage(chatId, `
+
+    const userGiveMoneyLimit = user.limit[0].giveMoneyLimit
+    const userGivedMoney = user.limit[0].givedMoney
+    const userLimitTime = user.limit[0].updateDayLimit
+    const remainingTime = formatRemainingTime(giveCooldown - (currentTime - userLimitTime));
+    bot.sendMessage(chatId, `
 ${userDonateStatus}, вот данные за ваш лимит
 
 <b>Деньги переданы:</b> ${userGivedMoney.toLocaleString('de-DE')} ${formatNumberInScientificNotation(userGivedMoney)} / ${userGiveMoneyLimit.toLocaleString('de-DE')} ${formatNumberInScientificNotation(userGiveMoneyLimit)}
 
 <b>До обновления дневного лимита:</b> ${userLimitTime > 0 ? remainingTime : ''}
-        `, { parse_mode: 'HTML' })
-    }
+    `, { parse_mode: 'HTML' })
 }
 
 async function removeLimit(msg, bot, collection, ObjectId) {
@@ -35,12 +34,11 @@ async function removeLimit(msg, bot, collection, ObjectId) {
 
     const userDonateStatus = await donatedUsers(msg, collection)
 
-    if (text.toLowerCase() === 'упдлимиты') {
-        bot.sendMessage(chatId, `
+
+    bot.sendMessage(chatId, `
 ${userDonateStatus}, успешно обновлены лимиты передачи
         `, { parse_mode: 'HTML' })
-        await collection.updateMany({ _id: ObjectId }, { $set: { "limit.0.givedMoney": 0, "limit.0.updateDayLimit": 0 } })
-    }
+    await collection.updateMany({ _id: ObjectId }, { $set: { "limit.0.givedMoney": 0, "limit.0.updateDayLimit": 0 } })
 }
 
 // Пример функции для форматирования оставшегося времени

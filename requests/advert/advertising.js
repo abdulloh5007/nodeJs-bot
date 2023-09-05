@@ -4,32 +4,13 @@ const { donatedUsers } = require('../donate/donatedUsers')
 require('dotenv').config()
 const adminId = parseInt(process.env.ADMIN_ID_INT)
 
-async function addAddvert(msg, bot, collectionAddvert, collection) {
+async function addAddvert(msg, bot, collectionAddvert, collection, globLength, toSliceLength) {
     const text = msg.text
     const userId1 = msg.from.id
     const chatId = msg.chat.id
 
     const userDonateStatus = await donatedUsers(msg, collection)
     const parts = text.split(' ')
-
-    let globLength = 1;
-    let toSliceLength;
-    if (parts[0] === '@levouJS_bot') {
-        if (['!+add', '!+рек', '!+реклама'].includes(parts[1].toLowerCase())) {
-            globLength = 2
-            toSliceLength = parts[0] + " " + parts[1]
-        }
-        else {
-            return;
-        }
-    }
-    else if (['!+add', '!+рек', '!+реклама'].includes(parts[0].toLowerCase())) {
-        globLength = 1
-        toSliceLength = parts[0]
-    }
-    else {
-        return;
-    }
 
     const advertisingText = text.slice(toSliceLength.length + 1)
     const date = new Date()
@@ -89,7 +70,6 @@ LINK = <a href="Ссылка">Текс ссылки</a>
 
 async function addverts(msg, bot, collection, collectionAddvert) {
     const text = msg.text
-    const userId1 = msg.from.id
     const chatId = msg.chat.id
 
     const userDonateStatus = await donatedUsers(msg, collection)
@@ -104,53 +84,28 @@ async function addverts(msg, bot, collection, collectionAddvert) {
         }
     }
 
-    if (['рекламы', 'adds', 'рекы'].includes(text.toLowerCase())) {
-//         if (userId1 !== adminId) {
-//             bot.sendMessage(chatId, `
-// ${userDonateStatus}, вы не являетесь администратором бота
-//             `, { parse_mode: 'HTML' })
-//             return;
-//         }
+    const sortedAddverts = addverts.map((e, i) => {
+        const dateAddvert = new Date(e.addvertTime)
 
-        const sortedAddverts = addverts.map((e, i) => {
-            const dateAddvert = new Date(e.addvertTime)
-
-            return `
+        return `
 
 ${i + 1}. <b>ДАТА:</b> ${dateAddvert.toLocaleDateString()}
     <b>ТЕКСТ:</b> ${e.addvertText}`
-        })
+    })
 
-        bot.sendMessage(chatId, `
+    bot.sendMessage(chatId, `
 ${userDonateStatus}, вот активные рекламы отсортированы по дате
 ${sortedAddverts}
-        `, { parse_mode: 'HTML', ...addvertOptions })
-    }
+    `, { parse_mode: 'HTML', ...addvertOptions })
 }
 
-async function deleteAdd(msg, bot, collection, collectionAddvert) {
+async function deleteAdd(msg, bot, collection, collectionAddvert, globLength) {
     const text = msg.text
     const userId1 = msg.from.id
     const chatId = msg.chat.id
 
     const userDonateStatus = await donatedUsers(msg, collection)
     const parts = text.split(' ')
-
-    let globLength = 1;
-    if (parts[0] === '@levouJS_bot') {
-        if (['!-add', '!-рек', '!-реклама'].includes(parts[1].toLowerCase())) {
-            globLength = 2
-        }
-        else {
-            return;
-        }
-    }
-    else if (['!-add', '!-рек', '!-реклама'].includes(parts[0].toLowerCase())) {
-        globLength = 1
-    }
-    else {
-        return;
-    }
 
     const numberToDel = parts[globLength]
 
@@ -199,13 +154,6 @@ async function deleteAllAddverts(msg, bot, collectionAddvert, collection) {
     const text = msg.text
 
     const userDonateStatus = await donatedUsers(msg, collection)
-
-    if (['!add -all', '!рек -все'].includes(text.toLowerCase())) {
-
-    }
-    else {
-        return;
-    }
 
     if (userId1 === adminId) {
         try {

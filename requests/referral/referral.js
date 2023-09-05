@@ -25,32 +25,28 @@ function generateRandomElementsOnlyUsers(letters, numbers) {
 const onlyUsersId = generateRandomElementsOnlyUsers('BFNPRS', 7);
 
 async function referral(msg, bot, collection) {
-    const text = msg.text
     const userId = msg.from.id
     const chatId = msg.chat.id
     const messageId = msg.message_id
 
-    if (['ref', '!ref', 'реф', '!реф'].includes(text.toLowerCase())) {
+    // Генерация уникального кода для реферальной ссылки (можно использовать хэш от userId)
+    const referralCode = `ref_${userId}`;
 
-        // Генерация уникального кода для реферальной ссылки (можно использовать хэш от userId)
-        const referralCode = `ref_${userId}`;
+    // Сохранение реферального кода в базе данных
+    await collection.updateOne({ id: userId }, { $set: { "referral.0.code": referralCode } });
+    const user = await collection.findOne({ id: userId })
+    const refAmount = user.referral[0].amount
 
-        // Сохранение реферального кода в базе данных
-        await collection.updateOne({ id: userId }, { $set: { "referral.0.code": referralCode } });
-        const user = await collection.findOne({ id: userId })
-        const refAmount = user.referral[0].amount
-
-        // Отправка пользователю ссылки для приглашения
-        const referralLink = `https://t.me/levouJS_bot?start=${referralCode}`;
-        bot.sendMessage(chatId, `
+    // Отправка пользователю ссылки для приглашения
+    const referralLink = `https://t.me/levouJS_bot?start=${referralCode}`;
+    bot.sendMessage(chatId, `
 <b>Приглашая пользователей через реферальной ссылкой вы получаете за каждого регистрированного
 пользователя по 1.000 $</b>
 
 <u><b>Ваши рефералы:</b> <i>${refAmount}</i></u>
 
 <b>Вот ваша ссылка для приглашения новых пользователей:</b> <i>${referralLink}</i>
-        `, { parse_mode: "HTML", reply_to_message_id: messageId, disable_web_page_preview: true });
-    }
+    `, { parse_mode: "HTML", reply_to_message_id: messageId, disable_web_page_preview: true });
 }
 
 async function startWithRef(msg, bot, collection) {
@@ -73,11 +69,11 @@ async function startWithRef(msg, bot, collection) {
         if (user) {
             return;
 
-//             await bot.sendMessage(chatId, `
-// Привет, <a href='tg://user?id=${userId}'>Игрок</a> \n
-// <b>Ты уже добавлен в базу</b>
-// <i>Дата ${register_time}</i>
-//             `, { parse_mode: 'HTML', ...startOptions, reply_to_message_id: msg.message_id })
+            //             await bot.sendMessage(chatId, `
+            // Привет, <a href='tg://user?id=${userId}'>Игрок</a> \n
+            // <b>Ты уже добавлен в базу</b>
+            // <i>Дата ${register_time}</i>
+            //             `, { parse_mode: 'HTML', ...startOptions, reply_to_message_id: msg.message_id })
         }
         else {
             // ЕСЛИ ВСЁ ТАКИ ХОЧЕШЬ ОТПРАВИТЬ СТИКЕР
@@ -141,10 +137,10 @@ async function startWithRef(msg, bot, collection) {
                     bTax: 0,
                     lastUpdTime: 0,
                 }],
-                // avatar: [{
-                //     waiting: '',
-                //     avaUrl: '',
-                // }],
+                avatar: [{
+                    waiting: '',
+                    avaUrl: '',
+                }],
                 properties: [{
                     houses: '',
                     cars: '',
@@ -163,8 +159,9 @@ async function startWithRef(msg, bot, collection) {
                 }],
                 ban: [{
                     ban: false,
-                    banTime: "",
                     cause: "",
+                    banTime: 0,
+                    unbanTime: 0,
                 }],
                 bankCard: [{
                     cardHave: true,
@@ -182,7 +179,7 @@ async function startWithRef(msg, bot, collection) {
 <b>С вашей реферальной ссылке был зарегистрирован пользоватаель</b>
 <b>Вам добавлены деньги в баланс !</b>
                 `, { parse_mode: 'HTML' })
-            }catch (err){
+            } catch (err) {
                 if (err.response && err.response.statusCode === 403) {
                     console.log(customChalk.colorize(`Пользователь ${referringUser.id} заблокировал бота`, { style: 'italic', background: 'bgRed' }));
                 } else if (err.response && err.response.statusCode === 400) {
