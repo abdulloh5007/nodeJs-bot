@@ -84,6 +84,7 @@ async function commandStart(msg, collection, bot) {
             altcoinidx: 0,
             checkPayment: 'not',
             lastBonusTime: 0,
+            toBeAnAdmin: true,
             status: [{
                 statusName: 'player',
                 purchaseDate: 0,
@@ -254,18 +255,20 @@ ${userDonateStatus}, вот остальные команды
 😎• ${userDonateStatus}, вот доступные игры
 
 🎰 <i><code>казино [сумма]</code></i> - <b>Игра🎭</b>
+<code>спин [сумма]</code>
     `
 
     const main = `
 🙋‍♂° ${userDonateStatus}, вот основные команды
 
-💵• <i><code>б</code></i> - <b>информация о счете</b>
+💵• <i><code>б</code></i> - <b>Информация о счете</b>
 
 🔁• <i><code>сменить ник [ник]</code></i> - <b>Смена ника</b>👨‍🎤
 🆔• <i><code>Сменить айди [айди]</code></i> - <b>Смена айди только админам</b>👮‍♂
 💸• <i><code>дать [сумма]</code></i> - <b>Передача денег</b>💁‍♂
 ❤️‍🔥• <i><code>донат</code></i> - <b>Донаты, сообщение отправить только в лс</b>
 ⌨• <i><code>+промо [название] [кол-во активации] [сумма] [комаентарии если есть]</code></i>😎
+🎁• <i><code>конты</code></i> - <b>Контейнеры</b>
     `
     const adminCommands = `
 ${userDonateStatus}, вот команды админов

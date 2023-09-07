@@ -3,6 +3,14 @@ const { parseNumber, formatNumberInScientificNotation } = require('../systems/sy
 
 require('dotenv').config();
 const adminIdInt = parseInt(process.env.ADMIN_ID_INT)
+const mongoDbUrl = process.env.MONGO_DB_URL
+const { MongoClient } = require('mongodb');
+const { checkUserPerms } = require('../userPermissions/userPremissionsBot');
+const client = new MongoClient(mongoDbUrl)
+
+async function connecting() {
+    await client.connect();
+};
 
 async function extraditeMoney(msg, collection, bot) {
     const chatId = msg.chat.id
@@ -10,13 +18,14 @@ async function extraditeMoney(msg, collection, bot) {
     const text = msg.text
     const messageId = msg.message_id
     const parts = text && text.split(' ');
+    const checkPerms = await checkUserPerms(userId, 'extraditemoney')
 
     const userIdToGet = msg.reply_to_message?.from?.id;
     const userToGet = userIdToGet ? await collection.findOne({ id: userIdToGet }) : null
     const userDonateStatus = await donatedUsers(msg, collection)
     const adminDonatStatus = await adminDonatedUsers(userIdToGet, collection)
 
-    if (userId == adminIdInt) {
+    if (userId == adminIdInt || checkPerms === true) {
         if (parts.length == 2) {
             const sum = parseInt(parseNumber(parts[1]))
 
@@ -43,7 +52,7 @@ ${userDonateStatus}, Вы успешно выдали игроку ${adminDonatS
         }
     }
     else {
-        bot.sendMessage(chatId, 'Вы не являетесь администратором бота')
+        bot.sendMessage(chatId, 'У вас нету прав на эту команду')
     }
 }
 
@@ -54,6 +63,7 @@ async function extraditeUc(msg, collection, bot) {
     const text = msg.text
     const messageId = msg.message_id
     const parts = text && text.split(' ');
+    const checkPerms = await checkUserPerms(userId, 'extraditeuc')
 
     const userIdToGet = msg.reply_to_message?.from?.id;
     const userToGet = userIdToGet ? await collection.findOne({ id: userIdToGet }) : null
@@ -61,7 +71,7 @@ async function extraditeUc(msg, collection, bot) {
     const userDonateStatus = await donatedUsers(msg, collection)
     const adminDonateStatus = await adminDonatedUsers(userIdToGet, collection)
 
-    if (userId == adminIdInt) {
+    if (userId == adminIdInt || checkPerms === true) {
         if (parts.length == 3) {
             const sum = parseInt(parseNumber(parts[2]))
 
@@ -99,6 +109,7 @@ async function takeMoney(msg, collection, bot) {
     const text = msg.text
     const messageId = msg.message_id
     const parts = text && text.split(' ');
+    const checkPerms = await checkUserPerms(userId, 'pickmoney')
 
     const userIdToTake = msg.reply_to_message?.from?.id;
     const userToTake = userIdToTake ? await collection.findOne({ id: userIdToTake }) : null
@@ -106,47 +117,50 @@ async function takeMoney(msg, collection, bot) {
     const userDonateStatus = await donatedUsers(msg, collection)
     const adminDonateStatus = await adminDonatedUsers(userIdToTake, collection)
 
-    if (text.toLowerCase().startsWith('забрать')) {
-        if (userId == adminIdInt) {
-            if (parts.length == 2) {
-                const sum = parseInt(parseNumber(parts[1]))
+    if (userId == adminIdInt || checkPerms === true) {
+        if (parts.length == 2) {
+            const sum = parseInt(parseNumber(parts[1]))
 
-                if (!!userToTake) {
-                    const userToTakeBalance = userToTake.balance
-                    if (sum <= userToTakeBalance) {
-                        if (sum > 0) {
-                            const userNameToTake = userToTake.userName
-                            bot.sendMessage(chatId, `
+            if (!!userToTake) {
+                const userToTakeBalance = userToTake.balance
+                if (sum <= userToTakeBalance) {
+                    if (sum > 0) {
+                        const userNameToTake = userToTake.userName
+                        bot.sendMessage(chatId, `
 ${userDonateStatus}, Вы успешно забрали от игрока ${adminDonateStatus}
 Сумму: ${sum.toLocaleString('de-DE')} ${formatNumberInScientificNotation(userToTakeBalance)}
                             `, { parse_mode: "HTML" })
 
-                            collection.updateOne({ id: userIdToTake }, { $inc: { balance: -sum } })
-                        }
-                        else {
-                            bot.sendMessage(chatId, 'Не возможно забрать отрицательную или 0 количество денег')
-                        }
+                        collection.updateOne({ id: userIdToTake }, { $inc: { balance: -sum } })
                     }
                     else {
-                        bot.sendMessage(chatId, `
-У этого пользователя ${adminDonateStatus} меньше денег чем вы назначили чтобы забрать вы можете забрать у него
-Сумму: ${userToTakeBalance.toLocaleString('de-DE')} ${formatNumberInScientificNotation(userToTakeBalance)}
-                        `, { reply_to_message_id: messageId })
+                        bot.sendMessage(chatId, 'Не возможно забрать отрицательную или 0 количество денег', {
+                            parse_mode: 'HTML',
+                            reply_to_message_id: messageId,
+                        })
                     }
                 }
                 else {
-                    bot.sendMessage(chatId, 'Этот пользователь не найден', { reply_to_message_id: messageId })
+                    bot.sendMessage(chatId, `
+У этого пользователя ${adminDonateStatus} меньше денег чем вы назначили чтобы забрать вы можете забрать у него
+Сумму: ${userToTakeBalance.toLocaleString('de-DE')} ${formatNumberInScientificNotation(userToTakeBalance)}
+                        `, {
+                        parse_mode: 'HTML',
+                        reply_to_message_id: messageId,
+                    })
                 }
             }
             else {
-                bot.sendMessage(chatId, 'Ответь сообщением <code>забрать сумма</code> От кого бы хотели бы забрать денег', { parse_mode: 'HTML', reply_to_message_id: messageId })
+                bot.sendMessage(chatId, 'Этот пользователь не найден', { reply_to_message_id: messageId })
             }
         }
         else {
-            bot.sendMessage(chatId, 'Вы не являетесь администратором бота', { reply_to_message_id: messageId })
+            bot.sendMessage(chatId, 'Ответь сообщением <code>забрать сумма</code> От кого бы хотели бы забрать денег', { parse_mode: 'HTML', reply_to_message_id: messageId })
         }
     }
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    else {
+        bot.sendMessage(chatId, 'Вы не являетесь администратором бота', { reply_to_message_id: messageId })
+    }
 }
 
 
@@ -156,6 +170,7 @@ async function takeUc(msg, collection, bot) {
     const text = msg.text
     const messageId = msg.message_id
     const parts = text && text.split(' ');
+    const checkPerms = await checkUserPerms(userId, 'pickuc')
 
     const userIdToTake = msg.reply_to_message?.from?.id;
     const userToTake = userIdToTake ? await collection.findOne({ id: userIdToTake }) : null
@@ -163,7 +178,7 @@ async function takeUc(msg, collection, bot) {
     const userDonateStatus = await donatedUsers(msg, collection)
     const adminDonateStatus = await adminDonatedUsers(userToTake, collection)
 
-    if (userId == adminIdInt) {
+    if (userId == adminIdInt || checkPerms === true) {
         if (parts.length == 3) {
             const sum = parseInt(parseNumber(parts[2]))
 
@@ -186,7 +201,10 @@ ${userDonateStatus}, Вы успешно забрали от игрока ${admi
                     bot.sendMessage(chatId, `
 У этого пользователя ${adminDonateStatus} меньше UC чем вы назначили чтобы забрать вы можете забрать у него
 Сумму: ${userToTakeBalance.toLocaleString('de-DE')} UC
-                        `, { reply_to_message_id: messageId })
+                        `, {
+                        parse_mode: 'HTML',
+                        reply_to_message_id: messageId,
+                    })
                 }
             }
             else {
@@ -244,7 +262,6 @@ ${userDonateStatus}, Вы успешно забрали от игрока ${admi
     else {
         bot.sendMessage(chatId, 'Вы не являетесь администратором бота', { reply_to_message_id: messageId })
     }
-    await new Promise(resolve => setTimeout(resolve, 1000));
 }
 
 async function takeAllUc(msg, collection, bot) {
@@ -410,14 +427,26 @@ async function generateRandomKey() {
 }
 
 async function useKey(msg, bot, collectionAdmins) {
+    const db = client.db('bot');
+    const collectionPermission = db.collection('permissions');
     const text = msg.text
     const userId = msg.from.id;
 
     const parts = text.split(' ')
 
+    const user = await collectionPermission.findOne({ id: userId })
+    if (user) {
+        bot.sendMessage(userId, `
+Ты уже добавлен в датабазу как админ если хочешь узнать свои права админа то напиши <code>мои права</code>
+        `, {
+            parse_mode: 'HTML',
+        })
+        return;
+    }
+
     const keyInfo = await collectionAdmins.findOne({ key: parts[1] });
-    if (keyInfo.key === null) {
-        return
+    if (keyInfo === null) {
+        return;
     }
     if (parts[1] === keyInfo.key) {
         if (!keyInfo.used) {
@@ -428,7 +457,24 @@ async function useKey(msg, bot, collectionAdmins) {
                     usedBy: userId
                 }
             });
-            bot.sendMessage(userId, `Ключ успешно использован.`);
+            await collectionPermission.insertOne({
+                id: userId,
+                licenses: [{
+                    extraditemoney: false,
+                    extraditeuc: false,
+                    pickmoney: false,
+                    pickuc: false,
+                    addhouse: false,
+                    addcar: false,
+                    delhouse: false,
+                    delcar: false,
+                    changenamehouse: false,
+                    changenamecar: false,
+                    changepricehouse: false,
+                    changepricecar: false,
+                }]
+            })
+            bot.sendMessage(userId, `Ключ успешно использован. вы стали администратором и у вас пока что нету разрешений`);
         } else if (keyInfo.usedBy === userId) {
             bot.sendMessage(userId, `Вы уже использовали этот ключ.`);
         } else {
@@ -441,12 +487,19 @@ async function useKey(msg, bot, collectionAdmins) {
 }
 
 async function toBeAnAdministrtorBot(msg, bot, collection, collectionAdmins) {
-    const text = msg.text
     const userId1 = msg.from.id
     const chatId = msg.chat.id
 
     const user = await collection.findOne({ id: userId1 })
     const adminDonateStatus = await adminDonatedUsers(user.id, collection)
+    const userToBeAnAdmin = user.toBeAnAdmin
+
+    if (userToBeAnAdmin === false) {
+        bot.sendMessage(chatId, `
+Ты уже отправлял ключ администратора это возможность будет один раз
+        `)
+        return;
+    }
 
     if (chatId === userId1) {
 
@@ -458,12 +511,13 @@ async function toBeAnAdministrtorBot(msg, bot, collection, collectionAdmins) {
             usedBy: null
         });
 
+        await collection.updateOne({ id: userId1 }, { $set: { toBeAnAdmin: false } })
         bot.sendMessage(userId1, `Выполняю ...`)
         bot.sendMessage(adminIdInt, `
 ${adminDonateStatus}, отправил запрос на ключ администратора
 
 <b>Ключ:</b> <code>${generatedKey}</code>
-            `, { parse_mode: 'HTML' });
+        `, { parse_mode: 'HTML' });
     }
     else {
         return;

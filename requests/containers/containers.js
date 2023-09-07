@@ -172,6 +172,14 @@ ${userDonateStatus}, вы открыли контейнер 🎉
 и начисли денег в ваш баланс 🥳
     `;
 
+    let contOpt = {
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: 'Открыть еще', switch_inline_query_current_chat: 'Открыть контейнер ' }]
+            ]
+        }
+    }
+
     if (userPriseType === '') {
         beReturnedMsg = `
 ${userDonateStatus}, вы открыли контейнер 🎉
@@ -189,6 +197,7 @@ ${userDonateStatus}, вы открыли контейнер 🎉
         bot.sendPhoto(chatId, img, {
             caption: `${beReturnedMsg}`,
             parse_mode: 'HTML',
+            ...contOpt,
         })
         return;
     }
@@ -196,10 +205,12 @@ ${userDonateStatus}, вы открыли контейнер 🎉
     bot.sendPhoto(chatId, img, {
         caption: `${beReturnedMsg}`,
         parse_mode: 'HTML',
+        ...contOpt,
     })
     const newContPrise = await contPrise.findOne({ name: randomedPrise.name })
     const prisePrice = newContPrise.price * 0.9
 
+    await collection.updateOne({ id: userId1 }, { $inc: { balance: -price } })
     await collection.updateOne({ id: userId1 }, { $inc: { balance: prisePrice } })
 }
 

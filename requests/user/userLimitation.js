@@ -30,15 +30,13 @@ ${userDonateStatus}, вот данные за ваш лимит
 
 async function removeLimit(msg, bot, collection, ObjectId) {
     const chatId = msg.chat.id
-    const text = msg.text
 
     const userDonateStatus = await donatedUsers(msg, collection)
-
 
     bot.sendMessage(chatId, `
 ${userDonateStatus}, успешно обновлены лимиты передачи
         `, { parse_mode: 'HTML' })
-    await collection.updateMany({ _id: ObjectId }, { $set: { "limit.0.givedMoney": 0, "limit.0.updateDayLimit": 0 } })
+    await collection.updateMany({ _id: ObjectId }, { $set: { "limit.0.givedMoney": 0, "limit.0.updateDayLimit": Date.now() } })
 }
 
 // Пример функции для форматирования оставшегося времени

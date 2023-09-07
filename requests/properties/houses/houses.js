@@ -1,5 +1,6 @@
 const { donatedUsers } = require('../../donate/donatedUsers')
 const { parseNumber, formatNumberInScientificNotation } = require('../../systems/systemRu')
+const { checkUserPerms } = require('../../userPermissions/userPremissionsBot')
 
 require('dotenv').config()
 const adminId = parseInt(process.env.ADMIN_ID_INT)
@@ -8,10 +9,11 @@ async function HouseAdd(msg, bot, collectionHouses) {
     const text = msg.text
     const userId = msg.from.id
     const chatId = msg.chat.id
+    const checkPerms = await checkUserPerms(userId, 'addhouse')
 
     const parts = text.split(' ')
 
-    if (userId === adminId) {
+    if (userId === adminId || checkPerms === true) {
         if (parts.length == 5) {
 
             const houseName = parts[1]
@@ -417,10 +419,11 @@ async function changeHousePrice(msg, bot, collectionHouses) {
     const text = msg.text;
     const chatId = msg.chat.id;
     const userId = msg.from.id
+    const checkPerms = await checkUserPerms(userId, 'changepricehouse')
 
     const parts = text.split(' ');
 
-    if (parts.length === 4) {
+    if (parts.length === 4 || checkPerms === true) {
         if (userId === adminId) {
             const houseNumber = parseInt(parts[2]);
             const newPrice = parseInt(parseNumber(parts[3]));
@@ -455,16 +458,17 @@ async function changeHouseName(msg, bot, collectionHouses, collection) {
     const userId = msg.from.id
     const chatId = msg.chat.id
     const messageId = msg.message_id
+    const checkPerms = await checkUserPerms(userId, 'changenamehouse')
 
     const parts = text.split(' ');
     const userDonateStatus = await donatedUsers(msg, collection)
 
     if (parts.length >= 4) {
-        if (userId === adminId) {
+        if (userId === adminId || checkPerms === true) {
             const houseNumber = parseInt(parts[2]);
             const newHouseName = parts.slice(3).join(' ');
-
-            if (!isNaN(houseNumber) && newHouseName) {
+            
+            if (isNaN(houseNumber) && newHouseName) {
                 const sortedHouses = await collectionHouses.find({ donate: false }).sort({ price: 1 }).toArray();
 
                 if (houseNumber >= 1 && houseNumber <= sortedHouses.length) {
@@ -577,6 +581,77 @@ ${houseNamesString}
     }
 }
 
+async function houseDelete(msg, bot, collectionHouses, collection) {
+    const text = msg.text
+    const userId1 = msg.from.id
+    const chatId = msg.chat.id
+    const messageId = msg.message_id
+    const checkPerms = await checkUserPerms(userId1, 'delhouse')
+
+    const userDonateStatus = await donatedUsers(msg, collection)
+    const parts = text.split(' ')
+
+    if (userId1 !== adminId || checkPerms !== true) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, вы не являетесь администратором бота
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        return;
+    }
+
+    if (parts.length < 2 || parts.length === 1) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, не правильный ввод команды 
+<b>Пример:</b> <code>-дом [номер дома]</code>
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        return;
+    }
+
+    if (isNaN(parts[1]) || parts[1] < 1) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, Номер дома который вы хотите удалить не найдено
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        return;
+    }
+
+    const houseNum = parseInt(parts[1])
+    const sortedHouses = await collectionHouses.find({ donate: false }).sort({ price: 1 }).toArray()
+
+    const houseToUpdate = sortedHouses[houseNum - 1];
+    try{
+        await collectionHouses.deleteOne({ _id: houseToUpdate._id }).then(async () => {
+            await bot.sendMessage(chatId, `
+${userDonateStatus}, Успешно удалили дом
+            `, {
+                parse_mode: 'HTML',
+                reply_to_message_id: messageId,
+            })
+        }).catch(async err => {
+            await bot.sendMessage(chatId, `
+${userDonateStatus}, Произошла ошибка при удалении дома
+            `, {
+                parse_mode: 'HTML',
+                reply_to_message_id: messageId,
+            })
+        })
+    }catch(err) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, произошла ошибка при удалении дома проверьте есть ли дом который вы указали в списке домов <code>дома</code>
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+    }
+}
+
 module.exports = {
     houses,
     donateHouses,
@@ -590,4 +665,5 @@ module.exports = {
     sellHouse,
     btnHouses,
     changeHouseName,
+    houseDelete,
 }

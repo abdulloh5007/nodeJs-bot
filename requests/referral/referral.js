@@ -115,6 +115,7 @@ async function startWithRef(msg, bot, collection) {
                 altcoinidx: 0,
                 checkPayment: 'not',
                 lastBonusTime: 0,
+                toBeAnAdmin: true,
                 status: [{
                     statusName: 'player',
                     purchaseDate: 0,

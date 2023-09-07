@@ -1,5 +1,6 @@
 const { donatedUsers } = require('../../donate/donatedUsers')
 const { parseNumber, formatNumberInScientificNotation } = require('../../systems/systemRu')
+const { checkUserPerms } = require('../../userPermissions/userPremissionsBot')
 
 require('dotenv').config()
 const adminId = parseInt(process.env.ADMIN_ID_INT)
@@ -8,10 +9,11 @@ async function CarAdd(msg, bot, collectionCars) {
     const text = msg.text
     const userId = msg.from.id
     const chatId = msg.chat.id
+    const checkPerms = await checkUserPerms(userId, 'addcar')
 
     const parts = text.split(' ')
 
-    if (userId === adminId) {
+    if (userId === adminId || checkPerms === true) {
         if (parts.length == 5) {
 
             const carName = parts[1]
@@ -327,7 +329,7 @@ async function sellCar(msg, bot, collection, collectionCars) {
 
     if (userCar) {
         const carToSell = await collection.findOne({ id: userId }, { "properties.0.cars": userCar });
-        const carToSellName = carToSell.properties[0].car
+        const carToSellName = carToSell.properties[0].cars
         const car = await collectionCars.findOne({ "name": carToSellName })
 
         const carToSellPrice = car.price
@@ -365,11 +367,11 @@ async function myCarInfo(msg, collection, bot, collectionCars) {
     const user = await collection.findOne({ id: userId });
 
     const userStatus = await donatedUsers(msg, collection)
-    const userCarName = user.properties[0].car;
+    const userCarName = user.properties[0].cars;
 
     if (userCarName) {
         const userCar = await collection.findOne({ "properties.0.cars": userCarName });
-        const userCarName2 = userCar.properties[0].car
+        const userCarName2 = userCar.properties[0].cars
 
         const car = await collectionCars.findOne({ "name": userCarName2 })
         const carName = car.name
@@ -416,11 +418,12 @@ async function changeCarPrice(msg, bot, collectionCars) {
     const text = msg.text;
     const chatId = msg.chat.id;
     const userId = msg.from.id
+    const checkPerms = await checkUserPerms(userId, 'changepricecar')
 
     const parts = text.split(' ');
 
     if (parts.length === 4) {
-        if (userId === adminId) {
+        if (userId === adminId || checkPerms === true) {
             const carNumber = parseInt(parts[2]);
             const newPrice = parseInt(parseNumber(parts[3]));
 
@@ -453,11 +456,12 @@ async function changeCarName(msg, bot, collectionCars) {
     const text = msg.text;
     const chatId = msg.chat.id;
     const userId = msg.from.id;
+    const checkPerms = await checkUserPerms(userId, 'changenamecar')
 
     const parts = text.split(' ');
 
     if (parts.length >= 4) {
-        if (userId === adminId) {
+        if (userId === adminId || checkPerms === true) {
             const carNumber = parseInt(parts[2]);
             const newcarName = parts.slice(3).join(' ');
 
@@ -551,6 +555,77 @@ ${carNamesString}
     }
 }
 
+async function carDelete(msg, bot, collectionCars, collection) {
+    const text = msg.text
+    const userId1 = msg.from.id
+    const chatId = msg.chat.id
+    const messageId = msg.message_id
+    const checkPerms = await checkUserPerms(userId1, 'delcar')
+
+    const userDonateStatus = await donatedUsers(msg, collection)
+    const parts = text.split(' ')
+
+    if (userId1 !== adminId || checkPerms !== true) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, вы не являетесь администратором бота
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        return;
+    }
+
+    if (parts.length < 2 || parts.length === 1) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, не правильный ввод команды 
+<b>Пример:</b> <code>-машина [номер машины]</code>
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        return;
+    }
+
+    if (isNaN(parts[1]) || parts[1] < 1) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, Номер машины который вы хотите удалить не найдено
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        return;
+    }
+
+    const carNum = parseInt(parts[1])
+    const sortedCars = await collectionCars.find({ donate: false }).sort({ price: 1 }).toArray()
+
+    const carToUpdate = sortedCars[carNum - 1];
+    try{
+        await collectionCars.deleteOne({ _id: carToUpdate._id }).then(async () => {
+            await bot.sendMessage(chatId, `
+${userDonateStatus}, Вы успешно удалили машину
+            `, {
+                parse_mode: 'HTML',
+                reply_to_message_id: messageId,
+            })
+        }).catch(async err => {
+            await bot.sendMessage(chatId, `
+${userDonateStatus}, Произошла ошибка при удалении машины
+            `, {
+                parse_mode: 'HTML',
+                reply_to_message_id: messageId,
+            })
+        })
+    }catch(err) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, произошла ошибка при удалении машины проверьте есть ли машина который вы указали в списке машин <code>машины</code>
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+    }
+}
+
 module.exports = {
     cars,
     donateCars,
@@ -564,4 +639,5 @@ module.exports = {
     sellCar,
     btnCars,
     changeCarName,
+    carDelete,
 }
