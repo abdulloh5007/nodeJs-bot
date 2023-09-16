@@ -71,7 +71,7 @@ async function addPermsForUser(msg, bot, collection) {
     const replyToUser = msg.reply_to_message
 
     const userDonateStatus = await donatedUsers(msg, collection)
-    
+
     if (!replyToUser) {
         bot.sendMessage(chatId, `
         ${userDonateStatus}, отьветье пользователя тому кому вы хотите прибавить права
@@ -81,8 +81,11 @@ async function addPermsForUser(msg, bot, collection) {
         })
         return;
     }
-    
+
     const userPerm = await collectionPermission.findOne({ id: replyToUser.from.id })
+    if (!userPerm) {
+        return;
+    }
     const adminDonateStatus = await adminDonatedUsers(userPerm.id, collection)
 
     if (userId1 !== adminId) {
@@ -113,6 +116,19 @@ ${userDonateStatus}, это пользователь еще не стал адм
 
     bot.sendMessage(chatId, `
 ${userDonateStatus} добавление правы ${adminDonateStatus}
+
+1. <b>extraditemoney</b> = <i>Разрешение на выдачу денег</i>
+2. <b>extraditeuc</b> = <i>Разрешение на выдачу UC</i>
+3. <b>pickmoney</b> = <i>Разрешение на отбор денег</i>
+4. <b>pickuc</b> = <i>Разрешение на отбор UC</i>
+5. <b>addhouse</b> = <i>Разрешение на добавление домов</i>
+6. <b>addcar</b> = <i>Разрешение на добавление машин</i>
+7. <b>delhouse</b> = <i>Разрешение на удаление дома</i>
+8. <b>delcar</b> = <i>Разрешение на удаление машин</i>
+9. <b>changenamehouse</b> = <i>Разрешение на изменение имени дома</i>
+10. <b>changenamecar</b> = <i>Разрешение на изменение имени машин</i>
+11. <b>changepricehouse</b> = <i>Разрешение на изменение цены дома</i>
+12. <b>changepricecar</b> = <i>Разрешение на изменение цены машины</i>
     `, {
         parse_mode: 'HTML',
         reply_to_message_id: messageId,
@@ -222,9 +238,54 @@ async function checkUserPerms(userId, perm) {
     return globalTrueOrFalse
 }
 
+async function userPermsInfo(msg, bot, collection) {
+    const db = client.db('bot');
+    const collectionPerms = db.collection('permissions');
+
+    const userId1 = msg.from.id
+    const chatId = msg.chat.id
+    const messageId = msg.message_id
+    const replyToUser = msg.reply_to_message
+    const userDonateStatus = await donatedUsers(msg, collection)
+
+    if (!replyToUser) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, ответьте сообщением <code>разрешения</code> пользователя который вы хотите увидеть разрешения
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        return;
+    }
+    const replyToUserId = replyToUser.from.id
+    const userPerms = await collectionPerms.findOne({ id: replyToUserId })
+    const adminDonateStatus = await adminDonatedUsers(replyToUserId, collection)
+
+    if (!userPerms) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, это пользователь еще не стал админом ${adminDonateStatus}
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        return;
+    }
+
+    const userPermsJson = userPerms.licenses
+    bot.sendMessage(adminId, `
+${userDonateStatus}, вот права пользователя ${adminDonateStatus}
+
+${JSON.stringify(userPermsJson)}
+    `, {
+        parse_mode: 'HTML',
+        reply_to_message_id: messageId,
+    })
+}
+
 module.exports = {
     userPermissionInfo,
     addPermsForUser,
     addPermsToCollection,
     checkUserPerms,
+    userPermsInfo,
 }

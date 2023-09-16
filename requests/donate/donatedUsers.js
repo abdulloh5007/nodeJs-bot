@@ -75,31 +75,34 @@ async function checkAndUpdateDonations(collection) {
         }
         if (userExpireDate && userExpireDate <= currentDate) {
             console.log(userStatusName);
-//             try {
-//                 // Снимите донат и обновите статус пользователя
-//                 await bot.sendMessage(user.id, `
-// ${donatedUser},
-// ➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-// <b>С вас был снят донат:</b> <i>${userStatusName.toUpperCase()} ${sortedStName}</i>
-// ➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-//                 `, { parse_mode: 'HTML' })
-//             }
-//             catch (err){
-//                 if (err.response && err.response.statusCode === 403) {
-//                     console.log(customChalk.colorize(`сд Пользователь ${user.id} заблокировал бота`, { style: 'italic', background: 'bgRed' }));
-//                 } else if (err.response && err.response.statusCode === 400) {
-//                     console.log(customChalk.colorize(`сд Пользователя ${user.id} нет чата с ботом`, { style: 'italic', background: 'bgYellow' }))
-//                 } else {
-//                     console.log(customChalk.colorize(`Ошибка при снятие донат статуса: ${err.message}`, { style: 'italic', background: 'bgRed' }));
-//                 }
-//             }
-//             await collection.updateOne(
-//                 { id: user.id },
-//                 {
-//                     $set: { "status.0.statusName": "player", "status.0.statusExpireDate": 0, "status.0.purchaseDate": 0 },
-//                     // Дополнительные действия, если необходимы
-//                 }
-//             );
+            try {
+                // Снимите донат и обновите статус пользователя
+                await bot.sendMessage(user.id, `
+${donatedUser},
+➖➖➖➖➖➖➖➖➖➖➖➖➖➖
+<b>С вас был снят донат:</b> <i>${userStatusName.toUpperCase()} ${sortedStName}</i>
+➖➖➖➖➖➖➖➖➖➖➖➖➖➖
+                `, { parse_mode: 'HTML' })
+            }
+            catch (err){
+                if (err.response && err.response.statusCode === 403) {
+                    console.log(customChalk.colorize(`сд Пользователь ${user.id} заблокировал бота`, { style: 'italic', background: 'bgRed' }));
+                } else if (err.response && err.response.statusCode === 400) {
+                    console.log(customChalk.colorize(`сд Пользователя ${user.id} нет чата с ботом`, { style: 'italic', background: 'bgYellow' }))
+                } else {
+                    console.log(customChalk.colorize(`Ошибка при снятие донат статуса: ${err.message}`, { style: 'italic', background: 'bgRed' }));
+                }
+            }
+            await collection.updateOne(
+                { id: user.id },
+                {
+                    $set: { "status.0.statusName": "player", "status.0.statusExpireDate": 0, "status.0.purchaseDate": 0 },
+                    // Дополнительные действия, если необходимы
+                }
+            );
+        }
+        else {
+            console.log(`Пока что не кого снять донат ${userExpireDate}`);
         }
     }
 }

@@ -115,17 +115,17 @@ ${userDonateStatus}, Ваша аватарка успешно отправлен
         reply_to_message_id: messageId,
     })
 
-    const testUser = `${parts[glLength]}_${userId1}`
+    const testUser = `${parts[glLength]}__${userId1}`
 
-    const userAva = testUser.split('_')
+    const userAva = testUser.split('__')
     const userWaitingId = userAva[1]
     const userWaitingUrl = userAva[0]
 
     let avaToCheck = {
         reply_markup: {
             inline_keyboard: [
-                [{ text: 'Принять', callback_data: `avatarAccept_${userWaitingId}` }],
-                [{ text: 'Отклонить', callback_data: `avatarReject_${userWaitingId}` }]
+                [{ text: 'Принять', callback_data: `avatarAccept__${userWaitingId}` }],
+                [{ text: 'Отклонить', callback_data: `avatarReject__${userWaitingId}` }]
             ]
         }
     }
@@ -164,7 +164,7 @@ async function avaChekAdmins(msg, bot) {
 
     const data = msg.data
 
-    const [wait, waitId] = data.split('_')
+    const [wait, waitId] = data.split('__')
     const waitIdInt = parseInt(waitId)
     const user = await collection.findOne({ id: waitIdInt })
     const chatId = msg.message.chat.id
@@ -173,7 +173,7 @@ async function avaChekAdmins(msg, bot) {
     const userDonateStatus = await donatedUsers(msg, collection)
 
     if (wait === 'avatarAccept') {
-        const waitUrl = user.avatar[0].waiting.split('_')[0]
+        const waitUrl = user.avatar[0].waiting.split('__')[0]
         bot.sendMessage(waitIdInt, `
 <b>Ваша аватарка успешно проверено администратором</b> ✅
         `, {

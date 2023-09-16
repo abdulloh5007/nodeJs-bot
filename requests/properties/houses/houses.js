@@ -591,7 +591,7 @@ async function houseDelete(msg, bot, collectionHouses, collection) {
     const userDonateStatus = await donatedUsers(msg, collection)
     const parts = text.split(' ')
 
-    if (userId1 !== adminId || checkPerms !== true) {
+    if (userId1 !== adminId && checkPerms === false) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, вы не являетесь администратором бота
         `, {

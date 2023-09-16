@@ -96,7 +96,7 @@ ${i + 1}. <b>ДАТА:</b> ${dateAddvert.toLocaleDateString()}
     bot.sendMessage(chatId, `
 ${userDonateStatus}, вот активные рекламы отсортированы по дате
 ${sortedAddverts}
-    `, { parse_mode: 'HTML', ...addvertOptions })
+    `, { parse_mode: 'HTML', ...addvertOptions, disable_web_page_preview: true })
 }
 
 async function deleteAdd(msg, bot, collection, collectionAddvert, globLength) {

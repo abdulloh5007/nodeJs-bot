@@ -3,6 +3,7 @@ const { donatedUsers } = require('../../donate/donatedUsers');
 const { formatNumberInScientificNotation } = require('../../systems/systemRu');
 require('dotenv').config()
 
+const adminId = parseInt(process.env.ADMIN_ID_INT)
 const mongoDbUrl = process.env.MONGO_DB_URL
 const client = new MongoClient(mongoDbUrl);
 
@@ -18,12 +19,12 @@ async function addBusiness(msg, bot) {
     const chatId = msg.chat.id
 
     collectionBusiness.insertOne({
-        name: 'louis vuitton2',
-        price: 9000,
-        img: 'AgACAgEAAxkBAAIfa2Twc2xXc5x-EBcRpEfDJo5N7U4kAAIvrDEbHVWBR0qAt37FpyCaAQADAgADcwADMAQ',
-        maxWorkers: 150,
-        workersProfit: 230,
-        tax: 1200,
+        name: 'Samsung 📱',
+        price: 1500000,
+        img: 'https://www.ixbt.com/img/n1/news/2023/0/2/Samsung_Electronics_large_large_large.jpg',
+        maxWorkers: 130,
+        workersProfit: 1600,
+        tax: 0,
     })
     bot.sendMessage(chatId, `Успешно был добавлен бизнес`)
 }
@@ -95,6 +96,16 @@ ${userDonateStatus}, номер бизнеса не должно состоят�
         bot.sendMessage(chatId, `
 ${userDonateStatus}, У вас уже имеется бизнес под названием <u>${userBusiness}</u>
         `, { parse_mode: 'HTML' })
+        return;
+    }
+
+    if (!selectedBusiness) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, такого бизнеса не существует напишите <code>бизнесы</code>
+чтобы узнать о бизнесах
+        `, {
+            parse_mode: 'HTML',
+        })
         return;
     }
 
@@ -174,6 +185,10 @@ async function workersInfo(msg, bot, collection) {
     const userDonateStatus = await donatedUsers(msg, collection)
     const userBusiness = user.business[0].name
 
+    let messageB = `
+У вас не существует базнеса
+Хотите узнать существующих бизнесов то отправьте <code>бизнесы</code>
+`;
     let haveB = true;
     if (userBusiness === '') {
         haveB = false;
@@ -184,10 +199,6 @@ async function workersInfo(msg, bot, collection) {
     const procent20 = Math.floor((workersProfit / 100) * 20)
     const workersPrice = workersProfit + procent20
 
-    let messageB = `
-У вас не существует базнеса
-Хотите узнать существующих бизнесов то отправьте <code>бизнесы</code>
-`;
     if (haveB === true) {
         messageB = `
 <b>Ваш бизнес:</b> ${userBusiness}
@@ -252,7 +263,7 @@ ${userDonateStatus}, у вас не существует бизнеса чтоб
     const amountworkers = parts[glLength]
     const amountToBuyWorkersAndworkers = parseInt(amountworkers) + parseInt(userworkers)
 
-    if (isNaN(amountworkers) || amountworkers < 0) {
+    if (isNaN(amountworkers) || amountworkers <= 0) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, не возможно купить количество букв или отрицательное количество бработников
 
@@ -332,8 +343,27 @@ async function addProfitEveryOneHour(collection) {
     return;
 }
 
+async function manualAddProfitEveryOneHour(msg, bot, collection) {
+    const users = await collection.find({ "business.0.have": true }).toArray()
+    const userId1 = msg.from.id
+
+    if (userId1 === adminId) {
+        for (let i = 0; i < users.length; i++) {
+            const el = users[i];
+            const userworkers = el.business[0].workers
+            const userworkersProfit = el.business[0].workersProfit
+            const addToProfit = userworkers * userworkersProfit
+
+            await collection.updateOne({ id: el.id }, { $inc: { "business.0.profit": parseInt(addToProfit), "business.0.tax": parseInt(Math.floor(addToProfit / 2)) } })
+        }
+        bot.sendMessage(adminId, `
+    Успешно были добавлены прибыль для бизнесов
+        `)
+    }
+    return;
+}
+
 async function pulloffBusiness(msg, bot, collection) {
-    const text = msg.text
     const userId1 = msg.from.id
     const chatId = msg.chat.id
 
@@ -375,6 +405,16 @@ async function payTaxForBusiness(msg, bot, collection) {
     const user = await collection.findOne({ id: userId1 })
     const userBalance = user.balance
     const usertax = user.business[0].tax
+    const username = user.business[0].name
+
+    if (username === '') {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, у вас нету бизнеса
+
+<b>Напишите:</b> <code>бизнесы</code> чтобы узнать о бизнесах
+        `, { parse_mode: 'HTML' })
+        return;
+    }
 
     if (usertax === 0) {
         bot.sendMessage(chatId, `
@@ -397,6 +437,66 @@ ${userDonateStatus}, вы успешно оплатили налоги бизн�
     await collection.updateOne({ id: userId1 }, { $inc: { balance: -usertax, "business.0.tax": -usertax } })
 }
 
+async function sellBusiness(msg, bot, collection) {
+    const db = client.db('bot');
+    const collectionBusiness = db.collection('businesses')
+
+    const userId1 = msg.from.id
+    const chatId = msg.chat.id
+    const messageId = msg.message_id
+
+    const user = await collection.findOne({ id: userId1 })
+    const userDonateStatus = await donatedUsers(msg, collection)
+    const username = user.business[0].name
+    const usertax = user.business[0].tax
+    const userprofit = user.business[0].profit
+
+    if (username === '') {
+        bot.sendMessage(chatId, `
+        ${userDonateStatus}, у вас нету бизнеса
+        
+        <b>Напишите:</b> <code>бизнесы</code> чтобы узнать о бизнесах
+        `, { parse_mode: 'HTML' })
+        return;
+    }
+
+    const business = await collectionBusiness.findOne({ name: username })
+    const bPriceToSell = business.price * 0.8
+
+    if (usertax > 0) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, прежде чем продать свой бизнес вам нужно оплатить его налоги !
+Отправьте команду <code>бизнес налоги</code> чтобы оплатить их
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        });
+        return;
+    }
+
+    const flooredBPrice = Math.floor(bPriceToSell)
+    let incBalance = flooredBPrice + userprofit
+    let profitMsg = `Деньги которые были у вас в прибыле: ${userprofit.toLocaleString('de-DE')}
+успешно переведены в основной счет`
+
+    if (userprofit === 0) {
+        profitMsg = 'У вас небыло денег в балансе бизнеса поэтому вы забираете только деньги которые стоил ваш бизнес'
+        incBalance = flooredBPrice
+    }
+
+    bot.sendMessage(chatId, `
+${userDonateStatus}, вы успешно продали свой бизнес <u>${username}</u>
+Стоимость продажи: ${flooredBPrice.toLocaleString('de-DE')}$
+
+${profitMsg}
+    `, {
+        parse_mode: 'HTML',
+        reply_to_message_id: messageId,
+    })
+    await collection.updateOne({ id: userId1 }, { $set: { "business.0.name": '', "business.0.profit": 0, "business.0.workers": 0 } })
+    await collection.updateOne({ id: userId1 }, { $inc: { balance: incBalance } })
+}
+
 module.exports = {
     addBusiness,
     listBusinesses,
@@ -407,4 +507,6 @@ module.exports = {
     addProfitEveryOneHour,
     pulloffBusiness,
     payTaxForBusiness,
+    manualAddProfitEveryOneHour,
+    sellBusiness,
 }

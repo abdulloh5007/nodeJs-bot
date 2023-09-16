@@ -12,8 +12,6 @@ const hours = date.getHours()
 const minutes = date.getMinutes()
 const registerUserTime = `${day}-${month}-${year} ${hours}:${minutes}`
 
-const userStates = {};
-
 function generateRandomElementsOnlyUsers(letters, numbers) {
     const alphabet = letters;
     const randomLetter = alphabet[Math.floor(Math.random() * alphabet.length)];
@@ -78,7 +76,7 @@ async function commandStart(msg, collection, bot) {
             id: userId,
             gameId: onlyUsersId,
             userName: 'Игрок',
-            balance: 10000,
+            balance: 5000,
             uc: 0,
             registerTime: registerUserTime,
             altcoinidx: 0,
@@ -91,20 +89,20 @@ async function commandStart(msg, collection, bot) {
                 statusExpireDate: 0,
             }],
             limit: [{
-                giveMoneyLimit: 5000000,
+                giveMoneyLimit: 50000,
                 givedMoney: 0,
                 updateDayLimit: 0,
                 // promoMoneyLimit: 1000,
                 // promoMoney: 0,
             }],
             business: [{
-                bHave: false,
-                bName: "",
-                bWorkers: 0,
-                bMaxWorkers: 0,
-                bProfit: 0,
-                bWorkersProfit: 0,
-                bTax: 0,
+                have: false,
+                name: "",
+                workers: 0,
+                maxWorkers: 0,
+                profit: 0,
+                workersProfit: 0,
+                tax: 0,
                 lastUpdTime: 0,
             }],
             avatar: [{
@@ -141,7 +139,13 @@ async function commandStart(msg, collection, bot) {
                 cardValue: 0,
                 cardPassword: 0,
                 cardOwnerId: userId
-            }]
+            }],
+            depozit: [{
+                balance: 0,
+                procent: 10,
+                limit: 50000,
+                date: 0,
+            }],
         })
 
     }
@@ -244,6 +248,7 @@ ${userDonateStatus}, вот остальные команды
 <i><code>продать дом</code></i> - 🏘<b>Продажа дома или донат дома</b>
 
 💻 <i><code>бизнесы</code></i> - <b>Информация о бизнесах</b>
+<i><code>купить бизнес [номер]</code></i> - <b>Покупка бизнеса</b>
 📽 <i><code>инфо бработники</code></i> - <b>Информация о бизнес работниках</b>🤵
     `
 
@@ -254,8 +259,10 @@ ${userDonateStatus}, вот остальные команды
     const game = `
 😎• ${userDonateStatus}, вот доступные игры
 
-🎰 <i><code>казино [сумма]</code></i> - <b>Игра🎭</b>
-<code>спин [сумма]</code>
+🎰 <i><code>казино [сумма]</code></i> - <b>Игра казино 🎭</b>
+🎰 <i><code>спин [сумма]</code></i> - <b>Игра спин 🎮</b>
+🎳 <i><code>боул [сумма]</code></i> - <b>Игра боулинг 🎮</b>
+⚽️ <i><code>футбол [сумма]</code></i> - <b>Игра футбол 🎮</b>
     `
 
     const main = `
@@ -269,6 +276,8 @@ ${userDonateStatus}, вот остальные команды
 ❤️‍🔥• <i><code>донат</code></i> - <b>Донаты, сообщение отправить только в лс</b>
 ⌨• <i><code>+промо [название] [кол-во активации] [сумма] [комаентарии если есть]</code></i>😎
 🎁• <i><code>конты</code></i> - <b>Контейнеры</b>
+💳• <i><code>депозит</code></i> - <b>Информация о депозите</b>
+💸• <i><code>депозит пополнить [сумма]</code></i> - <b>Положить деньги на баланс депозита</b>
     `
     const adminCommands = `
 ${userDonateStatus}, вот команды админов
@@ -488,6 +497,27 @@ async function deleteAllUsers(msg, collection, bot, ObjectId) {
     }
 }
 
+async function infoFromUGameId(msg, bot, collection) {
+    const text = msg.text
+    const userId1 = msg.from.id
+    const chatId = msg.chat.id
+    const messageId = msg.message_id
+
+    const parts = text.split(' ')
+    const userDonateStatus = await donatedUsers(msg, collection)
+
+    if (!parts[1]) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, напишите мне игровой айди игрока чтобы я мог вам отправить
+Информацию о пользователе
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        return;
+    }
+}
+
 module.exports = {
     commandStart,
     commandHelp,
@@ -495,4 +525,5 @@ module.exports = {
     userMsg,
     deleteAllUsers,
     userInfoReplyToMessage,
+    infoFromUGameId,
 }

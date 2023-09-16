@@ -1,6 +1,13 @@
 const TelegramBot = require('node-telegram-bot-api');
 require('dotenv').config();
 const cron = require('node-cron');
+const OpenAI = require('openai');
+const axios = require('axios');
+const apiKey = '7614b400705bae6b9485a603f32873eb';
+
+const openai = new OpenAI({
+    apiKey: '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', // Замените на ваш ключ API OpenAI
+});
 
 const botToken = process.env.BOT_TOKEN
 const mongoDbUrl = process.env.MONGO_DB_URL
@@ -9,33 +16,174 @@ const adminId = parseInt(process.env.ADMIN_ID)
 const { MongoClient, ObjectId } = require('mongodb');
 const client = new MongoClient(mongoDbUrl);
 
-const { kazino, gameSpin, } = require('./requests/games/games');
-const { commandStart, commandHelp, commandHelpAsBtn, deleteAllUsers, userInfoReplyToMessage, userMsg } = require('./requests/commands/commands');
-const { userBalance, userEditGameId, userGameInfo, userEditGameName, myId, dayBonusCollectingBtn } = require('./requests/user/userInfo');
-const { userUnMuteAll, } = require('./requests/violations/userMute');
-const { botInfo, deleteMessageBot, botVersionChange } = require('./requests/botInfo/botInfos');
+const {
+    kazino,
+    gameSpin,
+    gameBouling,
+    gameFootball,
+} = require('./requests/games/games');
+
+const {
+    commandStart,
+    commandHelp,
+    commandHelpAsBtn,
+    deleteAllUsers,
+    userInfoReplyToMessage,
+    userMsg,
+    infoFromUGameId,
+} = require('./requests/commands/commands');
+
+const {
+    userBalance,
+    userEditGameId,
+    userGameInfo,
+    userEditGameName,
+    myId,
+    dayBonusCollectingBtn,
+} = require('./requests/user/userInfo');
+
+const { userUnMuteAll } = require('./requests/violations/userMute');
+
+const {
+    botInfo,
+    deleteMessageBot,
+    botVersionChange,
+} = require('./requests/botInfo/botInfos');
+
 const { giveMoney } = require('./requests/user/giveMoney');
-const { extraditeMoney, takeMoney, takeAllMoney, extraditeUc, takeUc, takeAllUc, adminCommands, adminCommandsWithBtn, toBeAnAdministrtorBot, useKey, deleteGenKeys } = require('./requests/admin/adminCommands');
-const { generateCardNumber, cardInfo, createUpdateCardPassword, setMoneyToCard, getMoneyFromOwnCard, infoAboutCards } = require('./requests/user/userBankCard');
+
+const {
+    extraditeMoney,
+    takeMoney,
+    takeAllMoney,
+    extraditeUc,
+    takeUc,
+    takeAllUc,
+    adminCommands,
+    adminCommandsWithBtn,
+    toBeAnAdministrtorBot,
+    useKey,
+    deleteGenKeys,
+} = require('./requests/admin/adminCommands');
+
+const {
+    generateCardNumber,
+    cardInfo,
+    createUpdateCardPassword,
+    setMoneyToCard,
+    getMoneyFromOwnCard,
+    infoAboutCards,
+} = require('./requests/user/userBankCard');
+
 const { tops, topWithBtns } = require('./requests/tops/tops');
+
 const { referral, startWithRef } = require('./requests/referral/referral');
-const { houses, HouseAdd, findHouseByName, houseBuy, myHouseInfo, changeHousePrice, sellHouse, donateHouses, houseDonateBuy, btnHouses, HouseDonateAdd, changeHouseName, houseDelete, } = require('./requests/properties/houses/houses');
-const { donateMenu, donateBtns, donateInfo, donateMenuStatuses } = require('./requests/donate/donate');
+
+const {
+    houses,
+    HouseAdd,
+    findHouseByName,
+    houseBuy,
+    myHouseInfo,
+    changeHousePrice,
+    sellHouse,
+    donateHouses,
+    houseDonateBuy,
+    btnHouses,
+    HouseDonateAdd,
+    changeHouseName,
+    houseDelete,
+} = require('./requests/properties/houses/houses');
+
+const {
+    donateMenu,
+    donateBtns,
+    donateInfo,
+    donateMenuStatuses,
+} = require('./requests/donate/donate');
+
 const { checkAndUpdateDonations } = require('./requests/donate/donatedUsers');
+
 const { createPromo, usingPromo, createDonatePromo } = require('./requests/promo/promo');
+
 const { handleBan } = require('./requests/violations/userBan');
-const { limitations, removeLimit, updateDayLimitAtUTC9 } = require('./requests/user/userLimitation');
-const { cars, donateCars, CarAdd, CarDonateAdd, findCarByName, carBuy, carDonateBuy, myCarInfo, changeCarPrice, changeCarName, sellCar, btnCars, carDelete } = require('./requests/properties/cars/cars');
+
+const {
+    limitations,
+    removeLimit,
+    updateDayLimitAtUTC9,
+} = require('./requests/user/userLimitation');
+
+const {
+    cars,
+    donateCars,
+    CarAdd,
+    CarDonateAdd,
+    findCarByName,
+    carBuy,
+    carDonateBuy,
+    myCarInfo,
+    changeCarPrice,
+    changeCarName,
+    sellCar,
+    btnCars,
+    carDelete,
+} = require('./requests/properties/cars/cars');
+
 const { customChalk } = require('./customChalk');
-const { mailing } = require('./requests/mailing/mailing');
-const { addAddvert, addverts, deleteAdd, deleteAllAddverts } = require('./requests/advert/advertising');
-const { addBusiness, listBusinesses, buyBusiness, infoBusiness, workersInfo, buyWorkers, addProfitEveryOneHour, pulloffBusiness, payTaxForBusiness } = require('./requests/properties/business/business');
-const { addContainers, listPriceMoneyContainers, buyPriceMoneyContainer, donateContainers } = require('./requests/containers/containers');
-const { autoCreatePromoCodes, manualCreatePromoCodes } = require('./requests/auto/autoPromoAdd');
+
+const { mailing, mailingWithButtons } = require('./requests/mailing/mailing');
+
+const {
+    addAddvert,
+    addverts,
+    deleteAdd,
+    deleteAllAddverts,
+} = require('./requests/advert/advertising');
+
+const {
+    addBusiness,
+    listBusinesses,
+    buyBusiness,
+    infoBusiness,
+    workersInfo,
+    buyWorkers,
+    addProfitEveryOneHour,
+    pulloffBusiness,
+    payTaxForBusiness,
+    manualAddProfitEveryOneHour,
+    sellBusiness,
+} = require('./requests/properties/business/business');
+
+const {
+    addContainers,
+    listPriceMoneyContainers,
+    buyPriceMoneyContainer,
+    donateContainers,
+} = require('./requests/containers/containers');
+
+const {
+    autoCreatePromoCodes,
+    manualCreatePromoCodes,
+    manualDeleteAllPromocodes,
+    autoDeleteAllPromocodes,
+} = require('./requests/auto/autoPromoAdd');
+
 const { avatarMenu, addAvatar, avaChekAdmins } = require('./requests/avatar/avatar');
+
 const { calcInfo, calc } = require('./requests/calc/calc');
+
 const { botCommands } = require('./requests/botCommands/botCommands');
-const { userPermissionInfo, addPermsForUser, addPermsToCollection } = require('./requests/userPermissions/userPremissionsBot');
+
+const {
+    userPermissionInfo,
+    addPermsForUser,
+    addPermsToCollection,
+    userPermsInfo,
+} = require('./requests/userPermissions/userPremissionsBot');
+const { globalReset } = require('./requests/globalReset/globalReset');
+const { userDepozit, depozitAddMoney, pullMoneyDepozit } = require('./requests/bank/depozit');
+const { openIsland, myIsland, islandCommands } = require('./requests/islands/islands');
 
 client.connect()
     .then(() => {
@@ -84,10 +232,52 @@ function start() {
         {
             command: '/help', description: 'Помощь'
         },
-        {
-            command: '/admin', description: 'Админ'
-        },
+        // {
+        //     command: '/admin', description: 'Админ'
+        // },
     ])
+
+    bot.on('location', async msg => {
+        // Пример использования функции для получения погоды по координатам
+        const longitude = msg.location.longitude
+        const latitude = msg.location.latitude
+        const chatId = msg.chat.id
+
+        async function getWeatherByCoordinates(latitude, longitude) {
+            try {
+                const response = await axios.get(`https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${apiKey}`);
+
+                // Обработка ответа от API и извлечение информации о погоде
+                const weatherData = response.data;
+                const temperature = weatherData.main.temp;
+                const description = weatherData.weather[0].description;
+                const main = weatherData.weather[0].main;
+                const countryName = weatherData.name
+                const speed = weatherData.wind.speed
+                const gust = weatherData.wind.gust
+
+                // Отправка сообщения с информацией о погоде
+                const message = `
+Температура: ${temperature}°C
+Погодные условия: ${description}
+Погодные условия: ${main}
+Страна: ${countryName}
+                `;
+
+                console.log(weatherData);
+                return message;
+            } catch (error) {
+                console.error('Ошибка при запросе к OpenWeatherMap API:', error);
+                return 'Произошла ошибка при получении погоды.';
+            }
+        }
+
+        getWeatherByCoordinates(latitude, longitude)
+            .then((weatherMessage) => {
+                bot.sendMessage(chatId, weatherMessage);
+                // Отправьте сообщение с информацией о погоде пользователю
+            });
+    })
 
     // Обработчик события оповещения о входе нового участника
     bot.on('new_chat_members', async (msg) => {
@@ -151,15 +341,20 @@ function start() {
 
     bot.on('message', async msg => {
         const text = msg.text
+        const userId = msg.from.id
         const chatId = msg.chat.id
+        const messageId = msg.message_id
+        const me = await bot.getMe()
 
-        const opt = { emoji: '🏀', value: 5 }
+        const opt = { emoji: '⚽️' }
 
         if (text === 'бк') {
             bot.sendDice(chatId, opt)
-            console.log(opt.value);
+            console.log(me);
         }
     })
+
+
 
     // bot.on('message', async msg => {
     //     const ce = msg.dice.value
@@ -199,12 +394,13 @@ function start() {
         //start
         if (text.toLowerCase() === '/start' || text == '/start@levouJS_bot') {
             commandStart(msg, collection, bot)
-            log(customChalk.colorize('Успешно зарегистрирован', { style: 'underline', background: 'bgGreen' }))
+            log(customChalk.colorize(`Успешно зарегистрирован ${userId}`, { style: 'underline', background: 'bgGreen' }))
         }
 
         //ref start
         else if (text.toLowerCase().startsWith('/start ref_')) {
             startWithRef(msg, bot, collection)
+            log(customChalk.colorize(`Успешно зарегистрирован через реф ${userId}`, { style: 'underline', background: 'bgGreen' }))
         }
 
         else if (!botCommands.includes(text.toLowerCase()) && !user) {
@@ -257,6 +453,8 @@ function start() {
             const txtCasino = '@levouJS_bot казино'.toLowerCase()
             const txtSpin = '@levouJS_bot спин'.toLowerCase()
             const txtPerm = '@levouJS_bot права'.toLowerCase()
+            const txtBouling = '@levouJS_bot боул'.toLowerCase()
+            const txtFootball = '@levouJS_bot футбол'.toLowerCase()
 
             //calc
             if (['calc', 'cl'].includes(text.toLowerCase())) {
@@ -336,6 +534,12 @@ function start() {
             else if (text.toLowerCase() === 'бизнес налоги') {
                 payTaxForBusiness(msg, bot, collection)
             }
+            else if (text.toLowerCase() === 'продать бизнес') {
+                sellBusiness(msg, bot, collection)
+            }
+            else if (text === 'mBP') {
+                manualAddProfitEveryOneHour(msg, bot, collection)
+            }
 
             //addvert
             if (parts[0] === '@levouJS_bot') {
@@ -399,9 +603,25 @@ function start() {
                 let valueIndex = 1
                 gameSpin(msg, bot, collection, valueIndex)
             }
+            else if (text.toLowerCase().startsWith(txtBouling)) {
+                let valueIndex = 2
+                gameBouling(msg, bot, collection, valueIndex)
+            }
+            else if (text.toLowerCase().startsWith('боул')) {
+                let valueIndex = 1
+                gameBouling(msg, bot, collection, valueIndex)
+            }
+            else if (text.toLowerCase().startsWith(txtFootball)) {
+                let valueIndex = 2
+                gameFootball(msg, bot, collection, valueIndex)
+            }
+            else if (text.toLowerCase().startsWith('футбол')) {
+                let valueIndex = 1
+                gameFootball(msg, bot, collection, valueIndex)
+            }
 
             // info
-            else if (['инфо', 'профиль'].includes(text.toLowerCase())) {
+            if (['инфо', 'профиль'].includes(text.toLowerCase())) {
                 userGameInfo(msg, bot, collection)
             }
 
@@ -452,7 +672,7 @@ function start() {
             }
 
             //info ID
-            if (text.toLowerCase() == '.infoid') {
+            if (text.toLowerCase() == '.info') {
                 userInfoReplyToMessage(msg, bot, collection)
             }
 
@@ -605,18 +825,24 @@ function start() {
             else if (text.toLowerCase().startsWith('промо')) {
                 usingPromo(msg, bot, collection, collectionPromo)
             }
+            else if (text.toLowerCase() === 'del all promo') {
+                manualDeleteAllPromocodes(bot)
+            }
 
             // Лимиты
             if (text.toLowerCase() === 'лимит') {
                 limitations(msg, bot, collection)
             }
-            else if (text.toLowerCase() === 'упдлимиты') {
+            else if (text.toLowerCase() === 'упдлимиты' || text.toLowerCase() === 'upd limit') {
                 removeLimit(msg, bot, collection, ObjectId)
             }
 
             // Рассылка
             if (['!рас', '!mail', '!рассылка'].includes(parts[0].toLowerCase())) {
                 mailing(msg, bot, collection)
+            }
+            else if (text.toLowerCase().startsWith('!крас')) {
+                mailingWithButtons(msg, bot, collection)
             }
 
             // user permissions
@@ -629,21 +855,62 @@ function start() {
             else if (text.toLowerCase().startsWith(txtPerm)) {
                 addPermsToCollection(msg, bot, collection)
             }
-
-            if (text == 'testEditingStatusesDeleting') {
-                bot.sendChatAction(chatId, 'typing')
-                await collection.updateMany({ _id: ObjectId }, {
-                    $unset: {
-                        ban: []
-                    }
-                });
-                bot.sendMessage(chatId, 'Успешна обновлена датабаза')
+            else if (text.toLowerCase() === 'разрешения') {
+                userPermsInfo(msg, bot, collection)
             }
+
+            // manual update donates
+            else if (text === 'mUD') {
+                checkAndUpdateDonations(collection)
+            }
+
+            // global reset
+            if (text.toLowerCase() === 'gl reset' || text.toLowerCase() === 'обнул') {
+                globalReset(msg, bot, collection)
+            }
+
+            // depozit
+            const txtDep = '@levouJS_bot депозит пополнить'.toLowerCase()
+            if (text.toLowerCase() === 'депозит') {
+                userDepozit(msg, bot, collection)
+            }
+            else if (text.toLowerCase().startsWith(txtDep)) {
+                depozitAddMoney(msg, bot, collection, 3)
+            }
+            else if (text.toLowerCase().startsWith('депозит пополнить')) {
+                depozitAddMoney(msg, bot, collection, 2)
+            }
+
+            // islands
+            const txtIslands = '@levouJS_bot открыть остров'.toLowerCase()
+            if (text.toLowerCase() === txtIslands) {
+                openIsland(msg, bot, collection)
+            }
+            else if (text.toLowerCase() === 'открыть остров') {
+                openIsland(msg, bot, collection)
+            }
+            else if (text.toLowerCase() === 'мой остров') {
+                myIsland(msg, bot, collection)
+            }
+            else if (text.toLowerCase() === 'инфо островы') {
+                islandCommands(msg, bot, collection)
+            }
+
+            // info from user game id
+            if (text.toLowerCase().startsWith('.info_id')) {
+                infoFromUGameId(msg, bot, collection)
+            }
+
+
+            // ----------------------------------------------------------------
+            // if (text.toLowerCase().startsWith('asdf')) {
+            //     bot.sendMessage(chatId, `это эмоджи ${text}`)
+            // }
 
             if (text == 'testEditingStatuses') {
                 bot.sendChatAction(chatId, 'typing')
                 await collection.updateMany({ _id: ObjectId }, {
-                    $set: {
+                    $unset: {
                         toBeAnAdmin: true,
                     }
                 });
@@ -655,6 +922,19 @@ function start() {
 
                     }
                 })
+            }
+            if (text === 'addnewValue') {
+                await collection.updateMany({ "status.0.statusName": "premium" }, {
+                    $set: {
+                        depozit: [{
+                            balance: 0,
+                            procent: 18,
+                            limit: 400000,
+                            date: 0,
+                        }]
+                    }
+                })
+                bot.sendMessage(chatId, `res`)
             }
         }
         else {
@@ -696,6 +976,9 @@ function start() {
 
             //admin commands
             adminCommandsWithBtn(msg, bot, collection)
+
+            //depozit
+            pullMoneyDepozit(msg, bot, collection)
         }
         else {
             bot.sendMessage(chatId, `
@@ -720,6 +1003,9 @@ cron.schedule('0 9 * * *', () => {
     addProfitEveryOneHour(collection).catch(err => {
         console.error('Ошибка при добавлении прибыли на бизнесы:', err);
     });
+    autoDeleteAllPromocodes(bot).catch(err => {
+        console.error('Ошибка при удалении промокодов:', err);
+    })
 });
 
 cron.schedule('0 */12 * * *', () => {
@@ -728,9 +1014,9 @@ cron.schedule('0 */12 * * *', () => {
 })
 
 // Вызывайте эту функцию регулярно, например, каждый день или час
-setTimeout(() => {
+cron.schedule('0 */12 * * *', () => {
     checkAndUpdateDonations(collection);
-}, 6 * 60 * 60 * 1000); // 24 часа или 12 часа или 6
+}) // 24 часа или 12 часа или 6
 
 start()
 collectionBot.updateOne({}, { $set: { botLastIncTime: botLastIncludedTime } })

@@ -78,7 +78,7 @@ ${userStatus}
         }
     };
     if (userAva === '') {
-        await bot.sendMessage(chatId, txt, { reply_to_message_id: msg.message_id, ...dayBonusOption, parse_mode: 'HTML' });
+        await bot.sendMessage(chatId, txt, { reply_to_message_id: msg.message_id, ...dayBonusOption, parse_mode: 'HTML', disable_web_page_preview: true });
     }
     else {
         await bot.sendPhoto(chatId, userAva, {
@@ -86,6 +86,7 @@ ${userStatus}
             ...dayBonusOption,
             parse_mode: 'HTML',
             caption: txt,
+            disable_web_page_preview: true,
         });
     }
 }
@@ -141,32 +142,41 @@ ${userDonateStatus}, Длина айди должна составлять 8 з�
 }
 
 async function userEditGameName(msg, bot, collection) {
-    const text = msg.text;
-    const userId = msg.from.id;
-    const chatId = msg.chat.id;
+    const text = msg.text
+    const userId = msg.from.id
+    const chatId = msg.chat.id
+    const messageId = msg.message_id
 
     const parts = text.split(' ')
     const userDonateStatus = await donatedUsers(msg, collection)
+    let test = false
 
     if (text === 'сменить ник') {
         await bot.sendMessage(chatId, `
-${userDonateStatus}, Напишите новый ник, который не должен превышать 14 знаков.\nНапример: <code>Сменить ник (я владелец)</code>`, { parse_mode: 'HTML', reply_to_message_id: msg.message_id });
+${userDonateStatus}, Напишите новый ник, который не должен превышать ${test === true ? '14' : '9'} знаков.\nНапример: <code>Сменить ник (я владелец)</code>`, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        });
         return;
     }
 
     const prohibitedStickers = ["🎁", "💎", "⭐️"]; // Запрещенные стикеры
     const user = await collection.findOne({ id: userId });
-    const newName = parts[2];
+    const newName = text.slice(12);
     const userStatus = user.status[0].statusName
 
     // Проверяем статус пользователя
     if (userStatus === "premium" || userStatus === "vip") {
+        test = true
         // Проверяем наличие запрещенных стикеров в новом никнейме
         const containsProhibitedSticker = prohibitedStickers.some(sticker => newName.includes(sticker));
 
         if (newName.length <= 16 && !containsProhibitedSticker) {
             await bot.sendMessage(chatId, `
-${userDonateStatus}, Вы сменили ник на <u>${newName}</u>`, { reply_to_message_id: msg.message_id });
+${userDonateStatus}, Вы сменили ник на <u>${newName}</u>`, {
+                parse_mode: 'HTML',
+                reply_to_message_id: messageId,
+            });
             collection.updateOne({ id: userId }, { $set: { userName: newName } });
             collection.updateOne({ id: userId }, { $set: { "bankCard.0.cardOwner": newName } });
         } else {
@@ -177,7 +187,10 @@ ${userDonateStatus}, Длина ника не должна превышать 16
                 errorMessage += `${userDonateStatus}, Ник слишком длинный.\n`;
             }
 
-            await bot.sendMessage(chatId, errorMessage, { reply_to_message_id: msg.message_id });
+            await bot.sendMessage(chatId, errorMessage, {
+                parse_mode: 'HTML',
+                reply_to_message_id: messageId,
+            });
         }
     } else {
         // Проверяем наличие запрещенных стикеров в новом никнейме
@@ -185,7 +198,10 @@ ${userDonateStatus}, Длина ника не должна превышать 16
 
         if (newName.length <= 9 && !containsProhibitedSticker) {
             await bot.sendMessage(chatId, `
-${userDonateStatus}, Вы сменили ник на <u>${newName}</u>`, { reply_to_message_id: msg.message_id });
+${userDonateStatus}, Вы сменили ник на <u>${newName}</u>`, {
+                parse_mode: 'HTML',
+                reply_to_message_id: messageId,
+            });
             collection.updateOne({ id: userId }, { $set: { userName: newName } });
             collection.updateOne({ id: userId }, { $set: { "bankCard.0.cardOwner": newName } });
         } else {
@@ -197,10 +213,13 @@ ${userDonateStatus}, Длина ника не должна превышать 9 
             }
 
             if (containsProhibitedSticker) {
-                errorMessage += `${userDonateStatus}, Нельзя использовать стикеры 🎁, 💎 или ⭐️ в никнейме.`;
+                errorMessage += `Нельзя использовать стикеры 🎁, 💎 или ⭐️ в никнейме.`;
             }
 
-            await bot.sendMessage(chatId, errorMessage, { reply_to_message_id: msg.message_id });
+            await bot.sendMessage(chatId, errorMessage, {
+                parse_mode: 'HTML',
+                reply_to_message_id: messageId,
+            });
         }
     }
 }
@@ -225,6 +244,11 @@ async function userGameInfo(msg, bot, collection) {
     const balanceFuncE = formatNumberInScientificNotation(userGameBalance);
     const balanceFuncT = userGameBalance.toLocaleString('de-DE');
     const userDonateStatus = await donatedUsers(msg, collection);
+    const userHouse = user.properties[0].houses
+    const userCar = user.properties[0].cars
+
+    const propHouse = userHouse !== '' ? userHouse : 'отсутсвует'
+    const propCar = userCar !== '' ? userCar : 'отсутсвует'
 
     const cardText = chatId === userId ? `Карта 💳: |<code>${userBankCard}</code>|` : `Карта 💳: |<code>5444 **** **** ****</code>|`;
 
@@ -235,8 +259,10 @@ async function userGameInfo(msg, bot, collection) {
 <b>Uc: ${userUc}</b>
 <b>Status: ${userStatus.toUpperCase()}</b>
 ${cardText}
-<b>Криптовалюты 📊↓</b>
-   <b>Alt Coin IDX:</b> ${cryptoCurAlt}
+
+<b>Имущества ↓:</b>
+   <b>Дом -</b> <u>${propHouse}</u>
+   <b>Машина -</b> <u>${propCar}</u>
 
 <b>Сыграно игр: ${ratesAll} \n    Выигрыши: ${ratesWin} \n    Проигрыши: ${ratesLose}</b>
 <b>Время регистрации 📆:</b> ${register_time}

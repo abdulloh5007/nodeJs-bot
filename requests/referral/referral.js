@@ -122,20 +122,20 @@ async function startWithRef(msg, bot, collection) {
                     statusExpireDate: 0,
                 }],
                 limit: [{
-                    giveMoneyLimit: 5000000,
+                    giveMoneyLimit: 50000,
                     givedMoney: 0,
                     updateDayLimit: 0,
                     // promoMoneyLimit: 1000,
                     // promoMoney: 0,
                 }],
                 business: [{
-                    bHave: false,
-                    bName: "",
-                    bWorkers: 0,
-                    bMaxWorkers: 0,
-                    bProfit: 0,
-                    bWorkersProfit: 0,
-                    bTax: 0,
+                    have: false,
+                    name: "",
+                    workers: 0,
+                    maxWorkers: 0,
+                    profit: 0,
+                    workersProfit: 0,
+                    tax: 0,
                     lastUpdTime: 0,
                 }],
                 avatar: [{
@@ -172,7 +172,13 @@ async function startWithRef(msg, bot, collection) {
                     cardValue: 0,
                     cardPassword: 0,
                     cardOwnerId: userId
-                }]
+                }],
+                depozit: [{
+                    balance: 0,
+                    procent: 10,
+                    limit: 50000,
+                    date: 0,
+                }],
             })
 
             try {

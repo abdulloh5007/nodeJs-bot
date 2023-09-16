@@ -1,6 +1,6 @@
 require('dotenv').config();
 const mongoDbUrl = process.env.MONGO_DB_URL
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 const { formatNumberInScientificNotation } = require('../systems/systemRu');
 const { donatedUsers } = require('../donate/donatedUsers');
 const client = new MongoClient(mongoDbUrl);
@@ -30,8 +30,9 @@ async function autoCreatePromoCodes(bot) {
 
     const randomPromoName = generateRandomString(10);
     const randomActivation = Math.floor(Math.random() * 11)
-    const randomAmount = generateRandomNumber(70000)
+    const randomAmount = generateRandomNumber(30000)
     const promoComents = 'Спасибо что вы с нами'
+    const finishedAmountForOne = randomAmount / randomActivation
 
     let channelId = '@sbi_promos'
     bot.sendMessage(channelId, `
@@ -39,7 +40,8 @@ async function autoCreatePromoCodes(bot) {
 
 <b>Название:</b> <code>${randomPromoName}</code>
 <b>Количество использований:</b> ${randomActivation}
-<b>Приз:</b> ${randomAmount.toLocaleString('de-DE')} $ ${formatNumberInScientificNotation(randomAmount)}
+<b>Приз каждому по:</b> ${finishedAmountForOne.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(finishedAmountForOne)}
+
 <b>Коментарии</b> <u>${promoComents}</u>
         `, {
         parse_mode: 'HTML',
@@ -51,6 +53,28 @@ async function autoCreatePromoCodes(bot) {
         promoDonate: false,
         promoComent: promoComents,
         promoUsedBy: []
+    })
+}
+
+async function autoDeleteAllPromocodes(bot) {
+    const db = client.db('bot');
+    const collectionPromo = db.collection('promo');
+
+    await collectionPromo.deleteMany({ _id: ObjectId }).then(() => {
+        bot.sendMessage(adminId, `
+Все промокоды успешно удалены автоматически
+        `)
+    })
+}
+
+async function manualDeleteAllPromocodes(bot) {
+    const db = client.db('bot');
+    const collectionPromo = db.collection('promo');
+
+    await collectionPromo.deleteMany({ _id: ObjectId }).then(() => {
+        bot.sendMessage(adminId, `
+Все промокоды успешно удалены в ручную
+        `)
     })
 }
 
@@ -66,8 +90,9 @@ async function manualCreatePromoCodes(msg, bot, collection) {
     const userDonateStatus = await donatedUsers(msg, collection)
     const randomPromoName = generateRandomString(10);
     const randomActivation = Math.floor(Math.random() * 11) + 1
-    const randomAmount = generateRandomNumber(70000)
+    const randomAmount = generateRandomNumber(30000)
     const promoComents = 'Спасибо что вы с нами'
+    const finishedAmountForOne = randomAmount / randomActivation
 
     if (userId1 === adminId) {
         let channelId = '@sbi_promos'
@@ -76,7 +101,8 @@ async function manualCreatePromoCodes(msg, bot, collection) {
 
 <b>Название:</b> <code>${randomPromoName}</code>
 <b>Количество использований:</b> ${randomActivation}
-<b>Приз:</b> ${randomAmount.toLocaleString('de-DE')} $ ${formatNumberInScientificNotation(randomAmount)}
+<b>Приз каждому по:</b> ${finishedAmountForOne.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(finishedAmountForOne)}
+
 <b>Коментарии</b> <u>${promoComents}</u>
             `, {
             parse_mode: 'HTML',
@@ -106,7 +132,7 @@ function generateRandomNumber(num) {
 }
 
 function generateRandomString(length) {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789♂♀♪♫☼►◄‼►¶∟▲▼';
     let result = '';
     const charactersLength = characters.length;
     for (let i = 0; i < length; i++) {
@@ -119,4 +145,6 @@ function generateRandomString(length) {
 module.exports = {
     autoCreatePromoCodes,
     manualCreatePromoCodes,
+    manualDeleteAllPromocodes,
+    autoDeleteAllPromocodes,
 }
