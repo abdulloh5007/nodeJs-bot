@@ -10,9 +10,9 @@ module.exports = {
     helpOption: {
         reply_markup: JSON.stringify({
             inline_keyboard: [
-                [{ text: '👜', callback_data: 'mainHelp' }, { text: '🤹‍♂', callback_data: 'gameHelp' }],
-                [{ text: '🌇', callback_data: 'propertyHelp' }, { text: '🛡', callback_data: 'adminHelp' }],
-                [{ text: '📓', callback_data: 'restHelp' }, { text: '☎️', callback_data: 'moderationHelp' }],
+                [{ text: '🏞', callback_data: 'mainHelp' }, { text: '🎯', callback_data: 'gameHelp' }],
+                [{ text: '🏘', callback_data: 'propertyHelp' }, { text: '⚡️', callback_data: 'adminHelp' }],
+                [{ text: '🤹', callback_data: 'restHelp' }],
                 [{ text: 'Добавить бота в чат', url: 'https://telegram.me/levoujs_bot?startgroup=new' }],
             ]
         })
@@ -41,7 +41,7 @@ module.exports = {
     dayBonusOption: {
         reply_markup: JSON.stringify({
             inline_keyboard: [
-                [{ text: 'Получить бонус', callback_data: 'dayBonusCollect' }]
+                [{ text: 'Получить бонус🎁', callback_data: 'dayBonusCollect' }]
             ]
         })
     },

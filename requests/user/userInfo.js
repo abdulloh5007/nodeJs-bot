@@ -45,25 +45,27 @@ async function userBalance(msg, collection, bot, collectionAddvert) {
     const addvertTime = addvert ? addvert.addvertTime : ''
     const convertedTime = new Date(addvertTime)
     const userAva = user.avatar[0].avaUrl
+    const depBalance = user.depozit[0].balance
+
+    const txtBalance = `
+<b>┌💵 | Денег:</b> <i>${balanceFuncT}$ ${balanceFuncE}</i>
+<b>├UC | Донат-валюта:</b> <b><i>${userUc}</i></b>
+<b>└🏦 | В депозите:</b> <i>${depBalance.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(depBalance)}</i>
+    `
 
     let userStatus;
     if (userStatusName === 'standart' || userStatusName === 'player') {
         userStatus = `
 ${userDonateStatus}, ваш баланс
-
-🪙 | Монет: ${balanceFuncT} ${balanceFuncE}
-UC | ${userUc}
-
+${txtBalance}
 <b>РЕКЛАМА:</b> ${addvertText}
 ${addvertTime != '' ? `<b>ДАТА:</b> ${convertedTime.toLocaleDateString()}` : ''}
             `;
     } else {
         userStatus = `
 ${userDonateStatus}, ваш баланс
-
-🪙 | Монет: ${balanceFuncT} ${balanceFuncE}
-UC | ${userUc}
-            `;
+${txtBalance}
+        `;
     }
 
     const txt = `
@@ -73,7 +75,7 @@ ${userStatus}
     const dayBonusOption = {
         reply_markup: {
             inline_keyboard: [
-                [{ text: 'Получить бонус', callback_data: `dayBonusCollect_${userId}` }]
+                [{ text: 'Получить бонус 🎁', callback_data: `dayBonusCollect_${userId}` }]
             ]
         }
     };

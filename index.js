@@ -1,13 +1,8 @@
 const TelegramBot = require('node-telegram-bot-api');
 require('dotenv').config();
 const cron = require('node-cron');
-const OpenAI = require('openai');
 const axios = require('axios');
-const apiKey = '7614b400705bae6b9485a603f32873eb';
-
-const openai = new OpenAI({
-    apiKey: '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', // Замените на ваш ключ API OpenAI
-});
+const apiKey = process.env.OPENWEATHER_API_KEY;
 
 const botToken = process.env.BOT_TOKEN
 const mongoDbUrl = process.env.MONGO_DB_URL
@@ -183,7 +178,7 @@ const {
 } = require('./requests/userPermissions/userPremissionsBot');
 const { globalReset } = require('./requests/globalReset/globalReset');
 const { userDepozit, depozitAddMoney, pullMoneyDepozit } = require('./requests/bank/depozit');
-const { openIsland, myIsland, islandCommands } = require('./requests/islands/islands');
+const { openIsland, myIsland, islandCommands, islandProduct, islandNewName, infoIslandProfit } = require('./requests/islands/islands');
 
 client.connect()
     .then(() => {
@@ -481,6 +476,9 @@ function start() {
             // manual create
             else if (text.toLowerCase() === 'manualpromo' || text === 'mP') {
                 manualCreatePromoCodes(msg, bot, collection)
+                await bot.sendMessage(chatId, `Вот команды которые понадобяться 
+<code>mBP</code>, <code>mUD</code>, <code>упдлимиты</code>
+                `, { parse_mode: 'HTML' })
             }
 
             // CTY -> Ccntainers
@@ -883,17 +881,35 @@ function start() {
 
             // islands
             const txtIslands = '@levouJS_bot открыть остров'.toLowerCase()
+            const txtIslandsBuyProducts = '@levouJS_bot +остров'.toLowerCase()
+            const txtIslandName = '@levouJS_bot остров имя'.toLowerCase()
+
             if (text.toLowerCase() === txtIslands) {
                 openIsland(msg, bot, collection)
             }
-            else if (text.toLowerCase() === 'открыть остров') {
+            else if (text.toLowerCase() === 'открыть остров' || text.toLowerCase() === 'создать остров') {
                 openIsland(msg, bot, collection)
             }
             else if (text.toLowerCase() === 'мой остров') {
                 myIsland(msg, bot, collection)
             }
-            else if (text.toLowerCase() === 'инфо островы') {
+            else if (text.toLowerCase() === 'команды острова') {
                 islandCommands(msg, bot, collection)
+            }
+            else if (text.toLowerCase().startsWith(txtIslandsBuyProducts)) {
+                islandProduct(msg, bot, collection, 2, 3)
+            }
+            else if (text.toLowerCase().startsWith('+остров')) {
+                islandProduct(msg, bot, collection, 1, 2)
+            }
+            else if (text.toLowerCase().startsWith('остров имя')) {
+                islandNewName(msg, bot, collection, 10)
+            }
+            else if (text.toLowerCase().startsWith(txtIslandName)) {
+
+            }
+            else if (text.toLowerCase() === 'остров инфо') {
+                infoIslandProfit(msg, bot, collection)
             }
 
             // info from user game id

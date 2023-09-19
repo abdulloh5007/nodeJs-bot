@@ -100,7 +100,7 @@ ${userDonateStatus}, вы неможете попонить <b>${depMoney.toLoca
         return;
     }
 
-    if (dateDepDate < testDate) {
+    if (dateDepDate < testDate && depDate !== 0) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, вы не можете пополнить баланс депозита так как время уже вышло
 

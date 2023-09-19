@@ -189,7 +189,6 @@ ${userDonateStatus}, вы открыли контейнер 🎉
         `
         const updateObj = {};
         updateObj[`properties.0.${contType}`] = randomedPrise.name;
-        console.log(updateObj);
 
         await collection.updateOne({ id: userId1 }, { $set: updateObj });
         await collection.updateOne({ id: userId1 }, { $inc: { balance: -price } })

@@ -32,7 +32,7 @@ async function autoCreatePromoCodes(bot) {
     const randomActivation = Math.floor(Math.random() * 11)
     const randomAmount = generateRandomNumber(30000)
     const promoComents = 'Спасибо что вы с нами'
-    const finishedAmountForOne = randomAmount / randomActivation
+    const finishedAmountForOne = Math.floor(randomAmount / randomActivation)
 
     let channelId = '@sbi_promos'
     bot.sendMessage(channelId, `
@@ -92,7 +92,7 @@ async function manualCreatePromoCodes(msg, bot, collection) {
     const randomActivation = Math.floor(Math.random() * 11) + 1
     const randomAmount = generateRandomNumber(30000)
     const promoComents = 'Спасибо что вы с нами'
-    const finishedAmountForOne = randomAmount / randomActivation
+    const finishedAmountForOne = Math.floor(randomAmount / randomActivation)
 
     if (userId1 === adminId) {
         let channelId = '@sbi_promos'
@@ -132,7 +132,7 @@ function generateRandomNumber(num) {
 }
 
 function generateRandomString(length) {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789♂♀♪♫☼►◄‼►¶∟▲▼';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789♂♀♪♫☼►◄►¶∟▲▼';
     let result = '';
     const charactersLength = characters.length;
     for (let i = 0; i < length; i++) {

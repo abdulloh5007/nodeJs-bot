@@ -12,6 +12,21 @@ const hours = date.getHours()
 const minutes = date.getMinutes()
 const registerUserTime = `${day}-${month}-${year} ${hours}:${minutes}`
 
+const txtHelp = 
+`<b>🥴Разделы</b>
+<b>👨‍💻Ownner: <a href='https://t.me/Ctiv_50'>Владелец</a></b>
+<b>📚Чат</b> - 
+<b>🛰Канал</b> -
+
+<i>🏞 Основные😉</i>
+<i>🏘Дома(острова🏝)۬</i>
+<i>⚡️Админ</i>
+<i>🎯Игры</i>
+<i>🤹Развлекательное</i>
+
+🗄 Беседа - официальные чаты и канал бота.
+`
+
 function generateRandomElementsOnlyUsers(letters, numbers) {
     const alphabet = letters;
     const randomLetter = alphabet[Math.floor(Math.random() * alphabet.length)];
@@ -48,19 +63,16 @@ async function commandStart(msg, collection, bot) {
         await bot.sendSticker(chatId, 'CAACAgIAAxkBAAEJuehkthTWSWEaOSTzdOjdX5T1rpuFEgACSQADQbVWDGATQ6Y8j8OALwQ')
             .then(() => {
                 bot.sendMessage(chatId, `
-Привет, <a href='tg://user?id=${userId}'>Игрок</a>
+<i>😉Хай! <a href='tg://user?id=${userId}'>Игрок</a></i>
 
-Я - игровой бот для игры в различные игры.
+<b>Я 🙈Игровой бот много функциональный🚀, тут различные игры есть🎯. Тут весело играть покорай топы🏆</b>
 
-🎁 | Тебе выдан подарок в размере 10.000€.
+<b>🎁Тебе выдан подарок в размере 5000$ 😝</b>
+<b>💳+Плюс вам в подарок была выдана пластик карта «MasterCard»🏦</b>
+<b>😊Так же ты можешь добавить меня в беседу для игры с друзьями🎎.⚡️</b>
 
-Так же ты можешь добавить меня в беседу для игры с друзьями.
-
-Рекомендую скорее нажать на помощь или написав: «Помощь»
-
-+ вам в подарок была выдана пластик карта «MasterCard».
-
-Напишите: <code>инфо карта</code>, чтобы узнать информацию о карте, приятной игры! 😊
+<i>😄Рекомендую нажать на помощь или написать: «Помощь»📺•</i>
+<i>😎И не забудь☆написать: инфо карта, чтобы узнать информацию о карте, приятной игры! 🙃</i>
         `, { parse_mode: 'HTML', ...startOptions, reply_to_message_id: msg.message_id })
             })
         const prefix = "5444";
@@ -171,18 +183,8 @@ async function commandHelp(msg, collection, bot) {
     const userGameName = user.userName
     await bot.sendMessage(chatId, `
 <a href='tg://user?id=${userId}'>${userGameName}</a>
-<b>🗂Разделы</b>
-<b>👨‍🔬Ownner: Corporation of Three Youngs</b>
-
-<i>👜 Основные✇ </i>
-<i>🌇 Имущество❃۬</i>
-<i>🛡 Для ✄Админов</i>
-<i>🤹‍♂ Игры✺</i>
-<i>☎️ Модерация㋡</i>
-<i>📓 Развлекательное❒</i>
-
-🗄 Беседа - официальные чаты и канал бота.
-    `, { parse_mode: 'HTML', ...helpOption, reply_to_message_id: replyId })
+${txtHelp}
+    `, { parse_mode: 'HTML', ...helpOption, reply_to_message_id: replyId, disable_web_page_preview: true })
 
 }
 
@@ -195,21 +197,11 @@ async function commandHelpAsBtn(msg, bot, userGameName, collection) {
 
     const help = `
 <a href='tg://user?id=${userId}'>${userGameName}</a>
-<b>🗂Разделы</b>
-<b>👨‍🔬Ownner: Corporation of Three Youngs</b>
-
-<i>👜 Основные✇ </i>
-<i>🌇 Имущество❃۬</i>
-<i>🛡 Для ✄Админов</i>
-<i>🤹‍♂ Игры✺</i>
-<i>☎️ Модерация㋡</i>
-<i>📓 Развлекательное❒</i>
-
-🗄 Беседа - официальные чаты и канал бота.
+${txtHelp}
     `
     // ЭТО ФУНКЦИЯ ВЫЗЫВАЕТ КНОПКУ НАЗАД
     const willEditMessage = () => {
-        bot.editMessageText(help, { parse_mode: 'HTML', chat_id: chatId, message_id: msg.message.message_id, ...helpOption, reply_to_message_id: replyId })
+        bot.editMessageText(help, { parse_mode: 'HTML', chat_id: chatId, message_id: msg.message.message_id, ...helpOption, reply_to_message_id: replyId, disable_web_page_preview: true })
     }
     // ЭТО ФУНКЦИЯ ВЫЗЫВАЕТ ИЗМЕНЕНИЕ СООБЩЕНИЙ
     const willChangHelpOption = (funcData, funcText) => {
@@ -237,8 +229,6 @@ ${userDonateStatus}, вот остальные команды
     const property = `
 🚦${userDonateStatus}, вот имущества которые существуют в боте🛸
 
-🚦Игрок, вот имущества которые существуют в боте🛸
-
 🏠 <i><code>дома</code></i> - <b>Информация о домах</b>
 🏆 <i><code>донат дома</code></i> - <b>Информация о донат домах</b>
 🌇 <i><code>инфо дом [название дома]</code></i> - 🏠<b>Информация о доме</b>
@@ -250,6 +240,9 @@ ${userDonateStatus}, вот остальные команды
 💻 <i><code>бизнесы</code></i> - <b>Информация о бизнесах</b>
 <i><code>купить бизнес [номер]</code></i> - <b>Покупка бизнеса</b>
 📽 <i><code>инфо бработники</code></i> - <b>Информация о бизнес работниках</b>🤵
+
+<i>🏝<code>команды острова</code></i> - <b>команды островов</b>
+<i><code>открыть остров</code></i> - <b>Открытие собственного острова</b>
     `
 
     const moderation = `
@@ -325,7 +318,6 @@ ${userDonateStatus}, вот команды админов
     willChangHelpOption('propertyHelp', property)
     willChangHelpOption('adminHelp', adminCommands)
     willChangHelpOption('restHelp', restHelp)
-    willChangHelpOption('moderationHelp', moderation)
 
     if (data === 'back') {
         willEditMessage()
@@ -516,6 +508,57 @@ ${userDonateStatus}, напишите мне игровой айди игрок�
         })
         return;
     }
+    
+    const user = await collection.findOne({ gameId: parts[1] })
+
+    if (!user) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, этот пользователь не найден 
+<b>Пример:</b> <i>A1234567</i>
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        return;
+    }
+
+    const userName = user.userName
+    const userId2 = user.id
+    const userBalance = user.balance
+    const userGameId = user.gameId
+    const userUc = user.uc
+    const userStatusName = user.status[0].statusName
+    const userStatusExpire = user.status[0].statusExpireDate
+    const dateExpire = new Date(userStatusExpire)
+
+    const userStatus =  userStatusName != 'player' ? 
+`<i>${userStatusName.toUpperCase()} ⌂</i>
+  └<b>Время окончания:</b> ${dateExpire.toLocaleDateString()}` : '<b>PLAYER ☺</b>'
+    const userRegTime = user.registerTime
+    const userBanCause = user.ban[0].cause
+    const userBanTime = user.ban[0].banTime
+    const userBan = user.ban[0].ban == true ? 
+`<b>Заблокирован √</b>
+  └<b>Причина:</b> <i>${userBanCause}</i>
+  └<b>Время:</b> <i>${userBanTime}</i>` : '<b>Не заблокирован ×</b>'
+
+    bot.sendMessage(chatId, `
+${userDonateStatus}, вот инфо о игроке <a href='tg://user?id=${userId2}'>${userName}</a>
+
+<b>Ник:</b> <i>${userName}</i>
+<b>Игровой айди:</b> <i>${userGameId}</i>
+<b>Баланс:</b> <i>${userBalance.toLocaleString('de-DE')} ${formatNumberInScientificNotation(userBalance)}</i>
+<b>Uc:</b> <i>${userUc.toLocaleString('de-DE')}</i>
+<b>Время регистрации:</b> <i>${userRegTime}</i>
+
+<b>Статус:</b> ${userStatus}
+
+<b>Бан:</b> ${userBan}
+
+    `, {
+        parse_mode: 'HTML',
+        reply_to_message_id: messageId,
+    })
 }
 
 module.exports = {
