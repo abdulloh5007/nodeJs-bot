@@ -212,7 +212,7 @@ ${txtHelp}
     }
 
     if (data === 'help') {
-        await bot.sendMessage(chatId, help, { parse_mode: 'HTML', ...helpOption, reply_to_message_id: replyId })
+        await bot.sendMessage(chatId, help, { parse_mode: 'HTML', ...helpOption, reply_to_message_id: replyId, disable_web_page_preview: true })
     }
 
     const restHelp = `
