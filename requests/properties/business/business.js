@@ -1,6 +1,7 @@
 const { MongoClient } = require('mongodb');
 const { donatedUsers } = require('../../donate/donatedUsers');
 const { formatNumberInScientificNotation } = require('../../systems/systemRu');
+const { customChalk } = require('../../../customChalk');
 require('dotenv').config()
 
 const adminId = parseInt(process.env.ADMIN_ID_INT)
@@ -128,7 +129,6 @@ async function infoBusiness(msg, bot, collection) {
     const db = client.db('bot');
     const collectionBusiness = db.collection('businesses')
 
-    const text = msg.text
     const userId1 = msg.from.id
     const chatId = msg.chat.id
 
@@ -139,6 +139,8 @@ async function infoBusiness(msg, bot, collection) {
     if (userBusiness === '') {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, У вас нет бизнеса
+
+<b>Чтобы узнать:</b> <code>бизнесы</code>
         `, { parse_mode: 'HTML' })
         return;
     }
@@ -153,6 +155,7 @@ ${userDonateStatus}, У вас нет бизнеса
     const workers = user.business[0].workers
     const workersProfitHour = workersProfit * workers
     const localedStringProfitWorkers = `${workersProfitHour.toLocaleString('de-DE')} ${formatNumberInScientificNotation(workersProfitHour)}`
+    const endProfit = Math.floor(workersProfitHour * 3)
 
     bot.sendPhoto(chatId, bPhoto, {
         parse_mode: 'HTML',
@@ -169,6 +172,9 @@ ${userDonateStatus}, вот информация о вашем бизнесе
 
 <b>Прибыль от каждого работника будет состоять по:</b> ${workersProfit.toLocaleString('de-DE')} ${formatNumberInScientificNotation(workersProfit)}
 <b>Чтобы узнать о работниках напишите:</b> <code>инфо бработники</code>
+<b>Чтобы оплатить налоги напишите:</b> <code>бизнес налоги</code>
+
+<b>❗️Если ваши налоги будут превышать ${endProfit.toLocaleString('de-DE')} это означает 3 раза пропустить налоги</b>
         `
     })
 }
@@ -330,6 +336,7 @@ ${message}
 
 async function addProfitEveryOneHour(collection) {
     const users = await collection.find({ "business.0.have": true }).toArray()
+    const userDonateStatus = await donatedUsers(msg, collection)
 
     for (let i = 0; i < users.length; i++) {
         const el = users[i];
@@ -337,7 +344,55 @@ async function addProfitEveryOneHour(collection) {
         const userworkersProfit = el.business[0].workersProfit
         const addToProfit = userworkers * userworkersProfit
         const usertax = el.business[0].tax
+        const endTax = Math.floor(addToProfit * 3)
 
+        if (usertax >= endTax) {
+            try {
+                await bot.sendMessage(el.id, `
+${userDonateStatus}, <b>Ваш бизнес автоматически был закрыт так как вы не платили налоги</b>
+                `, {
+                    parse_mode: 'HTML',
+                })
+            } catch (err) {
+                if (err.response && err.response.statusCode === 403) {
+                    console.log(customChalk.colorize(`Ошибка при отправки сообщение обновлении бизнеса: ${err.message}`, { style: 'italic', background: 'bgRed' }));
+                } else if (err.response && err.response.statusCode === 400) {
+                    console.log(customChalk.colorize(`Ошибка при отправки сообщение обновлении бизнеса: ${err.message}`, { style: 'italic', background: 'bgRed' }));
+                } else {
+                    console.log(customChalk.colorize(`Ошибка при отправки сообщение обновлении бизнеса: ${err.message}`, { style: 'italic', background: 'bgRed' }));
+                }
+            }
+            await collection.updateOne({ id: el.id }, {
+                $set: {
+                    "business.0.have": false,
+                    "business.0.name": '',
+                    "business.0.workers": 0,
+                    "business.0.maxWorkers": 0,
+                    "business.0.profit": 0,
+                    "business.0.workersProfit": 0,
+                    "business.0.tax": 0,
+                    "business.0.lastUpdTime": 0,
+                }
+            })
+            return;
+        }
+
+        try {
+            await bot.sendMessage(el.id, `
+${userDonateStatus}, <b>Вам успешно были добавлены зарплаты бизнеса</b>
+<b>Не забывайте оплатить налоги а то после 3 раза ваш бизнес автоматически будет закрыт❗️</b>
+            `, {
+                parse_mode: 'HTML',
+            })
+        } catch (err) {
+            if (err.response && err.response.statusCode === 403) {
+                console.log(customChalk.colorize(`Ошибка при отправки сообщение обновлении бизнеса: ${err.message}`, { style: 'italic', background: 'bgRed' }));
+            } else if (err.response && err.response.statusCode === 400) {
+                console.log(customChalk.colorize(`Ошибка при отправки сообщение обновлении бизнеса: ${err.message}`, { style: 'italic', background: 'bgRed' }));
+            } else {
+                console.log(customChalk.colorize(`Ошибка при отправки сообщение обновлении бизнеса: ${err.message}`, { style: 'italic', background: 'bgRed' }));
+            }
+        }
         collection.updateOne({ id: el.id }, { $inc: { "business.0.profit": parseInt(addToProfit), "business.0.tax": parseInt(Math.floor(usertax / 2)) } })
     }
     return;
@@ -345,20 +400,64 @@ async function addProfitEveryOneHour(collection) {
 
 async function manualAddProfitEveryOneHour(msg, bot, collection) {
     const users = await collection.find({ "business.0.have": true }).toArray()
-    const userId1 = msg.from.id
+    const userDonateStatus = await donatedUsers(msg, collection)
 
-    if (userId1 === adminId) {
-        for (let i = 0; i < users.length; i++) {
-            const el = users[i];
-            const userworkers = el.business[0].workers
-            const userworkersProfit = el.business[0].workersProfit
-            const addToProfit = userworkers * userworkersProfit
+    for (let i = 0; i < users.length; i++) {
+        const el = users[i];
+        const userworkers = el.business[0].workers
+        const userworkersProfit = el.business[0].workersProfit
+        const addToProfit = userworkers * userworkersProfit
+        const usertax = el.business[0].tax
+        const endTax = Math.floor(addToProfit * 3)
 
-            await collection.updateOne({ id: el.id }, { $inc: { "business.0.profit": parseInt(addToProfit), "business.0.tax": parseInt(Math.floor(addToProfit / 2)) } })
+        if (usertax >= endTax) {
+            try {
+                await bot.sendMessage(el.id, `
+${userDonateStatus}, <b>Ваш бизнес автоматически был закрыт так как вы не платили налоги</b>
+                `, {
+                    parse_mode: 'HTML',
+                })
+            } catch (err) {
+                if (err.response && err.response.statusCode === 403) {
+                    console.log(customChalk.colorize(`Ошибка при отправки сообщение обновлении бизнеса: ${err.message}`, { style: 'italic', background: 'bgRed' }));
+                } else if (err.response && err.response.statusCode === 400) {
+                    console.log(customChalk.colorize(`Ошибка при отправки сообщение обновлении бизнеса: ${err.message}`, { style: 'italic', background: 'bgRed' }));
+                } else {
+                    console.log(customChalk.colorize(`Ошибка при отправки сообщение обновлении бизнеса: ${err.message}`, { style: 'italic', background: 'bgRed' }));
+                }
+            }
+            await collection.updateOne({ id: el.id }, {
+                $set: {
+                    "business.0.have": false,
+                    "business.0.name": '',
+                    "business.0.workers": 0,
+                    "business.0.maxWorkers": 0,
+                    "business.0.profit": 0,
+                    "business.0.workersProfit": 0,
+                    "business.0.tax": 0,
+                    "business.0.lastUpdTime": 0,
+                }
+            })
+            return;
         }
-        bot.sendMessage(adminId, `
-    Успешно были добавлены прибыль для бизнесов
-        `)
+
+        try {
+            await bot.sendMessage(el.id, `
+${userDonateStatus}, <b>Вам успешно были добавлены зарплаты бизнеса</b>
+<b>Не забывайте оплатить налоги а то после 3 раза ваш бизнес автоматически будет закрыт❗️</b>
+            `, {
+                parse_mode: 'HTML',
+            })
+        } catch (err) {
+            if (err.response && err.response.statusCode === 403) {
+                console.log(customChalk.colorize(`Ошибка при отправки сообщение обновлении бизнеса: ${err.message}`, { style: 'italic', background: 'bgRed' }));
+            } else if (err.response && err.response.statusCode === 400) {
+                console.log(customChalk.colorize(`Ошибка при отправки сообщение обновлении бизнеса: ${err.message}`, { style: 'italic', background: 'bgRed' }));
+            } else {
+                console.log(customChalk.colorize(`Ошибка при отправки сообщение обновлении бизнеса: ${err.message}`, { style: 'italic', background: 'bgRed' }));
+            }
+        }
+        collection.updateOne({ id: el.id }, { $inc: { "business.0.profit": parseInt(addToProfit), "business.0.tax": parseInt(Math.floor(usertax / 2)) } })
     }
     return;
 }

@@ -178,7 +178,7 @@ const {
 } = require('./requests/userPermissions/userPremissionsBot');
 const { globalReset } = require('./requests/globalReset/globalReset');
 const { userDepozit, depozitAddMoney, pullMoneyDepozit } = require('./requests/bank/depozit');
-const { openIsland, myIsland, islandCommands, islandProduct, islandNewName, infoIslandProfit } = require('./requests/islands/islands');
+const { openIsland, myIsland, islandCommands, islandProduct, islandNewName, infoIslandProfit, takeOfProfitIsland } = require('./requests/islands/islands');
 
 client.connect()
     .then(() => {
@@ -259,7 +259,6 @@ function start() {
 Страна: ${countryName}
                 `;
 
-                console.log(weatherData);
                 return message;
             } catch (error) {
                 console.error('Ошибка при запросе к OpenWeatherMap API:', error);
@@ -282,7 +281,7 @@ function start() {
     // Обработчик события оповещения об уходе участника из чата
     bot.on('left_chat_member', async (msg) => {
         // deleteMessageBot(msg, bot);
-        bot.sendMessage(msg.chat.id, 'Ну и ху* с ним', { reply_to_message_id: msg.message_id })
+        // bot.sendMessage(msg.chat.id, 'Ну и ху* с ним', { reply_to_message_id: msg.message_id })
     });
 
     // Обработчик события оповещения о новом фото чата
@@ -349,8 +348,6 @@ function start() {
         }
     })
 
-
-
     // bot.on('message', async msg => {
     //     const ce = msg.dice.value
     //     console.log(ce);
@@ -362,24 +359,7 @@ function start() {
         const chatId = msg.chat.id
         const messageId = msg.message_id
 
-        const pinned_message = msg.pinned_message
-        const new_chat_title = msg.new_chat_title
-        const new_chat_members = msg.new_chat_members
-        const new_chat_photo = msg.new_chat_photo
-        const left_chat_member = msg.left_chat_member
-        const sendedPhoto = msg.photo
-        const sendGiff = msg.animation
-        const sendSticker = msg.sticker
-        const voice = msg.voice
-        const dice = msg.dice
-        const video = msg.video
-        const document = msg.document
-        const poll = msg.poll
-        const location = msg.location
-        const contact = msg.contact
-        const gameBot = msg.game
-
-        if (pinned_message || new_chat_members || new_chat_title || new_chat_photo || left_chat_member || sendedPhoto || sendGiff || sendSticker || voice || dice || video || document || poll || location || contact || gameBot) {
+        if (!text) {
             return;
         }
 
@@ -450,6 +430,10 @@ function start() {
             const txtPerm = '@levouJS_bot права'.toLowerCase()
             const txtBouling = '@levouJS_bot боул'.toLowerCase()
             const txtFootball = '@levouJS_bot футбол'.toLowerCase()
+
+            function SIQCCtxts(string) {
+                return `@levouJS_bot ${string}`.toLowerCase()
+            }
 
             //calc
             if (['calc', 'cl'].includes(text.toLowerCase())) {
@@ -540,14 +524,12 @@ function start() {
             }
 
             //addvert
-            if (parts[0] === '@levouJS_bot') {
-                if (['!+add', '!+рек', '!+реклама'].includes(parts[1].toLowerCase())) {
-                    let globLength = 2
-                    let toSliceLength = parts[0] + " " + parts[1]
-                    addAddvert(msg, bot, collectionAddvert, collection, globLength, toSliceLength)
-                }
+            if (text.toLowerCase().startsWith(SIQCCtxts('+рек'))) {
+                let globLength = 2
+                let toSliceLength = parts[0] + " " + parts[1]
+                addAddvert(msg, bot, collectionAddvert, collection, globLength, toSliceLength)
             }
-            else if (['!+add', '!+рек', '!+реклама'].includes(parts[0].toLowerCase())) {
+            else if (['+add', '+рек', '+реклама'].includes(parts[0].toLowerCase())) {
                 let globLength = 1
                 let toSliceLength = parts[0]
                 addAddvert(msg, bot, collectionAddvert, collection, globLength, toSliceLength)
@@ -555,17 +537,15 @@ function start() {
             else if (['рекламы', 'adds', 'рекы'].includes(text.toLowerCase())) {
                 addverts(msg, bot, collection, collectionAddvert)
             }
-            else if (parts[0] === '@levouJS_bot') {
-                if (['!-add', '!-рек', '!-реклама'].includes(parts[1].toLowerCase())) {
-                    let globLengthAdd = 2
-                    deleteAdd(msg, bot, collection, collectionAddvert, globLengthAdd)
-                }
+            else if (text.toLowerCase().startsWith(SIQCCtxts('-рек'))) {
+                let globLengthAdd = 2
+                deleteAdd(msg, bot, collection, collectionAddvert, globLengthAdd)
             }
-            else if (['!-add', '!-рек', '!-реклама'].includes(parts[0].toLowerCase())) {
+            else if (['-add', '-рек', '-реклама'].includes(parts[0].toLowerCase())) {
                 let globLengthAdd = 1
                 deleteAdd(msg, bot, collection, collectionAddvert, globLengthAdd)
             }
-            else if (['!add -all', '!рек -все'].includes(text.toLowerCase())) {
+            else if (['!add -all', 'рек -все'].includes(text.toLowerCase())) {
                 deleteAllAddverts(msg, bot, collectionAddvert, collection)
             }
 
@@ -906,10 +886,16 @@ function start() {
                 islandNewName(msg, bot, collection, 10)
             }
             else if (text.toLowerCase().startsWith(txtIslandName)) {
-
+                islandNewName(msg, bot, collection, 23)
             }
             else if (text.toLowerCase() === 'остров инфо') {
                 infoIslandProfit(msg, bot, collection)
+            }
+            else if (text.toLowerCase() === 'остров казна снять') {
+                takeOfProfitIsland(msg, bot, collection)
+            }
+            else if (text.toLowerCase() === SIQCCtxts('остров казна снять')) {
+                takeOfProfitIsland(msg, bot, collection)
             }
 
             // info from user game id

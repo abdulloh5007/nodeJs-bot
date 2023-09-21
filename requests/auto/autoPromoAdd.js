@@ -34,17 +34,21 @@ async function autoCreatePromoCodes(bot) {
     const promoComents = 'Спасибо что вы с нами'
     const finishedAmountForOne = Math.floor(randomAmount / randomActivation)
 
-    let channelId = '@sbi_promos'
-    bot.sendMessage(channelId, `
+    let channelId = '@cty_channaldev'
+    await bot.sendMessage(channelId, `
 <b>Промокод от бота ↓</b>
 
 <b>Название:</b> <code>${randomPromoName}</code>
 <b>Количество использований:</b> ${randomActivation}
 <b>Приз каждому по:</b> ${finishedAmountForOne.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(finishedAmountForOne)}
 
-<b>Коментарии</b> <u>${promoComents}</u>
+<b>Коментарии:</b> <u>${promoComents}</u>
         `, {
         parse_mode: 'HTML',
+    }).then(() => {
+
+    }).catch(err => {
+        console.log('th ' + err);
     })
     await collectionPromo.insertOne({
         promoName: randomPromoName,
@@ -95,17 +99,21 @@ async function manualCreatePromoCodes(msg, bot, collection) {
     const finishedAmountForOne = Math.floor(randomAmount / randomActivation)
 
     if (userId1 === adminId) {
-        let channelId = '@sbi_promos'
-        bot.sendMessage(channelId, `
+        let channelId = '@cty_channaldev'
+        await bot.sendMessage(channelId, `
 <b>Промокод от бота ↓</b>
 
 <b>Название:</b> <code>${randomPromoName}</code>
 <b>Количество использований:</b> ${randomActivation}
 <b>Приз каждому по:</b> ${finishedAmountForOne.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(finishedAmountForOne)}
 
-<b>Коментарии</b> <u>${promoComents}</u>
-            `, {
+<b>Коментарии:</b> <u>${promoComents}</u>
+        `, {
             parse_mode: 'HTML',
+        }).then(() => {
+
+        }).catch(err => {
+            console.log('th ' + err);
         })
         await collectionPromo.insertOne({
             promoName: randomPromoName,

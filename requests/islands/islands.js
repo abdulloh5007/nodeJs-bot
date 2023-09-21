@@ -110,7 +110,7 @@ ${userDonateStatus}, вы успешно открыли свой остров
         })
         await collectionIslands.insertOne({
             id: userId1,
-            name: startNameIsland.toLowerCase(),
+            name: startNameIsland,
             owner: userName,
             population: 10,
             workPopulation: 0,
@@ -347,7 +347,7 @@ ${userDonateStatus}, у вас пока нету собственный остр
             inline_keyboard: [
                 [
                     { text: 'Смена имени', switch_inline_query_current_chat: 'остров имя ' },
-                    { text: 'Пополнить казну', switch_inline_query_current_chat: 'остров казна снять' },
+                    { text: 'Снять деньги', switch_inline_query_current_chat: 'остров казна снять' },
                 ],
                 [
                     { text: 'Купить еды', switch_inline_query_current_chat: '+остров еда ' },
@@ -526,15 +526,24 @@ async function islandNewName(msg, bot, collection, lenNewName) {
     const db = client.db('bot');
     const collectionIslands = db.collection('islands');
 
+    const userId1 = msg.from.id
     const text = msg.text;
     const chatId = msg.chat.id;
     const messageId = msg.message_id;
 
-    const parts = text.split(' ');
     const userDonateStatus = await donatedUsers(msg, collection);
-
     const newName = text.slice(lenNewName + 1);
-    if (!newName || newName.length > 15) {
+    const island = await collectionIslands.findOne({ id: userId1 })
+
+    if (!island) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, у вас пока нет собственного острова откройте
+его по команде <code>открыть остров</code>
+        `)
+        return;
+    }
+
+    if (!newName) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, не правильно введена команда
 <b>Пример:</b> <code>остров имя [новое имя]</code>
@@ -545,14 +554,37 @@ ${userDonateStatus}, не правильно введена команда
         return;
     };
 
-    const willChangeName = await collectionIslands.findOne({ name: willChangeName });
-    console.log(newName);
+    if (newName.length > 30) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, <b>не возможно поставить больше 30 символов попробуйте заново</b>
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        return;
+    }
+
+    const willChangeName = await collectionIslands.findOne({ name: newName });
+
+    if (willChangeName) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, это название острова уже существует 
+Попробуйте придумать другое имя
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        return;
+    }
+
     bot.sendMessage(chatId, `
-${userDonateStatus}, в разработке !
+${userDonateStatus}, Вы успешно сменили название острова
+<b>Новая название:</b> <i>${newName}</i>
     `, {
         parse_mode: 'HTML',
         reply_to_message_id: messageId,
     })
+    await collectionIslands.updateOne({ id: userId1 }, { $set: { name: newName.toString() } })
 }
 
 async function infoIslandProfit(msg, bot, collection) {
@@ -583,6 +615,50 @@ ${userDonateStatus}, инфо
     })
 }
 
+async function takeOfProfitIsland(msg, bot, collection) {
+    const db = client.db('bot');
+    const collectionIslands = db.collection('islands');
+
+    const userId1 = msg.from.id
+    const chatId = msg.chat.id
+    const messageId = msg.message_id
+
+    const userDonateStatus = await donatedUsers(msg, collection)
+    const island = await collectionIslands.findOne({ id: userId1 })
+
+    if (!island) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, у вас пока нет собственного острова откройте
+его по команде <code>открыть остров</code>
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        return;
+    }
+
+    const iBalance = island.balance
+    if (iBalance === 0) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, у вас на острове и так нету денег чтобы их снять !
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        return;
+    }
+
+    bot.sendMessage(chatId, `
+${userDonateStatus}, вы успешно сняли денег с острова
+<b>Кол-во:</b> <i>${iBalance.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(iBalance)}</i>
+    `, {
+        parse_mode: 'HTML',
+        reply_to_message_id: messageId,
+    })
+    await collection.updateOne({ id: userId1 }, { $inc: { balance: Math.floor(iBalance) } })
+    await collectionIslands.updateOne({ id: userId1 }, { $set: { balance: 0 } })
+}
+
 module.exports = {
     openIsland,
     myIsland,
@@ -590,4 +666,5 @@ module.exports = {
     islandProduct,
     islandNewName,
     infoIslandProfit,
+    takeOfProfitIsland,
 }

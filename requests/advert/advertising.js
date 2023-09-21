@@ -78,8 +78,8 @@ async function addverts(msg, bot, collection, collectionAddvert) {
     let addvertOptions = {
         reply_markup: {
             inline_keyboard: [
-                [{ text: 'Добавить рек', switch_inline_query_current_chat: '!+рек ' }],
-                addverts.length ? [{ text: 'Удалить рек', switch_inline_query_current_chat: '!-рек ' }] : []
+                [{ text: 'Добавить рек', switch_inline_query_current_chat: '+рек ' }],
+                addverts.length ? [{ text: 'Удалить рек', switch_inline_query_current_chat: '-рек ' }] : []
             ]
         }
     }
@@ -141,6 +141,16 @@ ${userDonateStatus}, для удаление рукламы выберите н�
 
     const addverts = await collectionAddvert.find().sort({ addvertTime: -1 }).toArray()
     const addverToUpd = addverts[numberToDel - 1]
+
+    if (!addverToUpd) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, этот номер рекламы не существует
+<b>Напишите чтобы узнать о них:</b> <code>рекы</code>
+        `, {
+            parse_mode: 'HTML',
+        })
+        return;
+    }
 
     await collectionAddvert.deleteOne({ _id: addverToUpd._id });
     bot.sendMessage(chatId, `
