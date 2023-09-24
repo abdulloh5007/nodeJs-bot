@@ -34,24 +34,23 @@ async function userBalance(msg, collection, bot, collectionAddvert) {
     const addvert = await collectionAddvert.findOne({}, { sort: { addvertTime: -1 } });
 
     const balance = user.balance;
-    const balanceFuncE = formatNumberInScientificNotation(balance);
     const balanceFuncT = balance.toLocaleString('de-DE');
     const userUc = user.uc;
     const userStatusName = user.status[0].statusName;
 
     const userDonateStatus = await donatedUsers(msg, collection);
 
-    const addvertText = addvert ? addvert.addvertText : 'НЕТУ'
-    const addvertTime = addvert ? addvert.addvertTime : ''
-    const convertedTime = new Date(addvertTime)
-    const userAva = user.avatar[0].avaUrl
-    const depBalance = user.depozit[0].balance
+    const addvertText = addvert ? addvert.addvertText : 'НЕТУ';
+    const addvertTime = addvert ? addvert.addvertTime : '';
+    const convertedTime = new Date(addvertTime);
+    const userAva = user.avatar[0].avaUrl;
+    const depBalance = user.depozit[0].balance;
 
     const txtBalance = `
-<b>┌💵 | Денег:</b> <i>${balanceFuncT}$ ${balanceFuncE}</i>
+<b>┌💵 | Денег:</b> <i>${balanceFuncT}$</i>
 <b>├UC | Донат-валюта:</b> <b><i>${userUc}</i></b>
-<b>└🏦 | В депозите:</b> <i>${depBalance.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(depBalance)}</i>
-    `
+<b>└🏦 | В депозите:</b> <i>${depBalance.toLocaleString('de-DE')}$</i>
+    `;
 
     let userStatus;
     if (userStatusName === 'standart' || userStatusName === 'player') {
@@ -79,10 +78,10 @@ ${userStatus}
             ]
         }
     };
+
     if (userAva === '') {
         await bot.sendMessage(chatId, txt, { reply_to_message_id: msg.message_id, ...dayBonusOption, parse_mode: 'HTML', disable_web_page_preview: true });
-    }
-    else {
+    } else {
         await bot.sendPhoto(chatId, userAva, {
             reply_to_message_id: msg.message_id,
             ...dayBonusOption,
