@@ -65,10 +65,10 @@ ${userDonateStatus}, Подождите 2 секунды перед начало
     if (randomNum < 7) {
         winCoefficient = 5;
         resultText = 'Вы выиграли 5x';
-    } else if (randomNum < 20) {
+    } else if (randomNum < 15) {
         winCoefficient = 3;
         resultText = 'Вы выиграли 3x';
-    } else if (randomNum < 30) {
+    } else if (randomNum < 20) {
         winCoefficient = 2;
         resultText = 'Вы выиграли 2x';
     } else if (randomNum < 40) {
@@ -161,7 +161,7 @@ ${userDonateStatus}, Подождите 2 секунды перед начало
     let winCoefficient = 0;
     let resultText = '';
 
-    if (randomNum < 20) {
+    if (randomNum < 30) {
         winCoefficient = 2;
         resultText = 'Вы выиграли 2x';
     } else {
@@ -262,7 +262,7 @@ ${userDonateStatus}, Подождите 2 секунды перед начало
     let winCoefficient = 0;
     let resultText = '';
 
-    if (randomNum < 20) {
+    if (randomNum < 30) {
         winCoefficient = 2;
         resultText = 'Вы выиграли 2x';
     } else {
