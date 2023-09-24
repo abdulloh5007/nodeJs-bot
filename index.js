@@ -187,7 +187,7 @@ client.connect()
         console.log(customChalk.colorize(`ERROR CONNECTING TO DATABASE ${error}`, { style: 'italic', background: 'bgRed' }));
     })
 
-const db = client.db('bot');
+const db = client.db('testbot');
 const collection = db.collection('users');
 const collectionBot = db.collection('botInfo')
 const collectionCrypto = db.collection('crypto')
@@ -421,18 +421,8 @@ function start() {
 
             //
             const parts = text.split(' ')
-            const txtConts = '@levouJS_bot открыть контейнер'.toLowerCase()
-            const txtAva = '@levouJS_bot +ава'.toLowerCase()
-            const txtBuyBusiness = '@levouJS_bot купить бизнес'.toLowerCase()
-            const txtBuyBWorkers = '@levouJS_bot купить бработников'.toLowerCase()
-            const txtCasino = '@levouJS_bot казино'.toLowerCase()
-            const txtSpin = '@levouJS_bot спин'.toLowerCase()
-            const txtPerm = '@levouJS_bot права'.toLowerCase()
-            const txtBouling = '@levouJS_bot боул'.toLowerCase()
-            const txtFootball = '@levouJS_bot футбол'.toLowerCase()
-
             function SIQCCtxts(string) {
-                return `@levouJS_bot ${string}`.toLowerCase()
+                return `@tesLevouJs_bot ${string}`.toLowerCase()
             }
 
             //calc
@@ -452,7 +442,7 @@ function start() {
                 let glLengthAvatarAdd = 1
                 addAvatar(msg, bot, glLengthAvatarAdd)
             }
-            else if (text.toLowerCase().startsWith(txtAva)) {
+            else if (text.toLowerCase() === SIQCCtxts('+ава')) {
                 let glLengthAvatarAdd = 2
                 addAvatar(msg, bot, glLengthAvatarAdd)
             }
@@ -476,7 +466,7 @@ function start() {
                 let glLengthBuyCont = 2
                 buyPriceMoneyContainer(msg, bot, collection, glLengthBuyCont)
             }
-            else if (text.toLowerCase().startsWith(txtConts)) {
+            else if (text.toLowerCase().startsWith(SIQCCtxts('открыть контейнер'))) {
                 let glLengthBuyCont = 3
                 buyPriceMoneyContainer(msg, bot, collection, glLengthBuyCont)
             }
@@ -488,7 +478,7 @@ function start() {
             else if (text.toLowerCase() === 'бизнесы') {
                 listBusinesses(msg, bot, collection)
             }
-            else if (text.toLowerCase().startsWith(txtBuyBusiness)) {
+            else if (text.toLowerCase().startsWith(SIQCCtxts('купить бизнес'))) {
                 let glLengthBuyB = 3
                 buyBusiness(msg, bot, collection, glLengthBuyB)
             }
@@ -502,7 +492,7 @@ function start() {
             else if (text.toLowerCase() === 'инфо бработники') {
                 workersInfo(msg, bot, collection)
             }
-            else if (text.toLowerCase().startsWith(txtBuyBWorkers)) {
+            else if (text.toLowerCase() === SIQCCtxts('купить бработнико')) {
                 let glLengthBWorkers = 3
                 buyWorkers(msg, bot, collection, glLengthBWorkers)
             }
@@ -565,7 +555,7 @@ function start() {
             }
 
             // games
-            if (text.toLowerCase().startsWith(txtCasino)) {
+            if (text.toLowerCase().startsWith(SIQCCtxts('казино'))) {
                 let valueIndex = 2
                 kazino(msg, collection, bot, valueIndex)
             }
@@ -573,7 +563,7 @@ function start() {
                 let valueIndex = 1
                 kazino(msg, collection, bot, valueIndex)
             }
-            else if (text.toLowerCase().startsWith(txtSpin)) {
+            else if (text.toLowerCase().startsWith(SIQCCtxts('спин'))) {
                 let valueIndex = 2
                 gameSpin(msg, bot, collection, valueIndex)
             }
@@ -581,7 +571,7 @@ function start() {
                 let valueIndex = 1
                 gameSpin(msg, bot, collection, valueIndex)
             }
-            else if (text.toLowerCase().startsWith(txtBouling)) {
+            else if (text.toLowerCase().startsWith(SIQCCtxts('боул'))) {
                 let valueIndex = 2
                 gameBouling(msg, bot, collection, valueIndex)
             }
@@ -589,7 +579,7 @@ function start() {
                 let valueIndex = 1
                 gameBouling(msg, bot, collection, valueIndex)
             }
-            else if (text.toLowerCase().startsWith(txtFootball)) {
+            else if (text.toLowerCase().startsWith(SIQCCtxts('футбол'))) {
                 let valueIndex = 2
                 gameFootball(msg, bot, collection, valueIndex)
             }
@@ -830,7 +820,7 @@ function start() {
             else if (text.toLowerCase() === '+права') {
                 addPermsForUser(msg, bot, collection)
             }
-            else if (text.toLowerCase().startsWith(txtPerm)) {
+            else if (text.toLowerCase().startsWith(SIQCCtxts('права'))) {
                 addPermsToCollection(msg, bot, collection)
             }
             else if (text.toLowerCase() === 'разрешения') {
@@ -848,11 +838,10 @@ function start() {
             }
 
             // depozit
-            const txtDep = '@levouJS_bot депозит пополнить'.toLowerCase()
             if (text.toLowerCase() === 'депозит') {
                 userDepozit(msg, bot, collection)
             }
-            else if (text.toLowerCase().startsWith(txtDep)) {
+            else if (text.toLowerCase().startsWith(SIQCCtxts('депозит пополнить'))) {
                 depozitAddMoney(msg, bot, collection, 3)
             }
             else if (text.toLowerCase().startsWith('депозит пополнить')) {
@@ -860,11 +849,7 @@ function start() {
             }
 
             // islands
-            const txtIslands = '@levouJS_bot открыть остров'.toLowerCase()
-            const txtIslandsBuyProducts = '@levouJS_bot +остров'.toLowerCase()
-            const txtIslandName = '@levouJS_bot остров имя'.toLowerCase()
-
-            if (text.toLowerCase() === txtIslands) {
+            if (text.toLowerCase() === SIQCCtxts('открыть остров')) {
                 openIsland(msg, bot, collection)
             }
             else if (text.toLowerCase() === 'открыть остров' || text.toLowerCase() === 'создать остров') {
@@ -876,7 +861,7 @@ function start() {
             else if (text.toLowerCase() === 'команды острова') {
                 islandCommands(msg, bot, collection)
             }
-            else if (text.toLowerCase().startsWith(txtIslandsBuyProducts)) {
+            else if (text.toLowerCase().startsWith(SIQCCtxts('+остров'))) {
                 islandProduct(msg, bot, collection, 2, 3)
             }
             else if (text.toLowerCase().startsWith('+остров')) {
@@ -885,7 +870,7 @@ function start() {
             else if (text.toLowerCase().startsWith('остров имя')) {
                 islandNewName(msg, bot, collection, 10)
             }
-            else if (text.toLowerCase().startsWith(txtIslandName)) {
+            else if (text.toLowerCase().startsWith(SIQCCtxts('остров имя'))) {
                 islandNewName(msg, bot, collection, 23)
             }
             else if (text.toLowerCase() === 'остров инфо') {

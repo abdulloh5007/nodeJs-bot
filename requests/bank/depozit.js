@@ -1,35 +1,45 @@
 const { donatedUsers } = require("../donate/donatedUsers")
 const { formatNumberInScientificNotation, parseNumber } = require("../systems/systemRu")
 
-
+/**
+ * Retrieves information about a user's deposit and sends a message with the details to a chat.
+ * Includes options for deposit replenishment and withdrawal.
+ * 
+ * @param {object} msg - The message object containing information about the user and chat.
+ * @param {object} bot - The bot object used to send messages.
+ * @param {object} collection - The collection object used to query the database.
+ * @returns {Promise<void>}
+ */
 async function userDepozit(msg, bot, collection) {
-    const userId1 = msg.from.id
-    const chatId = msg.chat.id
-    const messageId = msg.message_id
+  const userId = msg.from.id;
+  const chatId = msg.chat.id;
+  const messageId = msg.message_id;
 
-    const userDonateStatus = await donatedUsers(msg, collection)
-    const user = await collection.findOne({ id: userId1 })
-    const depBalance = user.depozit[0].balance
-    const depLimit = user.depozit[0].limit
-    const depProcent = user.depozit[0].procent
-    const depDate = user.depozit[0].date
-    const findDepDate = depDate !== 0 ? `<i>⌛️Дата снятие: <b>${depDate.toLocaleString()}</b></i>
-` : ''
+  const userDonateStatus = await donatedUsers(msg, collection);
+  const user = await collection.findOne({ id: userId });
+  const depozit = user.depozit[0];
 
-    const newDepDate = new Date().getDate()
-    const dateDepDate = new Date(depDate).getDate()
-    const findDepDateToBtn = depDate === 0 ? 999 : dateDepDate
+  const depBalance = depozit.balance;
+  const depLimit = depozit.limit;
+  const depProcent = depozit.procent;
+  const depDate = depozit.date;
 
-    let depOpts = {
-        reply_markup: {
-            inline_keyboard: [
-                [{ text: 'Депозит пополнить', switch_inline_query_current_chat: 'депозит пополнить ' }],
-                newDepDate >= findDepDateToBtn ? [{ text: 'Снять', callback_data: `pull_money_depozit__${userId1}` }] : []
-            ]
-        }
+  const findDepDate = depDate !== 0 ? `<i>⌛️Дата снятие: <b>${depDate.toLocaleString()}</b></i>\n` : '';
+
+  const newDepDate = new Date().getDate();
+  const dateDepDate = new Date(depDate).getDate();
+  const findDepDateToBtn = depDate === 0 ? 999 : dateDepDate;
+
+  const depOpts = {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: 'Депозит пополнить', switch_inline_query_current_chat: 'депозит пополнить ' }],
+        newDepDate >= findDepDateToBtn ? [{ text: 'Снять', callback_data: `pull_money_depozit__${userId}` }] : []
+      ]
     }
+  };
 
-    bot.sendMessage(chatId, `
+  const message = `
 ${userDonateStatus}, информация о вашем депозите
 
 <i>💳Ваш баланс в депозите:</i> <b>${depBalance.toLocaleString('de-DE')} ${formatNumberInScientificNotation(depBalance)}</b>
@@ -38,11 +48,13 @@ ${userDonateStatus}, информация о вашем депозите
 ${findDepDate}
 <b>〽️Процент будет повышаться смотря на ваш статус !</b> 🏆
 <b>⏹Кнопка снять появиться когда придёт дата снятие</b> 🤖
-    `, {
-        parse_mode: 'HTML',
-        reply_to_message_id: messageId,
-        ...depOpts,
-    })
+  `;
+
+  await bot.sendMessage(chatId, message, {
+    parse_mode: 'HTML',
+    reply_to_message_id: messageId,
+    ...depOpts,
+  });
 }
 
 async function depozitAddMoney(msg, bot, collection, glLength) {
@@ -179,14 +191,15 @@ async function pullMoneyDepozit(msg, bot, collection) {
             return;
         }
 
-        bot.sendMessage(chatId, `
+        await bot.editMessageText(`
 ${userDonateStatus}, вы успешно сняли денег с депозита 
 
 <b>Процент:</b> <i>${depProcent}%</i>
 <b>Сумма снятие депозита:</b> <i>${finishedResult.toLocaleString('de-DE')} ${formatNumberInScientificNotation(finishedResult)}</i>
         `, {
             parse_mode: 'HTML',
-            reply_to_message_id: messageId,
+            chat_id: chatId,
+            message_id: messageId,
         })
         await collection.updateOne({ id: userId1 }, { $inc: { balance: Math.floor(finishedResult) } })
         await collection.updateOne({ id: userId1 }, {

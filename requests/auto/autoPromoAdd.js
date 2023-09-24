@@ -1,32 +1,10 @@
 require('dotenv').config();
-const mongoDbUrl = process.env.MONGO_DB_URL
-const { MongoClient, ObjectId } = require('mongodb');
 const { formatNumberInScientificNotation } = require('../systems/systemRu');
 const { donatedUsers } = require('../donate/donatedUsers');
-const client = new MongoClient(mongoDbUrl);
 const adminId = parseInt(process.env.ADMIN_ID_INT)
 
-// let addChannelOpt = {
-//     reply_markup: {
-//         inline_keyboard: [
-//             [{ text: 'Добавить в канал', url: 'https://telegram.me/levoujs_bot?startchannel=new' }]
-//         ]
-//     }
-// }
-// bot.sendMessage(chatId, `
-// Добавить в канал
-// `, {
-//     parse_mode: 'HTML',
-//     ...addChannelOpt,
-// })
-
-async function connecting() {
-    await client.connect();
-}
-
 async function autoCreatePromoCodes(bot) {
-    const db = client.db('bot');
-    const collectionPromo = db.collection('promo');
+    const collectionPromo = await mongoConnect('promo')
 
     const randomPromoName = generateRandomString(10);
     const randomActivation = Math.floor(Math.random() * 11)
@@ -61,8 +39,7 @@ async function autoCreatePromoCodes(bot) {
 }
 
 async function autoDeleteAllPromocodes(bot) {
-    const db = client.db('bot');
-    const collectionPromo = db.collection('promo');
+    const collectionPromo = await mongoConnect('promo')
 
     await collectionPromo.deleteMany({ _id: ObjectId }).then(() => {
         bot.sendMessage(adminId, `
@@ -72,8 +49,7 @@ async function autoDeleteAllPromocodes(bot) {
 }
 
 async function manualDeleteAllPromocodes(bot) {
-    const db = client.db('bot');
-    const collectionPromo = db.collection('promo');
+    const collectionPromo = await mongoConnect('promo')
 
     await collectionPromo.deleteMany({ _id: ObjectId }).then(() => {
         bot.sendMessage(adminId, `
@@ -83,8 +59,7 @@ async function manualDeleteAllPromocodes(bot) {
 }
 
 async function manualCreatePromoCodes(msg, bot, collection) {
-    const db = client.db('bot');
-    const collectionPromo = db.collection('promo');
+    const collectionPromo = await mongoConnect('promo')
 
     const text = msg.text
     const userId1 = msg.from.id

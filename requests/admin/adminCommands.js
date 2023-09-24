@@ -3,14 +3,7 @@ const { parseNumber, formatNumberInScientificNotation } = require('../systems/sy
 
 require('dotenv').config();
 const adminIdInt = parseInt(process.env.ADMIN_ID_INT)
-const mongoDbUrl = process.env.MONGO_DB_URL
-const { MongoClient } = require('mongodb');
 const { checkUserPerms } = require('../userPermissions/userPremissionsBot');
-const client = new MongoClient(mongoDbUrl)
-
-async function connecting() {
-    await client.connect();
-};
 
 async function extraditeMoney(msg, collection, bot) {
     const chatId = msg.chat.id
@@ -427,8 +420,8 @@ async function generateRandomKey() {
 }
 
 async function useKey(msg, bot, collectionAdmins) {
-    const db = client.db('bot');
-    const collectionPermission = db.collection('permissions');
+    const collectionPermission = await mongoConnect('permissions')
+
     const text = msg.text
     const userId = msg.from.id;
 

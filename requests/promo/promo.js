@@ -3,7 +3,6 @@ const { parseNumber, formatNumberInScientificNotation } = require("../systems/sy
 require("dotenv").config()
 const adminId = parseInt(process.env.ADMIN_ID_INT)
 
-
 async function addingPromoIfNotExists(collectionPromo, promoData) {
     const exisitingPromo = await collectionPromo.findOne({ promoName: promoData.promoName })
 

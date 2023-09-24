@@ -1,20 +1,7 @@
-require('dotenv').config();
-const mongoDbUrl = process.env.MONGO_DB_URL
-const { MongoClient } = require('mongodb');
-const client = new MongoClient(mongoDbUrl);
 const { donatedUsers } = require("../donate/donatedUsers");
 const { formatNumberInScientificNotation } = require('../systems/systemRu');
+const { mongoConnect } = require('../../mongoConnect');
 
-/**
- * Establishes a connection to a MongoDB database using the MongoClient class.
- */
-async function connection() {
-    try {
-        await client.connect();
-    } catch (error) {
-        console.error('Error connecting to MongoDB:', error);
-    }
-}
 
 function generateRandomString(length) {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -28,8 +15,7 @@ function generateRandomString(length) {
 }
 
 async function checkAndUpdateIslands(userId1) {
-    const db = client.db('bot');
-    const collectionIslands = db.collection('islands');
+    const collectionIslands = await mongoConnect('islands')
 
     const island = await collectionIslands.findOne({ id: userId1 });
     const foods = parseInt(island.foods);
@@ -83,8 +69,7 @@ async function checkAndUpdateIslands(userId1) {
 }
 
 async function openIsland(msg, bot, collection) {
-    const db = client.db('bot');
-    const collectionIslands = db.collection('islands');
+    const collectionIslands = await mongoConnect('islands')
 
     const userId1 = msg.from.id
     const chatId = msg.chat.id
@@ -152,8 +137,7 @@ ${userDonateStatus}, у вас уже есть остров под
  * @returns {Promise<void>}
  */
 async function myIsland(msg, bot, collection) {
-    const db = client.db('bot');
-    const collectionIslands = db.collection('islands');
+    const collectionIslands = await mongoConnect('islands')
 
     const userId = msg.from.id;
     const chatId = msg.chat.id;
@@ -310,8 +294,7 @@ ${txtMessage}
 }
 
 async function islandCommands(msg, bot, collection) {
-    const db = client.db('bot');
-    const collectionIslands = db.collection('islands');
+    const collectionIslands = await mongoConnect('islands')
 
     const userId1 = msg.from.id
     const chatId = msg.chat.id
@@ -395,8 +378,7 @@ ${userDonateStatus}, 😃вот команды островов🏝
 }
 
 async function islandProduct(msg, bot, collection, lenProdToBuy, lenValProdToBuy) {
-    const db = client.db('bot');
-    const collectionIslands = db.collection('islands');
+    const collectionIslands = await mongoConnect('islands')
 
     const text = msg.text
     const userId1 = msg.from.id
@@ -523,8 +505,7 @@ ${userDonateStatus}, вы успешно сделали покупка прод�
 }
 
 async function islandNewName(msg, bot, collection, lenNewName) {
-    const db = client.db('bot');
-    const collectionIslands = db.collection('islands');
+    const collectionIslands = await mongoConnect('islands')
 
     const userId1 = msg.from.id
     const text = msg.text;
@@ -616,8 +597,7 @@ ${userDonateStatus}, инфо
 }
 
 async function takeOfProfitIsland(msg, bot, collection) {
-    const db = client.db('bot');
-    const collectionIslands = db.collection('islands');
+    const collectionIslands = await mongoConnect('islands')
 
     const userId1 = msg.from.id
     const chatId = msg.chat.id

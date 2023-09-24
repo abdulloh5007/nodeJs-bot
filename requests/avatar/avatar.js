@@ -1,18 +1,11 @@
 require('dotenv').config()
 const adminId = parseInt(process.env.ADMIN_ID_INT)
-const mongoDbUrl = process.env.MONGO_DB_URL
-const { MongoClient } = require('mongodb');
-const client = new MongoClient(mongoDbUrl);
 
-async function connecting() {
-    await client.connect()
-}
-
+const { mongoConnect } = require('../../mongoConnect')
 const { donatedUsers } = require('../donate/donatedUsers')
 
 async function avatarMenu(msg, bot) {
-    const db = client.db('bot');
-    const collection = db.collection('users');
+    const collection = await mongoConnect('users')
 
     const text = msg.text
     const userId1 = msg.from.id
@@ -63,8 +56,7 @@ ${userDonateStatus}, нажмите кнопку нижу чтобы поста�
 }
 
 async function addAvatar(msg, bot, glLength) {
-    const db = client.db('bot');
-    const collection = db.collection('users');
+    const collection = await mongoConnect('users')
 
     const text = msg.text
     const userId1 = msg.from.id
@@ -159,8 +151,7 @@ ${userDonateStatus}, проверьте юрл картинки
 }
 
 async function avaChekAdmins(msg, bot) {
-    const db = client.db('bot');
-    const collection = db.collection('users');
+    const collection = await mongoConnect('users')
 
     const data = msg.data
 

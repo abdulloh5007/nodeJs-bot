@@ -1,20 +1,13 @@
 require('dotenv').config();
-const mongoDbUrl = process.env.MONGO_DB_URL
-const { MongoClient } = require('mongodb');
-const client = new MongoClient(mongoDbUrl);
 
-async function connecting() {
-    await client.connect()
-}
-
+const { mongoConnect } = require('../../mongoConnect');
 const { adminDonatedUsers, donatedUsers } = require("../donate/donatedUsers");
 const { parseNumber, formatNumberInScientificNotation } = require("../systems/systemRu");
 
 let giveCooldown = 24 * 60 * 60 * 1000; // 24 часа в миллисекундах
 
 async function giveMoney(msg, bot) {
-    const db = client.db('bot');
-    const collection = db.collection('users');
+    const collection = await mongoConnect('users')
 
     const chatId = msg.chat.id;
     const text = msg.text;

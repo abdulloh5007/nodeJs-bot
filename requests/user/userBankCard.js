@@ -1,13 +1,7 @@
+const { mongoConnect } = require("../../mongoConnect");
 const { donatedUsers } = require("../donate/donatedUsers")
 const { parseNumber, formatNumberInScientificNotation } = require("../systems/systemRu")
 require('dotenv').config();
-const mongoDbUrl = process.env.MONGO_DB_URL
-const { MongoClient, ObjectId } = require('mongodb');
-const client = new MongoClient(mongoDbUrl);
-
-async function connecting() {
-    await client.connect();
-}
 
 async function generateCardNumber(msg, bot, collection) {
     const text = msg.text
@@ -61,8 +55,7 @@ function generateRandomCardNumber() {
 
 
 async function infoAboutCards(msg, bot) {
-    const db = client.db('bot');
-    const collection = db.collection('users');
+    const collection = await mongoConnect('users')
 
     const text = msg.text
     const chatId = msg.chat.id
@@ -86,8 +79,7 @@ ${userDonateStatus}, вот информация о картах:
 }
 
 async function cardInfo(msg, bot) {
-    const db = client.db('bot');
-    const collection = db.collection('users');
+    const collection = await mongoConnect('users')
 
     const text = msg.text
     const userId = msg.from.id
@@ -132,8 +124,7 @@ ${isChatIdSameAsUserId ? '' : '<b>Напишите в лс бота чтобы �
 }
 
 async function createUpdateCardPassword(msg, bot) {
-    const db = client.db('bot');
-    const collection = db.collection('users');
+    const collection = await mongoConnect('users')
 
     const text = msg.text
     const userId = msg.from.id

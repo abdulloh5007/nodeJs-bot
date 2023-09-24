@@ -1,17 +1,10 @@
 require('dotenv').config();
-const mongoDbUrl = process.env.MONGO_DB_URL
-const { MongoClient } = require('mongodb');
 const { formatNumberInScientificNotation } = require('../systems/systemRu');
 const { donatedUsers } = require('../donate/donatedUsers');
-const client = new MongoClient(mongoDbUrl);
-
-async function connection() {
-    await client.connect();
-}
+const { mongoConnect } = require('../../mongoConnect');
 
 async function addContainers(msg) {
-    const db = client.db('bot');
-    const collectionContainers = db.collection('containers');
+    const collectionContainers = await mongoConnect('containers')
 
     const text = msg.text
 
@@ -30,8 +23,7 @@ async function addContainers(msg) {
 }
 
 async function listPriceMoneyContainers(msg, bot, collection) {
-    const db = client.db('bot');
-    const collectionContainers = db.collection('containers');
+    const collectionContainers = await mongoConnect('containers')
 
     const text = msg.text
     const chatId = msg.chat.id
@@ -72,8 +64,7 @@ ${sortedContainers}
 }
 
 async function buyPriceMoneyContainer(msg, bot, collection, glLength) {
-    const db = client.db('bot');
-    const collectionContainers = db.collection('containers');
+    const collectionContainers = await mongoConnect('containers')
 
     const text = msg.text
     const chatId = msg.chat.id
@@ -151,8 +142,7 @@ ${userDonateStatus}, у вас не хватает средст для откр�
 }
 
 async function contPriseType(msg, contType, collection, userId1, bot, chatId, img, price) {
-    const db = client.db('bot');
-    const contPrise = db.collection(contType);
+    const contPrise = await mongoConnect(contType)
     const user = await collection.findOne({ id: userId1 })
     const userPriseType = user.properties[0][contType]
 
@@ -163,6 +153,15 @@ async function contPriseType(msg, contType, collection, userId1, bot, chatId, im
     const randomedPrise = prise[randomPrise - 1]
 
     const userDonateStatus = await donatedUsers(msg, collection)
+
+    if (!randomedPrise) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, нет существует такое имущества
+        `, {
+            parse_mode: 'HTML',
+        })
+        return;
+    }
 
     let beReturnedMsg = `
 ${userDonateStatus}, вы открыли контейнер 🎉

@@ -1,23 +1,26 @@
-const { MongoClient } = require('mongodb');
 const { donatedUsers } = require('../../donate/donatedUsers');
 const { formatNumberInScientificNotation } = require('../../systems/systemRu');
 const { customChalk } = require('../../../customChalk');
+const { mongoConnect } = require('../../../mongoConnect');
 require('dotenv').config()
 
 const adminId = parseInt(process.env.ADMIN_ID_INT)
-const mongoDbUrl = process.env.MONGO_DB_URL
-const client = new MongoClient(mongoDbUrl);
-
-async function connecting() {
-    await client.connect()
-}
 
 async function addBusiness(msg, bot) {
-    const db = client.db('bot');
-    const collectionBusiness = db.collection('businesses')
+    const collectionBusiness = await mongoConnect('businesses')
 
     const text = msg.text
     const chatId = msg.chat.id
+    const userId = msg.from.id
+
+    if (userId !== adminId) {
+        bot.sendMessage(chatId, `
+Вы не являетесь администратором бота
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+    }
 
     collectionBusiness.insertOne({
         name: 'Samsung 📱',
@@ -31,8 +34,7 @@ async function addBusiness(msg, bot) {
 }
 
 async function listBusinesses(msg, bot, collection) {
-    const db = client.db('bot');
-    const collectionBusiness = db.collection('businesses')
+    const collectionBusiness = await mongoConnect('businesses')
 
     const text = msg.text
     const chatId = msg.chat.id
@@ -58,12 +60,11 @@ ${userDonateStatus}, вот доступные бизнесы
 ${sortedBusinesses}
 
 <b>Чтобы купить бизнес напишите:</b> <code>купить бизнес [номер]</code>
-    `, { parse_mode: 'HTML', ...businessOptions })
+    `, { parse_mode: 'HTML', ...businessOptions })  
 }
 
 async function buyBusiness(msg, bot, collection, glLength) {
-    const db = client.db('bot');
-    const collectionBusiness = db.collection('businesses')
+    const collectionBusiness = await mongoConnect('businesses')
     const business = await collectionBusiness.find({}).sort({ price: 1 }).toArray()
 
     const text = msg.text
@@ -121,13 +122,12 @@ ${userDonateStatus}, У вас недостаточно средств на сч
 ${userDonateStatus}, вы успешно приобрели новый бизнес под названием ${selectedBusiness.name}
     `, { parse_mode: "HTML" })
 
-    await collection.updateOne({ id: userId1 }, { $set: { "business.0.name": selectedBusiness.name, "business.0.maxWorkers": selectedBusiness.maxWorkers, "business.0.workersProfit": selectedBusiness.workersProfit, "business.0.tax": selectedBusiness.tax, "business.0.have": true } })
+    await collection.updateOne({ id: userId1 }, { $set: { "business.0.name": selectedBusiness.name, "business.0.maxWorkers": selectedBusiness.maxWorkers, "business.0.workersProfit": selectedBusiness.workersProfit, "business.0.tax": selectedBusiness.tax, "business.0.have": true, "business.0.workers": 20 } })
     await collection.updateOne({ id: userId1 }, { $inc: { balance: -selectedBusiness.price } })
 }
 
 async function infoBusiness(msg, bot, collection) {
-    const db = client.db('bot');
-    const collectionBusiness = db.collection('businesses')
+    const collectionBusiness = await mongoConnect('businesses')
 
     const userId1 = msg.from.id
     const chatId = msg.chat.id
@@ -155,7 +155,9 @@ ${userDonateStatus}, У вас нет бизнеса
     const workers = user.business[0].workers
     const workersProfitHour = workersProfit * workers
     const localedStringProfitWorkers = `${workersProfitHour.toLocaleString('de-DE')} ${formatNumberInScientificNotation(workersProfitHour)}`
-    const endProfit = Math.floor(workersProfitHour * 3)
+    const endProfit = Math.floor(workersProfitHour * 2)
+    const dayCount = Math.floor((endProfit - tax) / (workersProfitHour / 2))
+    const dayCountTxt = dayCount !== 0 ? `<b>У вас осталось ${dayCount} дня</b>` : '<b>Ваш бизнес завтра будет закрыт</b>'
 
     bot.sendPhoto(chatId, bPhoto, {
         parse_mode: 'HTML',
@@ -173,15 +175,16 @@ ${userDonateStatus}, вот информация о вашем бизнесе
 <b>Прибыль от каждого работника будет состоять по:</b> ${workersProfit.toLocaleString('de-DE')} ${formatNumberInScientificNotation(workersProfit)}
 <b>Чтобы узнать о работниках напишите:</b> <code>инфо бработники</code>
 <b>Чтобы оплатить налоги напишите:</b> <code>бизнес налоги</code>
+<b>Чтобы снять прибыль:</b> <code>бизнес снять</code>
 
-<b>❗️Если ваши налоги будут превышать ${endProfit.toLocaleString('de-DE')} это означает 3 раза пропустить налоги</b>
+<b>❗️Если ваши налоги будут превышать ${endProfit.toLocaleString('de-DE')} это означает 4 раза пропустить налоги</b>
+${dayCountTxt}
         `
     })
 }
 
 async function workersInfo(msg, bot, collection) {
-    const db = client.db('bot');
-    const collectionBusiness = db.collection('businesses')
+    const collectionBusiness = await mongoConnect('businesses')
 
     const text = msg.text
     const userId1 = msg.from.id
@@ -231,8 +234,7 @@ ${messageB}
 }
 
 async function buyWorkers(msg, bot, collection, glLength) {
-    const db = client.db('bot');
-    const collectionBusiness = db.collection('businesses')
+    const collectionBusiness = await mongoConnect('businesses')
 
     const text = msg.text
     const userId1 = msg.from.id
@@ -344,12 +346,14 @@ async function addProfitEveryOneHour(collection) {
         const userworkersProfit = el.business[0].workersProfit
         const addToProfit = userworkers * userworkersProfit
         const usertax = el.business[0].tax
-        const endTax = Math.floor(addToProfit * 3)
+        const endTax = Math.floor(addToProfit * 2)
+        const daysCount = Math.floor((endTax - usertax) / (addToProfit / 2)) - 1
 
         if (usertax >= endTax) {
             try {
                 await bot.sendMessage(el.id, `
 ${userDonateStatus}, <b>Ваш бизнес автоматически был закрыт так как вы не платили налоги</b>
+<b>Не скажи что мы не говорили</b>
                 `, {
                     parse_mode: 'HTML',
                 })
@@ -379,8 +383,10 @@ ${userDonateStatus}, <b>Ваш бизнес автоматически был з
 
         try {
             await bot.sendMessage(el.id, `
-${userDonateStatus}, <b>Вам успешно были добавлены зарплаты бизнеса</b>
-<b>Не забывайте оплатить налоги а то после 3 раза ваш бизнес автоматически будет закрыт❗️</b>
+${userDonateStatus}, <b>СКОРЕЕ ! ПИШИ</b> <code>бизнес налоги</code>
+<b>А то после ${daysCount} дня твоего бизнеса не будет !</b>
+
+<b>САМАЯ ГЛАВНАЯ НОВОСТЬ Я ПРИНЕС ТЕБЕ ЗАРПЛАТУ😉</b>
             `, {
                 parse_mode: 'HTML',
             })
@@ -393,7 +399,7 @@ ${userDonateStatus}, <b>Вам успешно были добавлены зар
                 console.log(customChalk.colorize(`Ошибка при отправки сообщение обновлении бизнеса: ${err.message}`, { style: 'italic', background: 'bgRed' }));
             }
         }
-        collection.updateOne({ id: el.id }, { $inc: { "business.0.profit": parseInt(addToProfit), "business.0.tax": parseInt(Math.floor(usertax / 2)) } })
+        collection.updateOne({ id: el.id }, { $inc: { "business.0.profit": parseInt(addToProfit), "business.0.tax": parseInt(Math.floor(addToProfit / 2)) } })
     }
     return;
 }
@@ -408,7 +414,8 @@ async function manualAddProfitEveryOneHour(msg, bot, collection) {
         const userworkersProfit = el.business[0].workersProfit
         const addToProfit = userworkers * userworkersProfit
         const usertax = el.business[0].tax
-        const endTax = Math.floor(addToProfit * 3)
+        const endTax = Math.floor(addToProfit * 2)
+        const daysCount = Math.floor((endTax - usertax) / (addToProfit / 2)) - 1
 
         if (usertax >= endTax) {
             try {
@@ -443,8 +450,10 @@ ${userDonateStatus}, <b>Ваш бизнес автоматически был з
 
         try {
             await bot.sendMessage(el.id, `
-${userDonateStatus}, <b>Вам успешно были добавлены зарплаты бизнеса</b>
-<b>Не забывайте оплатить налоги а то после 3 раза ваш бизнес автоматически будет закрыт❗️</b>
+${userDonateStatus}, <b>СКОРЕЕ ! ПИШИ</b> <code>бизнес налоги</code>
+<b>А то после ${daysCount} дня твоего бизнеса не будет !</b>
+
+<b>САМАЯ ГЛАВНАЯ НОВОСТЬ Я ПРИНЕС ТЕБЕ ЗАРПЛАТУ😉</b>
             `, {
                 parse_mode: 'HTML',
             })
@@ -457,7 +466,7 @@ ${userDonateStatus}, <b>Вам успешно были добавлены зар
                 console.log(customChalk.colorize(`Ошибка при отправки сообщение обновлении бизнеса: ${err.message}`, { style: 'italic', background: 'bgRed' }));
             }
         }
-        collection.updateOne({ id: el.id }, { $inc: { "business.0.profit": parseInt(addToProfit), "business.0.tax": parseInt(Math.floor(usertax / 2)) } })
+        collection.updateOne({ id: el.id }, { $inc: { "business.0.profit": parseInt(addToProfit), "business.0.tax": parseInt(Math.floor(addToProfit / 2)) } })
     }
     return;
 }
@@ -537,8 +546,7 @@ ${userDonateStatus}, вы успешно оплатили налоги бизн�
 }
 
 async function sellBusiness(msg, bot, collection) {
-    const db = client.db('bot');
-    const collectionBusiness = db.collection('businesses')
+    const collectionBusiness = await mongoConnect('businesses')
 
     const userId1 = msg.from.id
     const chatId = msg.chat.id

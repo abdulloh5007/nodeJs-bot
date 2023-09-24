@@ -3,7 +3,6 @@ const { donatedUsers } = require('../donate/donatedUsers');
 require('dotenv').config();
 
 const adminIdInt = parseInt(process.env.ADMIN_ID_INT);
-const adminIdStr = process.env.ADMIN_ID;
 
 const botLastIncludedTime = new Date().toLocaleString();
 

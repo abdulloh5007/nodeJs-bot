@@ -1,18 +1,10 @@
 require('dotenv').config();
-const mongoDbUrl = process.env.MONGO_DB_URL
-const { MongoClient } = require('mongodb');
+const { mongoConnect } = require('../../mongoConnect');
 const { donatedUsers, adminDonatedUsers } = require('../donate/donatedUsers');
-const client = new MongoClient(mongoDbUrl);
 const adminId = parseInt(process.env.ADMIN_ID_INT)
 
-
-async function connecting() {
-    await client.connect();
-}
-
 async function userPermissionInfo(msg, bot, collection) {
-    const db = client.db('bot');
-    const collectionPermission = db.collection('permissions');
+    const collectionPermission = await mongoConnect('permissions')
 
     const userId1 = msg.from.id
     const chatId = msg.chat.id
@@ -62,8 +54,7 @@ for (let i = 0; i < permsData.length; i += 4) {
 }
 
 async function addPermsForUser(msg, bot, collection) {
-    const db = client.db('bot');
-    const collectionPermission = db.collection('permissions');
+    const collectionPermission = await mongoConnect('permissions')
 
     const userId1 = msg.from.id
     const chatId = msg.chat.id
@@ -137,8 +128,7 @@ ${userDonateStatus} добавление правы ${adminDonateStatus}
 }
 
 async function addPermsToCollection(msg, bot, collection) {
-    const db = client.db('bot');
-    const collectionPermission = db.collection('permissions');
+    const collectionPermission = await mongoConnect('permissions')
 
     const text = msg.text.toLowerCase();
     const userId1 = msg.from.id
@@ -225,8 +215,7 @@ ${userDonateStatus}, название разрешений можно испол
 }
 
 async function checkUserPerms(userId, perm) {
-    const db = client.db('bot');
-    const collectionPermission = db.collection('permissions');
+    const collectionPermission = await mongoConnect('permissions')
 
     const userPerm = await collectionPermission.findOne({ id: userId })
     if (!userPerm) {
@@ -239,8 +228,7 @@ async function checkUserPerms(userId, perm) {
 }
 
 async function userPermsInfo(msg, bot, collection) {
-    const db = client.db('bot');
-    const collectionPerms = db.collection('permissions');
+    const collectionPerms = await mongoConnect('permissions')
 
     const userId1 = msg.from.id
     const chatId = msg.chat.id

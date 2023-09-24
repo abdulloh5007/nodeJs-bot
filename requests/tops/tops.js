@@ -60,13 +60,17 @@ async function getTopPlayersBalance(msg, bot, collection) {
     // Добавляем позицию и баланс пользователя в сообщение.
     message += `\nВаше место: ${userPosition}. Ваш баланс: ${userIndex === -1 ? 0 : topPlayers[userIndex].balance > 0 ? formatNumberWithAbbreviations(topPlayers[userIndex].balance) : topPlayers[userIndex].balance} `;
 
-    // Отправляем сообщение в чат.
-    bot.editMessageText(message, {
-        chat_id: chatId,
-        message_id: replyId,
-        parse_mode: 'HTML',
-        ...topOptions,
-    })
+    try {
+        // Отправляем сообщение в чат.
+        await bot.editMessageText(message, {
+            chat_id: chatId,
+            message_id: replyId,
+            parse_mode: 'HTML',
+            ...topOptions,
+        })
+    } catch (error) {
+       bot.answerCallbackQuery(msg.id, `Вы уже в этой категории топа`) 
+    }
 }
 
 async function getTopPlayersCard(msg, bot, collection) {
@@ -115,12 +119,17 @@ async function getTopPlayersCard(msg, bot, collection) {
     message += `\nВаше место: ${userPosition}. Ваш баланс на карте: ${userIndex === -1 ? 0 : topPlayers[userIndex].bankCard[0].cardValue > 0 ? formatNumberWithAbbreviations(topPlayers[userIndex].bankCard[0].cardValue) : topPlayers[userIndex].bankCard[0].cardValue} `;
 
     // Отправляем сообщение в чат.
-    bot.editMessageText(message, {
-        chat_id: chatId,
-        message_id: replyId,
-        parse_mode: 'HTML',
-        ...topOptions,
-    })
+    try {
+        // Отправляем сообщение в чат.
+        await bot.editMessageText(message, {
+            chat_id: chatId,
+            message_id: replyId,
+            parse_mode: 'HTML',
+            ...topOptions,
+        })
+    } catch (error) {
+       bot.answerCallbackQuery(msg.id, `Вы уже в этой категории топа`) 
+    }
 }
 
 async function getTopPlayersRates(msg, bot, collection) {
@@ -168,13 +177,17 @@ async function getTopPlayersRates(msg, bot, collection) {
     // Добавляем позицию и баланс пользователя в сообщение.
     message += `\nВаше место: ${userPosition}. Ваши проведенные игры: ${userIndex === -1 ? 0 : topPlayers[userIndex].rates[0].all} `;
 
-    // Отправляем сообщение в чат.
-    bot.editMessageText(message, {
-        chat_id: chatId,
-        message_id: replyId,
-        parse_mode: 'HTML',
-        ...topOptions,
-    })
+    try {
+        // Отправляем сообщение в чат.
+        await bot.editMessageText(message, {
+            chat_id: chatId,
+            message_id: replyId,
+            parse_mode: 'HTML',
+            ...topOptions,
+        })
+    } catch (error) {
+       bot.answerCallbackQuery(msg.id, `Вы уже в этой категории топа`) 
+    }
 }
 
 async function topWithBtns(msg, bot, collection) {
@@ -183,10 +196,10 @@ async function topWithBtns(msg, bot, collection) {
     if (data === 'top_balance') {
         getTopPlayersBalance(msg, bot, collection)
     }
-    if (data === 'top_game') {
+    else if (data === 'top_game') {
         getTopPlayersRates(msg, bot, collection)
     }
-    if (data === 'top_card') {
+    else if (data === 'top_card') {
         getTopPlayersCard(msg, bot, collection)
     }
 }
@@ -197,7 +210,7 @@ async function tops(msg, bot, collection) {
 
     const userStatus = await donatedUsers(msg, collection);
 
-    bot.sendMessage(chatId, `
+    await bot.sendMessage(chatId, `
 <b>${userStatus}</b>, Выберите категорю топа
         `, {
         parse_mode: "HTML",

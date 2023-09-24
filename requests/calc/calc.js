@@ -1,17 +1,10 @@
 require('dotenv').config();
-const mongoDbUrl = process.env.MONGO_DB_URL
-const { MongoClient } = require('mongodb');
 const { donatedUsers } = require('../donate/donatedUsers');
-const client = new MongoClient(mongoDbUrl);
 const math = require('mathjs');
-
-async function connecting() {
-    await client.connect()
-}
+const { mongoConnect } = require('../../mongoConnect');
 
 async function calcInfo(msg, bot) {
-    const db = client.db('bot');
-    const collection = db.collection('users');
+    const collection = await mongoConnect('users')
 
     const text = msg.text
     const chatId = msg.chat.id
@@ -30,8 +23,7 @@ ${userDonateStatus}, отправьте мне <code>кт 100 / 10 * 10 - 10 + 1
 }
 
 async function calc(msg, bot) {
-    const db = client.db('bot');
-    const collection = db.collection('users');
+    const collection = await mongoConnect('users')
 
     const text = msg.text
     const chatId = msg.chat.id
