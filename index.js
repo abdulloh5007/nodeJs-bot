@@ -422,7 +422,7 @@ function start() {
             //
             const parts = text.split(' ')
             function SIQCCtxts(string) {
-                return `@tesLevouJs_bot ${string}`.toLowerCase()
+                return `@levouJS_bot ${string}`.toLowerCase()
             }
 
             //calc
@@ -911,14 +911,9 @@ function start() {
                 })
             }
             if (text === 'addnewValue') {
-                await collection.updateMany({ "status.0.statusName": "premium" }, {
+                await collection.updateMany({ _id: ObjectId }, {
                     $set: {
-                        depozit: [{
-                            balance: 0,
-                            procent: 18,
-                            limit: 400000,
-                            date: 0,
-                        }]
+                        "business.0.workers": 20
                     }
                 })
                 bot.sendMessage(chatId, `res`)

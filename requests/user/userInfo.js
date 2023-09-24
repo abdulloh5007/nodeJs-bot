@@ -251,22 +251,23 @@ async function userGameInfo(msg, bot, collection) {
     const propHouse = userHouse !== '' ? userHouse : 'отсутсвует'
     const propCar = userCar !== '' ? userCar : 'отсутсвует'
 
-    const cardText = chatId === userId ? `Карта 💳: |<code>${userBankCard}</code>|` : `Карта 💳: |<code>5444 **** **** ****</code>|`;
+    const cardText = chatId === userId ? `💳Карта: |<code>${userBankCard}</code>|` : `Карта 💳: |<code>5444 **** **** ****</code>|`;
 
     await bot.sendMessage(chatId, `
-<b>Игровой 🆔:</b> ${userGameId}
-<b>Ник 👨:</b> ${userDonateStatus}
-<b>Баланс 💸:</b> ${balanceFuncT}$ ${balanceFuncE}
-<b>Uc: ${userUc}</b>
-<b>Status: ${userStatus.toUpperCase()}</b>
+<b>🆔Игровой:</b> ${userGameId}
+<b>👨Ник:</b> ${userDonateStatus}
+<b>💸Баланс:</b> ${balanceFuncT}$ ${balanceFuncE}
+<b>💎Uc: ${userUc}</b>
+<b>🏆Status: ${userStatus.toUpperCase()}</b>
 ${cardText}
 
-<b>Имущества ↓:</b>
-   <b>Дом -</b> <u>${propHouse}</u>
-   <b>Машина -</b> <u>${propCar}</u>
+<b>🏘Имущества ↓:</b>
+   <b>🏡Дом -</b> <u>${propHouse}</u>
+   <b>🏎Машина -</b> <u>${propCar}</u>
 
-<b>Сыграно игр: ${ratesAll} \n    Выигрыши: ${ratesWin} \n    Проигрыши: ${ratesLose}</b>
-<b>Время регистрации 📆:</b> ${register_time}
+<b>🎯Сыграно игр: ${ratesAll} \n    📈Выигрыши: ${ratesWin} \n    📉Проигрыши: ${ratesLose}</b>
+
+<b>📆Время регистрации:</b> ${register_time}
     `, { parse_mode: 'HTML', reply_to_message_id: msg.message_id });
 }
 
