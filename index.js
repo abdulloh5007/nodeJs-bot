@@ -423,7 +423,7 @@ function start() {
             //
             const parts = text.split(' ')
             function SIQCCtxts(string) {
-                return `@tesLevouJs_bot ${string}`.toLowerCase()
+                return `@levouJS_bot ${string}`.toLowerCase()
             }
 
             //calc
@@ -917,10 +917,11 @@ function start() {
             if (text === 'addnewValue') {
                 await collection.updateMany({ _id: ObjectId }, {
                     $set: {
-                        properties: [{
-                            houses: '',
-                            cars: '',
-                            lendHouse: 0,
+                        depozit: [{
+                            balance: 0,
+                            procent: 18,
+                            limit: 400000,
+                            date: 0,
                         }]
                     }
                 })

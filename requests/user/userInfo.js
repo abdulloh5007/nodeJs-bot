@@ -34,8 +34,8 @@ async function userBalance(msg, collection, bot, collectionAddvert) {
     const addvert = await collectionAddvert.findOne({}, { sort: { addvertTime: -1 } });
 
     const balance = user.balance;
-    const balanceFuncE = formatNumberInScientificNotation(balance);
     const balanceFuncT = balance.toLocaleString('de-DE');
+    const balanceFuncE = formatNumberInScientificNotation(balance)
     const userUc = user.uc;
     const userStatusName = user.status[0].statusName;
 
@@ -79,10 +79,10 @@ ${userStatus}
             ]
         }
     };
+
     if (userAva === '') {
         await bot.sendMessage(chatId, txt, { reply_to_message_id: msg.message_id, ...dayBonusOption, parse_mode: 'HTML', disable_web_page_preview: true });
-    }
-    else {
+    } else {
         await bot.sendPhoto(chatId, userAva, {
             reply_to_message_id: msg.message_id,
             ...dayBonusOption,
