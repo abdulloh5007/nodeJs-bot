@@ -41,16 +41,16 @@ async function userBalance(msg, collection, bot, collectionAddvert) {
 
     const userDonateStatus = await donatedUsers(msg, collection);
 
-    const addvertText = addvert ? addvert.addvertText : 'НЕТУ'
+    const addvertText = addvert ? addvert.addvertText : '<b>» РЕКЛАМЫ НЕТ</b>'
     const addvertTime = addvert ? addvert.addvertTime : ''
     const convertedTime = new Date(addvertTime)
     const userAva = user.avatar[0].avaUrl
     const depBalance = user.depozit[0].balance
 
     const txtBalance = `
-<b>┌💵 | Денег:</b> <i>${balanceFuncT}$ ${balanceFuncE}</i>
-<b>├UC | Донат-валюта:</b> <b><i>${userUc}</i></b>
-<b>└🏦 | В депозите:</b> <i>${depBalance.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(depBalance)}</i>
+┌ <i>💵 | Денег:</i> <b>${balanceFuncT}$ ${balanceFuncE}</b>
+├ <i>🔱 | Донат-валюта:</i> <b><i>${userUc}</i></b> UC
+└ <i>🏦 | В депозите:</i> <b>${depBalance.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(depBalance)}</b>
     `
 
     let userStatus;
@@ -58,9 +58,9 @@ async function userBalance(msg, collection, bot, collectionAddvert) {
         userStatus = `
 ${userDonateStatus}, ваш баланс
 ${txtBalance}
-<b>РЕКЛАМА:</b> ${addvertText}
-${addvertTime != '' ? `<b>ДАТА:</b> ${convertedTime.toLocaleDateString()}` : ''}
-            `;
+${addvertText}
+${addvertTime != '' ? `<i>» ДАТА:</i> <b>${convertedTime.toLocaleDateString()}</b>` : ''}
+        `;
     } else {
         userStatus = `
 ${userDonateStatus}, ваш баланс
@@ -123,7 +123,7 @@ async function userEditGameId(msg, bot, collection) {
     if (text === 'сменить айди') {
         await bot.sendMessage(chatId, `
 ${userDonateStatus}, Напиши мне айди, который состоит из 8 знаков.
-Например: <code>Сменить айди B7777777</code>`, { parse_mode: 'HTML', reply_to_message_id: msg.message_id });
+<i>Например:</i> <code>Сменить айди B7777777</code>`, { parse_mode: 'HTML', reply_to_message_id: msg.message_id });
         return;
     }
 
@@ -155,7 +155,8 @@ async function userEditGameName(msg, bot, collection) {
 
     if (text === 'сменить ник') {
         await bot.sendMessage(chatId, `
-${userDonateStatus}, Напишите новый ник, который не должен превышать ${test === true ? '14' : '9'} знаков.\nНапример: <code>Сменить ник (я владелец)</code>`, {
+${userDonateStatus}, Напишите новый ник, который не должен превышать ${test === true ? '14' : '9'} знаков.
+<i>Например:</i> <code>Сменить ник (я владелец)</code>`, {
             parse_mode: 'HTML',
             reply_to_message_id: messageId,
         });
@@ -239,7 +240,6 @@ async function userGameInfo(msg, bot, collection) {
     const ratesWin = user.rates.map(e => e.wins);
     const ratesLose = user.rates.map(e => e.loses);
     const userBankCard = user.bankCard[0].cardNumber;
-    const cryptoCurAlt = user.crypto[0].altcoinidx;
     const userUc = user.uc;
     const userStatus = user.status[0].statusName;
 
@@ -252,22 +252,25 @@ async function userGameInfo(msg, bot, collection) {
     const propHouse = userHouse !== '' ? userHouse : 'отсутсвует'
     const propCar = userCar !== '' ? userCar : 'отсутсвует'
 
-    const cardText = chatId === userId ? `Карта 💳: |<code>${userBankCard}</code>|` : `Карта 💳: |<code>5444 **** **** ****</code>|`;
+    const cardText = chatId === userId ? `<i>» 💳Карта:</i> |<code>${userBankCard}</code>|` : `<i>» 💳Карта:</i> |<code>5444 **** **** ****</code>|`;
 
     await bot.sendMessage(chatId, `
-<b>Игровой 🆔:</b> ${userGameId}
-<b>Ник 👨:</b> ${userDonateStatus}
-<b>Баланс 💸:</b> ${balanceFuncT}$ ${balanceFuncE}
-<b>Uc: ${userUc}</b>
-<b>Status: ${userStatus.toUpperCase()}</b>
+┌ <i>🆔Игровой:</i> ${userGameId}
+├ <i>👨Ник:</i> ${userDonateStatus}
+├ <i>💸Баланс:</i> ${balanceFuncT}$ ${balanceFuncE}
+├ <i>💎Uc: ${userUc}</i>
+└ <i>🏆Status: ${userStatus.toUpperCase()}</i>
 ${cardText}
 
-<b>Имущества ↓:</b>
-   <b>Дом -</b> <u>${propHouse}</u>
-   <b>Машина -</b> <u>${propCar}</u>
+<i>» 🏘Имущества ↓:</i>
+   <i>🏡Дом -</i> <b><u>${propHouse}</u></b>
+   <i>🏎Машина -</i> <b><u>${propCar}</u></b>
 
-<b>Сыграно игр: ${ratesAll} \n    Выигрыши: ${ratesWin} \n    Проигрыши: ${ratesLose}</b>
-<b>Время регистрации 📆:</b> ${register_time}
+<i>» 🎯Сыграно игр: ${ratesAll}
+   <i>» 📈Выигрыши:</i> <b>${ratesWin}</b>
+   <i>» 📉Проигрыши:</i> ${ratesLose}</i>
+
+<i>» 📆Время регистрации:</i> ${register_time}
     `, { parse_mode: 'HTML', reply_to_message_id: msg.message_id });
 }
 
@@ -285,8 +288,8 @@ async function myId(msg, bot, collection) {
 
     bot.sendMessage(chatId, `
 ${userDonateStatus}, Вот ваш 
-<b>Телеграм айди:</b> <code>${userBotid}</code>
-<b>Бот айди:</b> <code>${userGameId}</code>
+<i>» Телеграм айди:</i> <code>${userBotid}</code>
+<i>» Бот айди:</i> <code>${userGameId}</code>
     `, { parse_mode: 'HTML', reply_to_message_id: messageId })
 }
 

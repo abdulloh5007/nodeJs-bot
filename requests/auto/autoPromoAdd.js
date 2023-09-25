@@ -1,6 +1,7 @@
 require('dotenv').config();
 const { formatNumberInScientificNotation } = require('../systems/systemRu');
 const { donatedUsers } = require('../donate/donatedUsers');
+const { mongoConnect } = require('../../mongoConnect');
 const adminId = parseInt(process.env.ADMIN_ID_INT)
 
 async function autoCreatePromoCodes(bot) {
@@ -24,9 +25,10 @@ async function autoCreatePromoCodes(bot) {
         `, {
         parse_mode: 'HTML',
     }).then(() => {
-
-    }).catch(err => {
-        console.log('th ' + err);
+        
+    }).catch(async err => {
+        await bot.sendMessage(adminId, `Bot is not a member channel chat`)
+        console.log('channel error ' + err);
     })
     await collectionPromo.insertOne({
         promoName: randomPromoName,
@@ -87,8 +89,9 @@ async function manualCreatePromoCodes(msg, bot, collection) {
             parse_mode: 'HTML',
         }).then(() => {
 
-        }).catch(err => {
-            console.log('th ' + err);
+        }).catch(async err => {
+            await bot.sendMessage(adminId, `Bot is not a member of the channel chat`)
+            console.log('channel error ' + err);
         })
         await collectionPromo.insertOne({
             promoName: randomPromoName,

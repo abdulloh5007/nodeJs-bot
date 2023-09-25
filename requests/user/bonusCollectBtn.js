@@ -150,4 +150,5 @@ function formatRemainingTime(remainingTime) {
 
 module.exports = {
     handleDailyBonus,
+    formatRemainingTime,
 };

@@ -1,6 +1,9 @@
 const { donatedUsers } = require('../../donate/donatedUsers')
 const { parseNumber, formatNumberInScientificNotation } = require('../../systems/systemRu')
+const { formatRemainingTime } = require('../../user/bonusCollectBtn')
 const { checkUserPerms } = require('../../userPermissions/userPremissionsBot')
+
+let bonusCooldown = 24 * 60 * 60 * 1000;
 
 require('dotenv').config()
 const adminId = parseInt(process.env.ADMIN_ID_INT)
@@ -42,9 +45,9 @@ async function HouseAdd(msg, bot, collectionHouses) {
                             })
                             const txt = `
 Успешно был добавлен дом
-Название: ${houseName}
-Цена: ${housePrice.toLocaleString('de-DE')} ${formatNumberInScientificNotation(housePrice)}
-Сезон: ${houseSeason}
+<i>Название:</i> <b>${houseName}</b>
+<i>Цена:</i> <b>${housePrice.toLocaleString('de-DE')} ${formatNumberInScientificNotation(housePrice)}</b>
+<i>Сезон:</i> <b>${houseSeason}</b>
 `
                             bot.sendPhoto(chatId, houseImg, { caption: txt, parse_mode: 'HTML' })
                         }
@@ -110,9 +113,9 @@ async function HouseDonateAdd(msg, bot, collectionHouses) {
                             })
                             const txt = `
 Успешно был добавлен дом
-Название: ${houseName}
-Цена: ${housePrice.toLocaleString('de-DE')} UC
-Сезон: ${houseSeason}
+<i>Название:</i> <b>${houseName}</b>
+<i>Цена:</i> <b>${housePrice.toLocaleString('de-DE')} ${formatNumberInScientificNotation(housePrice)}</b>
+<i>Сезон:</i> <b>${houseSeason}</b>
 `
                             bot.sendPhoto(chatId, houseImg, { caption: txt, parse_mode: 'HTML' })
                         }
@@ -151,7 +154,7 @@ async function donateHouses(msg, collection, bot, collectionHouses) {
     let options = {
         reply_markup: {
             inline_keyboard: [
-                [{ text: `дома`, callback_data: `simpleHouses` }],
+                [{ text: `Дома`, callback_data: `simpleHouses` }],
                 // Добавьте другие кнопки с уникальными идентификаторами и данными пользователя
             ],
         },
@@ -163,7 +166,7 @@ ${userStatus}, вот доступные дома (отсортированы п
 
 ${houseNamesString}
 
-<b>Введите <code>купить донатдом [номер]</code> дома - чтобы купить дом из списка</b>
+<i>Введите <code>купить дом [номер]</code> дома - чтобы купить дом из списка</i>
             `, {
         parse_mode: 'HTML',
         ...options
@@ -178,7 +181,7 @@ async function houses(msg, collection, bot, collectionHouses) {
     let options = {
         reply_markup: {
             inline_keyboard: [
-                [{ text: `донат дома`, callback_data: `donateHouses` }],
+                [{ text: `Донат дома`, callback_data: `donateHouses` }],
                 // Добавьте другие кнопки с уникальными идентификаторами и данными пользователя
             ],
         },
@@ -190,7 +193,7 @@ ${userStatus}, вот доступные дома (отсортированы п
 
 ${houseNamesString}
 
-<b>Введите <code>купить дом [номер]</code> дома - чтобы купить дом из списка</b>
+<i>Введите <code>купить дом [номер]</code> дома - чтобы купить дом из списка</i>
         `, {
         parse_mode: 'HTML',
         ...options
@@ -214,9 +217,9 @@ async function findHouseByName(msg, collection, bot, collectionHouses) {
                 const houseInfo = `
 ${userStatus}, вот доступные дома:
 
-Название: ${house.name}
-Цена: ${house.price.toLocaleString('de-DE')} ${formatNumberInScientificNotation(house.price)}
-Сезон: ${house.season}
+<i>Название:</i> <b>${house.name}</b>
+<i>Цена:</i> <b>${house.price.toLocaleString('de-DE')} ${formatNumberInScientificNotation(house.price)}</b>
+<i>Сезон:</i> <b>${house.season}</b>
                 `;
 
                 bot.sendPhoto(chatId, house.img, { caption: houseInfo, parse_mode: 'HTML' });
@@ -250,11 +253,11 @@ async function houseBuy(msg, collection, bot, collectionHouses) {
             if (userHouse === '') {
                 if (userBalance >= selectedHouse.price) {
                     const houseInfo = `
-Вы успешно сделали покупку дом информацию о доме №${houseNumberToBuy}:
+Вы успешно совершили покупку дом информацию о доме №${houseNumberToBuy}:
 
-Название: ${selectedHouse.name}
-Цена: ${selectedHouse.price.toLocaleString('de-DE')} $
-Сезон: ${selectedHouse.season}
+<i>Название:</i> <b>${selectedHouse.name}</b>
+<i>Цена:</i> <b>${selectedHouse.price.toLocaleString('de-DE')} $</b>
+<i>Сезон:</i> <b>${selectedHouse.season}</b>
                         `;
                     bot.sendPhoto(chatId, selectedHouse.img, { caption: houseInfo, parse_mode: 'HTML' });
                     collection.updateOne({ id: userId }, { $set: { "properties.0.houses": selectedHouse.name } })
@@ -297,9 +300,9 @@ async function houseDonateBuy(msg, collection, bot, collectionHouses) {
                     const houseInfo = `
 Вы успешно совершили покупку донат дома информацию о доме №${houseNumberToBuy}:
 
-Название: ${selectedHouse.name}
-Цена: ${selectedHouse.price.toLocaleString('de-DE')} UC
-Сезон: ${selectedHouse.season}
+<i>Название:</i> <b>${selectedHouse.name}</b>
+<i>Цена:</i> <b>${selectedHouse.price.toLocaleString('de-DE')} $</b>
+<i>Сезон:</i> <b>${selectedHouse.season}</b>
                         `;
                     bot.sendPhoto(chatId, selectedHouse.img, { caption: houseInfo, parse_mode: 'HTML' });
                     collection.updateOne({ id: userId }, { $set: { "properties.0.houses": selectedHouse.name } })
@@ -341,14 +344,14 @@ async function sellHouse(msg, bot, collection, collectionHouses) {
                 const sellPrice = houseToSellPrice * 1; // Пример: продажа за 90% от цены
                 bot.sendMessage(chatId, `Вы успешно продали свой донат дом "${houseToSellName}" за ${sellPrice.toLocaleString('de-DE')} UC.`);
 
-                collection.updateOne({ id: userId }, { $set: { "properties.0.houses": '' } });
+                collection.updateOne({ id: userId }, { $set: { "properties.0.houses": '', "properties.0.lendHouse": 0 } });
                 collection.updateOne({ id: userId }, { $inc: { uc: sellPrice } });
             }
             if (houseDonate === false) {
                 const sellPrice = houseToSellPrice * 0.9; // Пример: продажа за 90% от цены
                 bot.sendMessage(chatId, `Вы успешно продали дом "${houseToSellName}" за ${sellPrice.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(sellPrice)}.`);
 
-                collection.updateOne({ id: userId }, { $set: { "properties.0.houses": '' } });
+                collection.updateOne({ id: userId }, { $set: { "properties.0.houses": '', "properties.0.lendHouse": 0 } });
                 collection.updateOne({ id: userId }, { $inc: { balance: sellPrice } });
             }
 
@@ -378,6 +381,25 @@ async function myHouseInfo(msg, collection, bot, collectionHouses) {
         const houseName = house.name
         const houseDonate = house.donate
 
+        let houseKb = {
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        { text: '🧨Продать дом', switch_inline_query_current_chat: 'продать дом' },
+                        { text: '📝Дать в аренду', switch_inline_query_current_chat: 'дом аренда' },
+                    ]
+                ]
+            }
+        }
+
+        const userLendHouse = user.properties[0].lendHouse
+        const currentDate = Date.now()
+        const remainingTime = formatRemainingTime(bonusCooldown - (currentDate - userLendHouse));
+
+        if (userStatus === 'premium' || userStatus === 'vip') {
+            bonusCooldown = 12 * 60 * 60 * 1000;
+        }
+
         if (houseName !== '') {
             if (houseDonate === true) {
                 const userHousePrice = house.price
@@ -387,11 +409,11 @@ async function myHouseInfo(msg, collection, bot, collectionHouses) {
                 const houseInfo = `
 ${userStatus}, вот информация о вашем донат доме:
 
-Название: ${userHouseName2}
-Цена: ${userHousePrice.toLocaleString('de-DE')} UC
-Сезон: ${userHouseSeason}
+<i>Название:</i> <b>${userHouseName2}</b>
+<i>Цена:</i> <b>${userHousePrice.toLocaleString('de-DE')} UC</b>
+<i>Сезон:</i> <b>${userHouseSeason}</b>
     `;
-                bot.sendPhoto(chatId, userHouImg, { caption: houseInfo, parse_mode: 'HTML' });
+                bot.sendPhoto(chatId, userHouImg, { caption: houseInfo, parse_mode: 'HTML', });
             }
             else {
                 const userHousePrice = house.price
@@ -401,17 +423,18 @@ ${userStatus}, вот информация о вашем донат доме:
                 const houseInfo = `
 ${userStatus}, вот информация о вашем доме:
 
-Название: ${userHouseName2}
-Цена: ${userHousePrice.toLocaleString('de-DE')}$ ${userHousePrice > 1000 ? `${formatNumberInScientificNotation(userHousePrice)}` : ''}
-Сезон: ${userHouseSeason}
+<i>Название:</i> <b>${userHouseName2}</b>
+<i>Цена:</i> <b>${userHousePrice.toLocaleString('de-DE')} UC</b>
+
+<i>До новый аренды:</i> <b>${remainingTime}</b>
     `;
-                bot.sendPhoto(chatId, userHouImg, { caption: houseInfo, parse_mode: 'HTML' });
+                bot.sendPhoto(chatId, userHouImg, { caption: houseInfo, parse_mode: 'HTML', ...houseKb, });
             }
         } else {
             bot.sendMessage(chatId, `У вас нету дома.`);
         }
     } else {
-        bot.sendMessage(chatId, `У вас нет дома. Вы можете приобрести дом с помощью команды "<code>купить дом [номер дома]</code>".`, { parse_mode: 'HTML' });
+        bot.sendMessage(chatId, `У вас нет дома. Вы можете приобрести дом с помощью команды <code>купить дом [номер дома]</code>.`, { parse_mode: 'HTML' });
     }
 }
 
@@ -467,7 +490,7 @@ async function changeHouseName(msg, bot, collectionHouses, collection) {
         if (userId === adminId || checkPerms === true) {
             const houseNumber = parseInt(parts[2]);
             const newHouseName = parts.slice(3).join(' ');
-            
+
             if (isNaN(houseNumber) && newHouseName) {
                 const sortedHouses = await collectionHouses.find({ donate: false }).sort({ price: 1 }).toArray();
 
@@ -533,7 +556,7 @@ async function btnHouses(msg, bot, collection, collectionHouses) {
         let options = {
             reply_markup: {
                 inline_keyboard: [
-                    [{ text: `дома`, callback_data: `simpleHouses` }],
+                    [{ text: `Дома`, callback_data: `simpleHouses` }],
                     // Добавьте другие кнопки с уникальными идентификаторами и данными пользователя
                 ],
             },
@@ -544,7 +567,7 @@ ${userStatus}, вот доступные донат дома (отсортиро
 
 ${houseNamesString}
 
-<b>Введите <code>купить донатдом [номер]</code> дома - чтобы купить дом из списка</b>
+<i>Введите <code>купить донатдом [номер]</code> дома - чтобы купить дом из списка</i>
         `, {
             chat_id: chatId,
             message_id: messageId,
@@ -558,7 +581,7 @@ ${houseNamesString}
         let options = {
             reply_markup: {
                 inline_keyboard: [
-                    [{ text: `донат дома`, callback_data: `donateHouses` }],
+                    [{ text: `Донат дома`, callback_data: `donateHouses` }],
                     // Добавьте другие кнопки с уникальными идентификаторами и данными пользователя
                 ],
             },
@@ -571,7 +594,7 @@ ${userStatus}, вот доступные дома (отсортированы п
 
 ${houseNamesString}
 
-<b>Введите <code>купить дом [номер]</code> дома - чтобы купить дом из списка</b>
+<i>Введите <code>купить дом [номер]</code> дома - чтобы купить дом из списка</i>
         `, {
             chat_id: chatId,
             message_id: messageId,
@@ -604,7 +627,7 @@ ${userDonateStatus}, вы не являетесь администратором
     if (parts.length < 2 || parts.length === 1) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, не правильный ввод команды 
-<b>Пример:</b> <code>-дом [номер дома]</code>
+<i>Пример:</i> <code>-дом [номер дома]</code>
         `, {
             parse_mode: 'HTML',
             reply_to_message_id: messageId,
@@ -626,7 +649,7 @@ ${userDonateStatus}, Номер дома который вы хотите уда
     const sortedHouses = await collectionHouses.find({ donate: false }).sort({ price: 1 }).toArray()
 
     const houseToUpdate = sortedHouses[houseNum - 1];
-    try{
+    try {
         await collectionHouses.deleteOne({ _id: houseToUpdate._id }).then(async () => {
             await bot.sendMessage(chatId, `
 ${userDonateStatus}, Успешно удалили дом
@@ -642,7 +665,7 @@ ${userDonateStatus}, Произошла ошибка при удалении д�
                 reply_to_message_id: messageId,
             })
         })
-    }catch(err) {
+    } catch (err) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, произошла ошибка при удалении дома проверьте есть ли дом который вы указали в списке домов <code>дома</code>
         `, {
@@ -650,6 +673,60 @@ ${userDonateStatus}, произошла ошибка при удалении д�
             reply_to_message_id: messageId,
         })
     }
+}
+
+async function lendHouse(msg, bot, collection, collectionHouses) {
+    const userId1 = msg.from.id
+    const chatId = msg.chat.id
+    const messageId = msg.message_id
+
+    const userDonateStatus = await donatedUsers(msg, collection)
+    const user = await collection.findOne({ id: userId1 })
+    const userHouse = user.properties[0].houses
+
+    if (userHouse === '') {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, у вас нету дома чтобы дать его в аренду
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        return;
+    }
+
+    const house = await collectionHouses.findOne({ name: userHouse })
+    const houseProfit = Math.floor(house.price / 20)
+    const userLendHouse = user.properties[0].lendHouse
+    const userStatus = user.status[0].statusName
+
+    const currentDate = Date.now()
+
+    if (userStatus === 'premium' || userStatus === 'vip') {
+        bonusCooldown = 12 * 60 * 60 * 1000;
+    }
+
+    const remainingTime = formatRemainingTime(bonusCooldown - (currentDate - userLendHouse));
+
+    if (currentDate - userLendHouse <= bonusCooldown && userLendHouse !== 0) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, вы уже поставили дом в аренду дождитесь до окончании аренды
+<i>Подождите еще:</i> <b>${remainingTime}</b>
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        return;
+    }
+
+    await bot.sendMessage(chatId, `
+${userDonateStatus}, вы успешно дали дом в аренду и заработали
+<i>Заработали:</i> <b>${houseProfit.toLocaleString('de-DE')}</b>
+    `, {
+        parse_mode: 'HTML',
+        reply_to_message_id: messageId,
+    })
+    await collection.updateOne({ id: userId1 }, { $set: { "properties.0.lendHouse": currentDate } })
+    await collection.updateOne({ id: userId1 }, { $inc: { balance: houseProfit } })
 }
 
 module.exports = {
@@ -666,4 +743,5 @@ module.exports = {
     btnHouses,
     changeHouseName,
     houseDelete,
+    lendHouse,
 }

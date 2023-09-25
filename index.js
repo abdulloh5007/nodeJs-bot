@@ -8,7 +8,7 @@ const botToken = process.env.BOT_TOKEN
 const mongoDbUrl = process.env.MONGO_DB_URL
 const adminId = parseInt(process.env.ADMIN_ID)
 
-const { MongoClient, ObjectId } = require('mongodb');
+const { MongoClient, ObjectId, Collection } = require('mongodb');
 const client = new MongoClient(mongoDbUrl);
 
 const {
@@ -88,6 +88,7 @@ const {
     HouseDonateAdd,
     changeHouseName,
     houseDelete,
+    lendHouse,
 } = require('./requests/properties/houses/houses');
 
 const {
@@ -492,7 +493,7 @@ function start() {
             else if (text.toLowerCase() === 'инфо бработники') {
                 workersInfo(msg, bot, collection)
             }
-            else if (text.toLowerCase() === SIQCCtxts('купить бработнико')) {
+            else if (text.toLowerCase().startsWith(SIQCCtxts('купить бработников'))) {
                 let glLengthBWorkers = 3
                 buyWorkers(msg, bot, collection, glLengthBWorkers)
             }
@@ -500,13 +501,13 @@ function start() {
                 let glLengthBWorkers = 2
                 buyWorkers(msg, bot, collection, glLengthBWorkers)
             }
-            else if (text.toLowerCase() === 'бизнес снять') {
+            else if (text.toLowerCase() === 'бизнес снять' || text.toLowerCase() === SIQCCtxts('бизнес снять')) {
                 pulloffBusiness(msg, bot, collection)
             }
-            else if (text.toLowerCase() === 'бизнес налоги') {
+            else if (text.toLowerCase() === 'бизнес налоги' || text.toLowerCase() === SIQCCtxts('бизнес налоги')) {
                 payTaxForBusiness(msg, bot, collection)
             }
-            else if (text.toLowerCase() === 'продать бизнес') {
+            else if (text.toLowerCase() === 'продать бизнес' || text.toLowerCase() === SIQCCtxts('продать бизнес')) {
                 sellBusiness(msg, bot, collection)
             }
             else if (text === 'mBP') {
@@ -719,11 +720,14 @@ function start() {
             else if (text.toLowerCase().startsWith('дом имя')) {
                 changeHouseName(msg, bot, collectionHouses, collection)
             }
-            else if (text.toLowerCase() === 'продать дом') {
+            else if (text.toLowerCase() === 'продать дом' || text.toLowerCase() === SIQCCtxts('продать дом')) {
                 sellHouse(msg, bot, collection, collectionHouses)
             }
             else if (text.toLocaleLowerCase().startsWith('-дом')) {
                 houseDelete(msg, bot, collectionHouses, collection)
+            }
+            else if (text.toLowerCase() === 'дом аренда' || text.toLowerCase() === SIQCCtxts('дом аренда')) {
+                lendHouse(msg, bot, collection, collectionHouses)
             }
 
             // cars
@@ -911,13 +915,12 @@ function start() {
                 })
             }
             if (text === 'addnewValue') {
-                await collection.updateMany({ "status.0.statusName": "premium" }, {
+                await collection.updateMany({ _id: ObjectId }, {
                     $set: {
-                        depozit: [{
-                            balance: 0,
-                            procent: 18,
-                            limit: 400000,
-                            date: 0,
+                        properties: [{
+                            houses: '',
+                            cars: '',
+                            lendHouse: 0,
                         }]
                     }
                 })
@@ -947,7 +950,7 @@ function start() {
             avaChekAdmins(msg, bot)
 
             // conts
-            donateContainers(msg, bot)
+            donateContainers(msg, bot, collection)
 
             // crypto currence
             // payTransactions(msg, bot, collection)

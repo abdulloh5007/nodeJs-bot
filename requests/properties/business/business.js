@@ -59,8 +59,8 @@ ${userDonateStatus}, вот доступные бизнесы
 
 ${sortedBusinesses}
 
-<b>Чтобы купить бизнес напишите:</b> <code>купить бизнес [номер]</code>
-    `, { parse_mode: 'HTML', ...businessOptions })  
+<i>Чтобы купить бизнес напишите:</i> <u><code>купить бизнес [номер]</code></u>
+    `, { parse_mode: 'HTML', ...businessOptions })
 }
 
 async function buyBusiness(msg, bot, collection, glLength) {
@@ -140,7 +140,7 @@ async function infoBusiness(msg, bot, collection) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, У вас нет бизнеса
 
-<b>Чтобы узнать:</b> <code>бизнесы</code>
+<i>Чтобы узнать:</i> <u><code>бизнесы</code></u>
         `, { parse_mode: 'HTML' })
         return;
     }
@@ -157,30 +157,47 @@ ${userDonateStatus}, У вас нет бизнеса
     const localedStringProfitWorkers = `${workersProfitHour.toLocaleString('de-DE')} ${formatNumberInScientificNotation(workersProfitHour)}`
     const endProfit = Math.floor(workersProfitHour * 2)
     const dayCount = Math.floor((endProfit - tax) / (workersProfitHour / 2))
-    const dayCountTxt = dayCount !== 0 ? `<b>У вас осталось ${dayCount} дня</b>` : '<b>Ваш бизнес завтра будет закрыт</b>'
+    const dayCountTxt = dayCount !== 0 ? `<b>» У вас осталось ${dayCount} дня</b>` : '<b>» Ваш бизнес завтра будет закрыт 🧨</b>'
+
+    let businessKb = {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    { text: '🚀Оплатить налоги', switch_inline_query_current_chat: 'бизнес налоги' },
+                    { text: '💰Снять прибыль', switch_inline_query_current_chat: 'бизнес снять' }
+                ],
+                [
+                    { text: '👨‍🔧Купить бработников', switch_inline_query_current_chat: 'купить бработников 5' },
+                    { text: '🧨Продать бизнес', switch_inline_query_current_chat: 'продать бизнес' }
+                ],
+            ]
+        }
+    }
 
     bot.sendPhoto(chatId, bPhoto, {
         parse_mode: 'HTML',
         caption: `
-${userDonateStatus}, вот информация о вашем бизнесе
+${userDonateStatus}, вот информация о вашем бизнесе 🏗
 
-<b>Название бизнеса:</b> ${userBusiness}
-<b>Кол-во работников:</b> ${workers}
-<b>Макс кол-во работников:</b> ${maxWorkers}
-<b>Прибыль в день:</b> ${workers >= 1 ? localedStringProfitWorkers : 0}
+┌ <i>Название бизнеса:</i> <b>${userBusiness}</b>
+├ <i>Кол-во работников:</i> <b>${workers}</b>
+├ <i>Макс кол-во работников:</i> <b>${maxWorkers}</b>
+└ <i>Прибыль в день:</i> <b>${workers >= 1 ? localedStringProfitWorkers : 0}</b>
 
-<b>Общий прибыль:</b> ${profit.toLocaleString('de-DE')} ${formatNumberInScientificNotation(profit)}
-<b>Налоги:</b> ${tax.toLocaleString('de-DE')} ${formatNumberInScientificNotation(tax)}
+<i>» Общий прибыль:</i> <b>${profit.toLocaleString('de-DE')} ${formatNumberInScientificNotation(profit)}</b>
+<i>» Налоги:</i> <b>${tax.toLocaleString('de-DE')} ${formatNumberInScientificNotation(tax)}</b>
 
-<b>Прибыль от каждого работника будет состоять по:</b> ${workersProfit.toLocaleString('de-DE')} ${formatNumberInScientificNotation(workersProfit)}
-<b>Чтобы узнать о работниках напишите:</b> <code>инфо бработники</code>
-<b>Чтобы оплатить налоги напишите:</b> <code>бизнес налоги</code>
-<b>Чтобы снять прибыль:</b> <code>бизнес снять</code>
+<i>» Прибыль от каждого работника будет состоять по:</i> <b>${workersProfit.toLocaleString('de-DE')} ${formatNumberInScientificNotation(workersProfit)}</b>
 
-<b>❗️Если ваши налоги будут превышать ${endProfit.toLocaleString('de-DE')} это означает 4 раза пропустить налоги</b>
+<i>» ❗️Если ваши налоги будут превышать <b>${endProfit.toLocaleString('de-DE')}</b> это означает 4 раза пропустить налоги</i>
 ${dayCountTxt}
-        `
+        `,
+        ...businessKb,
     })
+     
+    // <i>Чтобы узнать о работниках напишите:</i> <u><code>инфо бработники</code></u>
+    // <i>Чтобы оплатить налоги напишите:</i> <u><code>бизнес налоги</code></u>
+    // <i>Чтобы снять прибыль:</i> <u><code>бизнес снять</code></u>
 }
 
 async function workersInfo(msg, bot, collection) {
@@ -210,16 +227,16 @@ async function workersInfo(msg, bot, collection) {
 
     if (haveB === true) {
         messageB = `
-<b>Ваш бизнес:</b> ${userBusiness}
-<b>Стоимость работников:</b> ${workersPrice}
-<b>Прибыль работника:</b> ${workersProfit}
+┌ <i>Ваш бизнес:</i> <b>${userBusiness}</b>
+├ <i>Стоимость работников:</i> <b>${workersPrice}</b>
+└ <i>Прибыль работника:</i> <b>${workersProfit}</b>
         `
     }
 
     let workersOptions = {
         reply_markup: {
             inline_keyboard: [
-                [{ text: 'Купить бработников', switch_inline_query_current_chat: 'купить бработников ' }]
+                [{ text: '👨‍🔧Купить бработников', switch_inline_query_current_chat: 'купить бработников ' }]
             ]
         }
     }
@@ -247,6 +264,7 @@ async function buyWorkers(msg, bot, collection, glLength) {
     const userStatus = user.status[0].statusName
     const userworkers = user.business[0].workers
     const usermaxWorkers = user.business[0].maxWorkers
+    const userTax = user.business[0].tax
 
     const parts = text.split(' ')
 
@@ -254,7 +272,7 @@ async function buyWorkers(msg, bot, collection, glLength) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, введите количество бизнес работников чтобы купить
 
-<code>купить бработников [кол-во]</code>
+<u><code>купить бработников [кол-во]</code></u>
 `, { parse_mode: 'HTML' })
         return;
     }
@@ -263,7 +281,7 @@ ${userDonateStatus}, введите количество бизнес работ
         bot.sendMessage(chatId, `
 ${userDonateStatus}, у вас не существует бизнеса чтобы купить для него бработников
 
-<b>Напишите:</b> <code>бизнесы</code> чтобы узнать о бизнесах
+<i>Напишите:</i> <u><code>бизнесы</code></u> чтобы узнать о бизнесах
         `, { parse_mode: 'HTML' })
         return;
     }
@@ -275,7 +293,7 @@ ${userDonateStatus}, у вас не существует бизнеса чтоб
         bot.sendMessage(chatId, `
 ${userDonateStatus}, не возможно купить количество букв или отрицательное количество бработников
 
-<b>Отправьте количество бработников в числовом формате</b>
+<i>Отправьте количество бработников в числовом формате</i>
         `, { parse_mode: 'HTML' })
         return;
     }
@@ -285,7 +303,7 @@ ${userDonateStatus}, не возможно купить количество б�
 ${userDonateStatus}, количество бработников который вы хотите купить, превышает 
 максимальное кол-во работников бизнеса
 
-<b>Напишите:</b> <code>мой бизнес</code>
+<i>Напишите:</i> <u><code>мой бизнес</code></u>
 Чтобы увидеть информацию о своем бизнесе
 и максимальное количество работников бизнеса
         `, { parse_mode: 'HTML' })
@@ -300,17 +318,21 @@ ${userDonateStatus}, количество бработников который 
     if (userStatus === 'premium') {
         procent20 = Math.floor((workersProfit / 100) * 10)
         message = `
-<i>${userStatus.toUpperCase()}</i> <b>10% скидка от каждого работника</b>`
+<i>» ${userStatus.toUpperCase()}</i> <b>10% скидка от каждого работника</b>`
     }
     else if (userStatus === 'vip') {
         procent20 = Math.floor((workersProfit / 100) * 13)
         message = `
-<i>${userStatus.toUpperCase()}</i> <b>7% скидка от каждого работника</b>`
+<i>» ${userStatus.toUpperCase()}</i> <b>7% скидка от каждого работника</b>`
     }
     else if (userStatus === 'standart') {
         procent20 = Math.floor((workersProfit / 100) * 15)
         message = `
-<i>${userStatus.toUpperCase()}</i> <b>5% скидка от каждого работника</b>`
+<i>» ${userStatus.toUpperCase()}</i> <b>5% скидка от каждого работника</b>`
+    }
+    else {
+        procent20 = 0
+        message = ``
     }
 
     const workersPrice = Math.floor(workersProfit + procent20)
@@ -322,14 +344,24 @@ ${userDonateStatus}, количество бработников который 
 ${userDonateStatus}, у вас не хватает средств для покупки ${amountworkers} 
 бработников
 
-<b>Вы можете купить:</b> ${possibleBuyworkers}
+<i>Вы можете купить:</i> <b>${possibleBuyworkers}</b>
         `, { parse_mode: 'HTML' })
+        return;
+    }
+
+    if (userTax !== 0) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, сначало оплати налоги прежде чем купить новых
+бработников
+        `, {
+            parse_mode: 'HTML',
+        })
         return;
     }
 
     bot.sendMessage(chatId, `
 ${userDonateStatus}, вы успешно купили ${amountworkers} бработников
-<b>Сумма:</b> ${finishedToBuyworkers.toLocaleString('de-DE')} ${formatNumberInScientificNotation(finishedToBuyworkers)}
+<i>Сумма:</i> <b>${finishedToBuyworkers.toLocaleString('de-DE')} ${formatNumberInScientificNotation(finishedToBuyworkers)}</b>
 ${message}
     `, { parse_mode: 'HTML' })
 
@@ -352,7 +384,7 @@ async function addProfitEveryOneHour(collection) {
         if (usertax >= endTax) {
             try {
                 await bot.sendMessage(el.id, `
-${userDonateStatus}, <b>Ваш бизнес автоматически был закрыт так как вы не платили налоги</b>
+${userDonateStatus}, <b>Ваш бизнес автоматически был закрыт так как вы не платили налоги 💣</i>
 <b>Не скажи что мы не говорили</b>
                 `, {
                     parse_mode: 'HTML',
@@ -420,7 +452,8 @@ async function manualAddProfitEveryOneHour(msg, bot, collection) {
         if (usertax >= endTax) {
             try {
                 await bot.sendMessage(el.id, `
-${userDonateStatus}, <b>Ваш бизнес автоматически был закрыт так как вы не платили налоги</b>
+${userDonateStatus}, <b>Ваш бизнес автоматически был закрыт так как вы не платили налоги 💣</b>
+<b>Не скажи что мы не говорили</b>
                 `, {
                     parse_mode: 'HTML',
                 })
@@ -484,7 +517,7 @@ async function pulloffBusiness(msg, bot, collection) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, у вас нету бизнеса
 
-<b>Напишите:</b> <code>бизнесы</code> чтобы узнать о бизнесах
+<i>Напишите:</i> <code>бизнесы</code> чтобы узнать о бизнесах
         `, { parse_mode: 'HTML' })
         return;
     }
@@ -498,7 +531,7 @@ ${userDonateStatus}, у вас и так нету денег для снятие
 
     bot.sendMessage(chatId, `
 ${userDonateStatus}, вы успешно сняли с бизнеса 
-<b>Сумму:</b> ${userprofit.toLocaleString('de-DE')} ${formatNumberInScientificNotation(userprofit)}
+<i>Сумму:</i> <b>${userprofit.toLocaleString('de-DE')} ${formatNumberInScientificNotation(userprofit)}</b>
     `, { parse_mode: 'HTML' })
 
     await collection.updateOne({ id: userId1 }, { $inc: { "business.0.profit": -userprofit, balance: userprofit } })
@@ -519,7 +552,7 @@ async function payTaxForBusiness(msg, bot, collection) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, у вас нету бизнеса
 
-<b>Напишите:</b> <code>бизнесы</code> чтобы узнать о бизнесах
+<i>Напишите:</i> <code>бизнесы</code> чтобы узнать о бизнесах
         `, { parse_mode: 'HTML' })
         return;
     }
@@ -540,7 +573,7 @@ ${userDonateStatus}, у вас не хватает средств для опл�
 
     bot.sendMessage(chatId, `
 ${userDonateStatus}, вы успешно оплатили налоги бизнеса
-<b>Сумму:</b> ${usertax.toLocaleString('de-DE')} ${formatNumberInScientificNotation(usertax)}
+<i>Сумму:</i> <b>${usertax.toLocaleString('de-DE')} ${formatNumberInScientificNotation(usertax)}</b>
     `, { parse_mode: "HTML" })
     await collection.updateOne({ id: userId1 }, { $inc: { balance: -usertax, "business.0.tax": -usertax } })
 }
@@ -560,9 +593,9 @@ async function sellBusiness(msg, bot, collection) {
 
     if (username === '') {
         bot.sendMessage(chatId, `
-        ${userDonateStatus}, у вас нету бизнеса
-        
-        <b>Напишите:</b> <code>бизнесы</code> чтобы узнать о бизнесах
+${userDonateStatus}, у вас нету бизнеса
+
+<i>Напишите:</i> <code>бизнесы</code> чтобы узнать о бизнесах
         `, { parse_mode: 'HTML' })
         return;
     }
@@ -593,7 +626,7 @@ ${userDonateStatus}, прежде чем продать свой бизнес в
 
     bot.sendMessage(chatId, `
 ${userDonateStatus}, вы успешно продали свой бизнес <u>${username}</u>
-Стоимость продажи: ${flooredBPrice.toLocaleString('de-DE')}$
+<i>Стоимость продажи:</i> <b>${flooredBPrice.toLocaleString('de-DE')}</b>
 
 ${profitMsg}
     `, {

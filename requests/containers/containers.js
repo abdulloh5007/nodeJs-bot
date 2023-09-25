@@ -9,9 +9,9 @@ async function addContainers(msg) {
     const text = msg.text
 
     await collectionContainers.insertOne({
-        cName: 'CTY -> Houses',
-        cPrice: 30000,
-        cPriceType: 'money',
+        cName: 'CTY -> Donate Houses',
+        cPrice: 3000,
+        cPriceType: 'uc',
         cType: 'houses',
         cInfo: `С этого контейнера будет выпадать рандомно дома`,
         cImg: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-RiPE1nqnrJgy8IvsrrquWDO6wngqpGjzYQ&usqp=CAU',
@@ -212,12 +212,47 @@ ${userDonateStatus}, вы открыли контейнер 🎉
     await collection.updateOne({ id: userId1 }, { $inc: { balance: prisePrice } })
 }
 
-async function donateContainers(msg, bot) {
+async function donateContainers(msg, bot, collection) {
     const data = msg.data
     const msgId = msg.id
 
+    const collectionContainers = await mongoConnect('containers')
+
+    const chatId = msg.message.chat.id
+
+    const userDonateStatus = await donatedUsers(msg, collection)
+
     if (data === 'donateContainers') {
-        bot.answerCallbackQuery(msgId, { show_alert: true, text: 'В разработке' })
+
+        const containers = await collectionContainers.find({ cPriceType: 'uc' }).sort({ cPrice: 1 }).toArray()
+
+        let sortedContainers = 'В данный момент контейнеров не существует';
+        if (containers.length) {
+            sortedContainers = containers.map((e, i) => {
+                return `
+${i + 1}. <b>${e.cName}</b> - <i>${e.cPrice.toLocaleString('de-DE')} ${formatNumberInScientificNotation(e.cPrice)}</i>
+    <u>${e.cInfo}</u>
+                `
+            })
+        }
+
+        let caseOptions = {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: 'донат контейнеры', callback_data: 'donateContainers' }],
+                    [{ text: 'открыть контейнер', switch_inline_query_current_chat: 'Открыть контейнер ' }]
+                ]
+            }
+        }
+
+        bot.sendMessage(chatId, `
+${userDonateStatus}, вот контейнеры
+
+${sortedContainers}
+        `, {
+            parse_mode: 'HTML',
+            ...caseOptions,
+        })
     }
 }
 
