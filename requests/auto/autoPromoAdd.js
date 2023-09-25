@@ -1,6 +1,7 @@
 require('dotenv').config();
 const { formatNumberInScientificNotation } = require('../systems/systemRu');
 const { donatedUsers } = require('../donate/donatedUsers');
+const { mongoConnect } = require('../../mongoConnect');
 const adminId = parseInt(process.env.ADMIN_ID_INT)
 
 async function autoCreatePromoCodes(bot) {

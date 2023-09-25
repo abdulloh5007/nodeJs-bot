@@ -57,7 +57,7 @@ async function userBalance(msg, collection, bot, collectionAddvert) {
         userStatus = `
 ${userDonateStatus}, ваш баланс
 ${txtBalance}
-<b>РЕКЛАМА:</b> ${addvertText}
+${addvertText}
 ${addvertTime != '' ? `<b>ДАТА:</b> ${convertedTime.toLocaleDateString()}` : ''}
             `;
     } else {
