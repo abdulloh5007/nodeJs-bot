@@ -188,7 +188,7 @@ client.connect()
         console.log(customChalk.colorize(`ERROR CONNECTING TO DATABASE ${error}`, { style: 'italic', background: 'bgRed' }));
     })
 
-const db = client.db('testbot');
+const db = client.db('bot');
 const collection = db.collection('users');
 const collectionBot = db.collection('botInfo')
 const collectionCrypto = db.collection('crypto')
@@ -917,12 +917,7 @@ function start() {
             if (text === 'addnewValue') {
                 await collection.updateMany({ _id: ObjectId }, {
                     $set: {
-                        depozit: [{
-                            balance: 0,
-                            procent: 18,
-                            limit: 400000,
-                            date: 0,
-                        }]
+                        "properties.0.test": 0
                     }
                 })
                 bot.sendMessage(chatId, `res`)
