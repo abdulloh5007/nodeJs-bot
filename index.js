@@ -917,12 +917,7 @@ function start() {
             if (text === 'addnewValue') {
                 await collection.updateMany({ _id: ObjectId }, {
                     $set: {
-                        depozit: [{
-                            balance: 0,
-                            procent: 18,
-                            limit: 400000,
-                            date: 0,
-                        }]
+                        "properties.0.lendHouse": 0
                     }
                 })
                 bot.sendMessage(chatId, `res`)
