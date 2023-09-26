@@ -12,14 +12,14 @@ async function connection() {
 }
 
 async function mongoConnect(colName) {
-    const db = client.db('testbot');
+    const db = client.db('bot');
     const collection = db.collection(colName);
 
     return collection;
 }
 
 function botUrl(string) {
-    const botUrl = `<a href='https://t.me/tesLevouJs_bot'>${string}</a>`
+    const botUrl = `<a href='https://t.me/levouJS_bot'>${string}</a>`
     return botUrl;
 }
 

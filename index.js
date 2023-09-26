@@ -190,7 +190,7 @@ client.connect()
         console.log(customChalk.colorize(`ERROR CONNECTING TO DATABASE ${error}`, { style: 'italic', background: 'bgRed' }));
     })
 
-const db = client.db('testbot');
+const db = client.db('bot');
 const collection = db.collection('users');
 const collectionBot = db.collection('botInfo')
 const collectionCrypto = db.collection('crypto')
