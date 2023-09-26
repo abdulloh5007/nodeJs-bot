@@ -178,14 +178,6 @@ async function houses(msg, collection, bot, collectionHouses) {
     const chatId = msg.chat.id;
 
     const userStatus = await donatedUsers(msg, collection)
-    let options = {
-        reply_markup: {
-            inline_keyboard: [
-                [{ text: `Донат дома`, callback_data: `donateHouses` }],
-                // Добавьте другие кнопки с уникальными идентификаторами и данными пользователя
-            ],
-        },
-    };
     const sortedHouses = await collectionHouses.find({ donate: false }).sort({ price: 1 }).toArray();
     const houseNamesString = sortedHouses.map((house, index) => `${index + 1}. ${house.name} - ${house.price.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(house.price)}`).join('\n');
     bot.sendMessage(chatId, `
@@ -196,7 +188,6 @@ ${houseNamesString}
 <i>Введите <code>купить дом [номер]</code> дома - чтобы купить дом из списка</i>
         `, {
         parse_mode: 'HTML',
-        ...options
     });
 }
 
@@ -394,7 +385,7 @@ async function myHouseInfo(msg, collection, bot, collectionHouses) {
 
         const userLendHouse = user.properties[0].lendHouse
         const currentDate = Date.now()
-        const remainingTime = formatRemainingTime(bonusCooldown - (currentDate - userLendHouse));
+        const remainingTime = userLendHouse > 0 ? formatRemainingTime(bonusCooldown - (currentDate - userLendHouse)) : '<b>Дайте в аренду</b>';
 
         if (userStatus === 'premium' || userStatus === 'vip') {
             bonusCooldown = 12 * 60 * 60 * 1000;
@@ -549,43 +540,8 @@ async function btnHouses(msg, bot, collection, collectionHouses) {
     const chatId = msg.message.chat.id;
     const messageId = msg.message.message_id
 
-    if (data === 'donateHouses') {
-        const userStatus = await donatedUsers(msg, collection)
-
-        const sortedHouses = await collectionHouses.find({ donate: true }).sort({ price: 1 }).toArray();
-        let options = {
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: `Дома`, callback_data: `simpleHouses` }],
-                    // Добавьте другие кнопки с уникальными идентификаторами и данными пользователя
-                ],
-            },
-        };
-        const houseNamesString = sortedHouses.map((house, index) => `${index + 1}. ${house.name} - ${house.price.toLocaleString('de-DE')} UC`).join('\n');
-        bot.editMessageText(`
-${userStatus}, вот доступные донат дома (отсортированы по цене):
-
-${houseNamesString}
-
-<i>Введите <code>купить донатдом [номер]</code> дома - чтобы купить дом из списка</i>
-        `, {
-            chat_id: chatId,
-            message_id: messageId,
-            parse_mode: 'HTML',
-            ...options
-        })
-    }
-
     if (data === 'simpleHouses') {
         const userStatus = await donatedUsers(msg, collection)
-        let options = {
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: `Донат дома`, callback_data: `donateHouses` }],
-                    // Добавьте другие кнопки с уникальными идентификаторами и данными пользователя
-                ],
-            },
-        };
         const sortedHouses = await collectionHouses.find({ donate: false }).sort({ price: 1 }).toArray();
         const houseNamesString = sortedHouses.map((house, index) => `${index + 1}. ${house.name} - ${house.price.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(house.price)}`).join('\n');
 
@@ -599,7 +555,6 @@ ${houseNamesString}
             chat_id: chatId,
             message_id: messageId,
             parse_mode: 'HTML',
-            ...options
         })
     }
 }

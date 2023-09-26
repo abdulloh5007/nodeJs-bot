@@ -48,9 +48,9 @@ module.exports = {
     topOptions: {
         reply_markup: JSON.stringify({
             inline_keyboard: [
-                [{ text: 'Топ баланс', callback_data: 'top_balance' }],
-                [{ text: 'Топ проведены игр', callback_data: 'top_game' }],
-                [{ text: 'Топ баланса на карте', callback_data: 'top_card' }],
+                [{ text: '💰Баланс', callback_data: 'top_balance' }],
+                [{ text: '🕹Проведены игр', callback_data: 'top_game' }],
+                [{ text: '💳Баланса на карте', callback_data: 'top_card' }],
             ]
         })
     }

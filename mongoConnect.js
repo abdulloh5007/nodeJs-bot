@@ -18,6 +18,12 @@ async function mongoConnect(colName) {
     return collection;
 }
 
+function botUrl(string) {
+    const botUrl = `<a href='https://t.me/tesLevouJs_bot'>${string}</a>`
+    return botUrl;
+}
+
 module.exports = {
     mongoConnect,
+    botUrl,
 }

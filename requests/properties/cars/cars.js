@@ -175,14 +175,7 @@ async function cars(msg, collection, bot, collectionCars) {
     const chatId = msg.chat.id;
 
     const userStatus = await donatedUsers(msg, collection)
-    let options = {
-        reply_markup: {
-            inline_keyboard: [
-                [{ text: `донат машины`, callback_data: `donateCars` }],
-                // Добавьте другие кнопки с уникальными идентификаторами и данными пользователя
-            ],
-        },
-    };
+    
     const sortedCars = await collectionCars.find({ donate: false }).sort({ price: 1 }).toArray();
     const carNamesString = sortedCars.map((car, index) => `${index + 1}. ${car.name} - ${car.price.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(car.price)}`).join('\n');
     bot.sendMessage(chatId, `
@@ -193,7 +186,6 @@ ${carNamesString}
 <b>Введите <code>купить машину [номер]</code> машины - чтобы купить машину из списка</b>
         `, {
         parse_mode: 'HTML',
-        ...options
     });
 }
 
@@ -368,6 +360,16 @@ async function myCarInfo(msg, collection, bot, collectionCars) {
 
     const userStatus = await donatedUsers(msg, collection)
     const userCarName = user.properties[0].cars;
+    const userCarSt = user.properties[0].carStatus;
+    const userCarGas = user.properties[0].carGasoline;
+    let carSettingKb = {
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: '🛠Пойти в мастерскую', switch_inline_query_current_chat: 'машина мастерская' }, { text: '🛢Пойти в заправку', switch_inline_query_current_chat: 'машина заправить' }],
+                [{ text: '🧨Продать машину', switch_inline_query_current_chat: 'продать машину' }]
+            ]
+        }
+    }
 
     if (userCarName) {
         const userCar = await collection.findOne({ "properties.0.cars": userCarName });
@@ -394,17 +396,18 @@ ${userStatus}, вот информация о вашей донат машине
             }
             else {
                 const userCarPrice = car.price
-                const userCarSeason = car.season
                 const userHouImg = car.img
 
                 const carInfo = `
 ${userStatus}, вот информация о вашей машине:
 
-Название: ${userCarName2}
-Цена: ${userCarPrice.toLocaleString('de-DE')}$ ${userCarPrice > 1000 ? `${formatNumberInScientificNotation(userCarPrice)}` : ''}
-Сезон: ${userCarSeason}
-    `;
-                bot.sendPhoto(chatId, userHouImg, { caption: carInfo, parse_mode: 'HTML' });
+┌ <i>Название:</i> <b>${userCarName2}</b>
+└ <i>Цена:</i> <b>${userCarPrice.toLocaleString('de-DE')}$ ${userCarPrice > 1000 ? `${formatNumberInScientificNotation(userCarPrice)}` : ''}</b>
+
+<i>Заправлено »</i> <b>${userCarGas} / 100</b>
+<i>Починено »</i> <b>${userCarSt} / 100</b>
+            `;
+                bot.sendPhoto(chatId, userHouImg, { caption: carInfo, parse_mode: 'HTML', ...carSettingKb, });
             }
         } else {
             bot.sendMessage(chatId, `У вас нет машины.`);
@@ -500,43 +503,8 @@ async function btnCars(msg, bot, collection, collectionCars) {
     const chatId = msg.message.chat.id;
     const messageId = msg.message.message_id
 
-    if (data === 'donateCars') {
-        const userStatus = await donatedUsers(msg, collection)
-
-        const sortedCars = await collectionCars.find({ donate: true }).sort({ price: 1 }).toArray();
-        let options = {
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: `машины`, callback_data: `simpleCars` }],
-                    // Добавьте другие кнопки с уникальными идентификаторами и данными пользователя
-                ],
-            },
-        };
-        const carNamesString = sortedCars.map((car, index) => `${index + 1}. ${car.name} - ${car.price.toLocaleString('de-DE')} UC`).join('\n');
-        bot.editMessageText(`
-${userStatus}, вот доступные донат машины (отсортированы по цене):
-
-${carNamesString}
-
-<b>Введите <code>купить донатмашину [номер]</code> машины - чтобы купить машину из списка</b>
-        `, {
-            chat_id: chatId,
-            message_id: messageId,
-            parse_mode: 'HTML',
-            ...options
-        })
-    }
-
     if (data === 'simpleCars') {
         const userStatus = await donatedUsers(msg, collection)
-        let options = {
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: `донат машины`, callback_data: `donateCars` }],
-                    // Добавьте другие кнопки с уникальными идентификаторами и данными пользователя
-                ],
-            },
-        };
         const sortedCars = await collectionCars.find({ donate: false }).sort({ price: 1 }).toArray();
         const carNamesString = sortedCars.map((car, index) => `${index + 1}. ${car.name} - ${car.price.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(car.price)}`).join('\n');
 
@@ -550,7 +518,6 @@ ${carNamesString}
             chat_id: chatId,
             message_id: messageId,
             parse_mode: 'HTML',
-            ...options
         })
     }
 }

@@ -159,7 +159,6 @@ async function commandStart(msg, collection, bot) {
                 date: 0,
             }],
         })
-
     }
 
     // ЕСЛИ ХОЧЕШЬ ОТПРАВИТЬ ФОТО ВМЕСТО СТИКЕРА
