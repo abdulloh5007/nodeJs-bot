@@ -16,6 +16,8 @@ const {
     gameSpin,
     gameBouling,
     gameFootball,
+    gameRice,
+    gameRiceNeed,
 } = require('./requests/games/games');
 
 const {
@@ -188,7 +190,7 @@ client.connect()
         console.log(customChalk.colorize(`ERROR CONNECTING TO DATABASE ${error}`, { style: 'italic', background: 'bgRed' }));
     })
 
-const db = client.db('bot');
+const db = client.db('testbot');
 const collection = db.collection('users');
 const collectionBot = db.collection('botInfo')
 const collectionCrypto = db.collection('crypto')
@@ -423,7 +425,7 @@ function start() {
             //
             const parts = text.split(' ')
             function SIQCCtxts(string) {
-                return `@levouJS_bot ${string}`.toLowerCase()
+                return `@tesLevouJs_bot ${string}`.toLowerCase()
             }
 
             //calc
@@ -564,6 +566,12 @@ function start() {
                 let valueIndex = 1
                 kazino(msg, collection, bot, valueIndex)
             }
+            else if (text.toLowerCase().startsWith('гонка')) {
+                gameRice(msg, bot, collection, 1)
+            }
+            else if (text.toLowerCase().startsWith(SIQCCtxts('гонка'))) {
+                gameRice(msg, bot, collection, 2)
+            }
             else if (text.toLowerCase().startsWith(SIQCCtxts('спин'))) {
                 let valueIndex = 2
                 gameSpin(msg, bot, collection, valueIndex)
@@ -587,6 +595,14 @@ function start() {
             else if (text.toLowerCase().startsWith('футбол')) {
                 let valueIndex = 1
                 gameFootball(msg, bot, collection, valueIndex)
+            }
+
+            // car settings
+            if (text.toLowerCase().startsWith('автомобиль')) {
+                gameRiceNeed(msg, bot, collection, 1)
+            }
+            else if (text.toLowerCase().startsWith(SIQCCtxts('автомобиль'))) {
+                gameRiceNeed(msg, bot, collection, 2)
             }
 
             // info
@@ -758,7 +774,7 @@ function start() {
             else if (text.toLowerCase().startsWith('машина имя')) {
                 changeCarName(msg, bot, collectionCars)
             }
-            else if (text.toLowerCase() === 'продать машину') {
+            else if (text.toLowerCase() === 'продать машину' || text.toLowerCase() === SIQCCtxts('продать машину')) {
                 sellCar(msg, bot, collection, collectionCars)
             }
             else if (text.toLowerCase().startsWith('-машина')) {
@@ -898,11 +914,90 @@ function start() {
             //     bot.sendMessage(chatId, `это эмоджи ${text}`)
             // }
 
+            // add test user
+            if (text === 'newUser') {
+                collection.insertOne({
+                    id: 7777777,
+                    gameId: 'BOT7777',
+                    userName: 'CTY » BOT',
+                    balance: 777777,
+                    uc: 0,
+                    registerTime: 0,
+                    altcoinidx: 0,
+                    checkPayment: 'not',
+                    lastBonusTime: 0,
+                    toBeAnAdmin: true,
+                    status: [{
+                        statusName: 'player',
+                        purchaseDate: 0,
+                        statusExpireDate: 0,
+                    }],
+                    limit: [{
+                        giveMoneyLimit: 50000,
+                        givedMoney: 0,
+                        updateDayLimit: 0,
+                        // promoMoneyLimit: 1000,
+                        // promoMoney: 0,
+                    }],
+                    business: [{
+                        have: false,
+                        name: "",
+                        workers: 0,
+                        maxWorkers: 0,
+                        profit: 0,
+                        workersProfit: 0,
+                        tax: 0,
+                        lastUpdTime: 0,
+                    }],
+                    avatar: [{
+                        waiting: '',
+                        avaUrl: '',
+                    }],
+                    properties: [{
+                        houses: '',
+                        cars: '',
+                    }],
+                    referral: [{
+                        code: '',
+                        amount: 0,
+                    }],
+                    crypto: [{
+                        altcoinidx: 0
+                    }],
+                    rates: [{
+                        wins: 0,
+                        loses: 0,
+                        all: 0
+                    }],
+                    ban: [{
+                        ban: false,
+                        cause: "",
+                        banTime: 0,
+                        unbanTime: 0,
+                    }],
+                    bankCard: [{
+                        cardHave: true,
+                        cardNumber: 1111,
+                        cardName: "botcard",
+                        cardOwner: 'BOT',
+                        cardValue: 0,
+                        cardPassword: 0,
+                        cardOwnerId: 7777777
+                    }],
+                    depozit: [{
+                        balance: 0,
+                        procent: 10,
+                        limit: 50000,
+                        date: 0,
+                    }],
+                })
+            }
+
             if (text == 'testEditingStatuses') {
                 bot.sendChatAction(chatId, 'typing')
                 await collection.updateMany({ _id: ObjectId }, {
                     $unset: {
-                        toBeAnAdmin: true,
+                        "properties.0.lendHouses": 0
                     }
                 });
                 bot.sendMessage(chatId, 'Успешна обновлена датабаза')

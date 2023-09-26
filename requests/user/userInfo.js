@@ -254,6 +254,14 @@ async function userGameInfo(msg, bot, collection) {
 
     const cardText = chatId === userId ? `<i>» 💳Карта:</i> |<code>${userBankCard}</code>|` : `<i>» 💳Карта:</i> |<code>5444 **** **** ****</code>|`;
 
+    const profilKb = {
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: '🔐Пополнить депозит', switch_inline_query_current_chat: 'депозит пополнить 1е3' }]
+            ]
+        }
+    }
+
     await bot.sendMessage(chatId, `
 ┌ <i>🆔Игровой:</i> ${userGameId}
 ├ <i>👨Ник:</i> ${userDonateStatus}
@@ -271,7 +279,7 @@ ${cardText}
    <i>» 📉Проигрыши:</i> ${ratesLose}</i>
 
 <i>» 📆Время регистрации:</i> ${register_time}
-    `, { parse_mode: 'HTML', reply_to_message_id: msg.message_id });
+    `, { parse_mode: 'HTML', reply_to_message_id: msg.message_id, ...profilKb });
 }
 
 async function myId(msg, bot, collection) {
