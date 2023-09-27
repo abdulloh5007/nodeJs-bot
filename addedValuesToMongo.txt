@@ -1,0 +1,7 @@
+depozit
+    extraProcent
+    extraLimit
+
+business
+    speeds
+    

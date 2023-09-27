@@ -33,8 +33,10 @@ async function userDepozit(msg, bot, collection) {
   const depOpts = {
     reply_markup: {
       inline_keyboard: [
-        [{ text: 'Депозит пополнить', switch_inline_query_current_chat: 'депозит пополнить ' }],
-        newDepDate >= findDepDateToBtn ? [{ text: 'Снять', callback_data: `pull_money_depozit__${userId}` }] : []
+        [
+            { text: '⚖️Депозит пополнить', switch_inline_query_current_chat: 'депозит пополнить ' }, { text: '⚙️Дополнительный процент', switch_inline_query_current_chat: '+деп процент' }
+            ],
+        newDepDate >= findDepDateToBtn ? [{ text: '💰Снять', callback_data: `pull_money_depozit__${userId}` }] : []
       ]
     }
   };
