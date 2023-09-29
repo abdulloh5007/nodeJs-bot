@@ -194,7 +194,7 @@ client.connect()
         console.log(customChalk.colorize(`ERROR CONNECTING TO DATABASE ${error}`, { style: 'italic', background: 'bgRed' }));
     })
 
-const db = client.db('bot');
+const db = client.db('testbot');
 const collection = db.collection('users');
 const collectionBot = db.collection('botInfo')
 const collectionCrypto = db.collection('crypto')
@@ -429,7 +429,7 @@ function start() {
             //
             const parts = text.split(' ')
             function SIQCCtxts(string) {
-                return `@levouJs_bot ${string}`.toLowerCase()
+                return `@tesLevouJs_bot ${string}`.toLowerCase()
             }
 
             //calc

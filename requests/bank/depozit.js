@@ -75,7 +75,7 @@ async function depozitAddMoney(msg, bot, collection, glLength) {
     const dateDepDate = new Date(depDate).getDate()
 
     const parts = text.split(' ')
-    const depMoney = parseInt(parseNumber(parts[glLength]))
+    let depMoney = parts[glLength]
     const date = new Date()
     date.setDate(date.getDate() + 1);
 
@@ -90,6 +90,8 @@ ${userDonateStatus}, не правильно введена сумма для д
         })
         return;
     }
+
+    depMoney = parseInt(parseNumber(parts[glLength]))
 
     if (userBalance < depMoney) {
         bot.sendMessage(chatId, `

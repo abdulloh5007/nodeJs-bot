@@ -719,7 +719,7 @@ ${userDonateStatus}, у вас еше нету бизнеса для ускор�
     if (bBusts === 0) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, у вас нету бизнес ускоритель
-<i>чтобы купить:/i> <code>мой бизнес</code>
+<i>чтобы купить:</i> <code>мой бизнес</code>
         `, {
             parse_mode: 'HTML',
             reply_to_message_id: messageId,
