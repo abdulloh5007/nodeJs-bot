@@ -559,6 +559,32 @@ ${userDonateStatus}, вот инфо о игроке <a href='tg://user?id=${use
     })
 }
 
+async function userStatistics(msg, bot, collection){
+    const userId1 = msg.from.id
+    const chatId = msg.chat.id
+    const messageId = msg.message_id
+
+    const userDonateStatus = await donatedUsers(msg, collection)
+    const user = await collection.findOne({ id: userId1 })
+    const userCreatePromos = user.stats[0].createPromos
+    const userCaseHouses = user.stats[0].openCaseHouses
+    const userCaseCars = user.stats[0].openCaseCars
+
+    bot.sendMessage(chatId, `
+${userDonateStatus}, вот ваша статистика
+
+Открыто контейнеров
+  <i>Конт домов:</i> <b>${userCaseHouses}</b>
+  <i>Конт машин:</i> <b>${userCaseCars}</b>
+
+Создано промокодов
+  <i>Кол-ва:</i> <b>${userCreatePromos}</b> 
+    `, {
+        parse_mode: 'HTML',
+        reply_to_message_id: messageId,
+    })
+}
+
 module.exports = {
     commandStart,
     commandHelp,
@@ -567,4 +593,5 @@ module.exports = {
     deleteAllUsers,
     userInfoReplyToMessage,
     infoFromUGameId,
+    userStatistics,
 }

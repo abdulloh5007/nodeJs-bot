@@ -57,6 +57,8 @@ async function checkAndUpdateDonations(collection) {
     for (const user of users) {
         const userExpireDate = user.status[0].statusExpireDate
         const userStatusName = user.status[0].statusName
+        const userExtraDepLimit = parseInt(user.depozit[0].extraLimit) + parseInt(50000)
+        const userExtraDepProcent = parseInt(user.depozit[0].extraProcent) + parseInt(10)
 
         let sortedStName
 
@@ -96,7 +98,7 @@ async function checkAndUpdateDonations(collection) {
             await collection.updateOne(
                 { id: user.id },
                 {
-                    $set: { "status.0.statusName": "player", "status.0.statusExpireDate": 0, "status.0.purchaseDate": 0, "limit.0.giveMoneyLimit": 50000, "limit.0.givedMoney": 0, "avatar.0.waiting": '', "avaUrl": '' },
+                    $set: { "status.0.statusName": "player", "status.0.statusExpireDate": 0, "status.0.purchaseDate": 0, "limit.0.giveMoneyLimit": 50000, "limit.0.givedMoney": 0, "avatar.0.waiting": '', "avatar.0.avaUrl": '', "depozit.0.limit": userExtraDepLimit, "depozit.0.procent": userExtraDepProcent, },
                     // Дополнительные действия, если необходимы
                 }
             );

@@ -13,7 +13,6 @@ async function addingPromoIfNotExists(collectionPromo, promoData) {
         await collectionPromo.insertOne(promoData)
         return true
     }
-
 }
 
 async function createPromo(msg, bot, collection, collectionPromo) {
@@ -70,7 +69,7 @@ ${userDonateStatus}, слова в комментариях должны сос�
                     });
 
                     if (res === true) {
-                        collection.updateOne({ id: userId1 }, { $inc: { balance: -promoMoney } });
+                        collection.updateOne({ id: userId1 }, { $inc: { balance: -promoMoney, "stats.0.createPromos": 1 } });
                         bot.sendMessage(chatId, `
 ${userDonateStatus}, Вы успешно создали промокод
 <b>Название:</b> <code>${promoName}</code>
@@ -83,7 +82,7 @@ ${userDonateStatus}, Вы успешно создали промокод
                         bot.sendMessage(chatId, `
 ${userDonateStatus}, не возможно создать промо
 с таким названием промо уже существует
-                            `, { parse_mode: 'HTML' });
+                        `, { parse_mode: 'HTML' });
                     }
                 } else {
                     bot.sendMessage(chatId, `

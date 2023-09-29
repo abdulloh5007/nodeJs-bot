@@ -88,6 +88,7 @@ async function getTopPlayersBalance(msg, bot, collection) {
             message_id: replyId,
             parse_mode: 'HTML',
             ...topOptions,
+            disable_web_page_preview: true,
         })
     } catch (error) {
        bot.answerCallbackQuery(msg.id, `Вы уже в этой категории топа`) 
@@ -147,6 +148,7 @@ async function getTopPlayersCard(msg, bot, collection) {
             message_id: replyId,
             parse_mode: 'HTML',
             ...topOptions,
+            disable_web_page_preview: true,
         })
     } catch (error) {
        bot.answerCallbackQuery(msg.id, `Вы уже в этой категории топа`) 
@@ -207,6 +209,7 @@ async function getTopPlayersRates(msg, bot, collection) {
             message_id: replyId,
             parse_mode: 'HTML',
             ...topOptions,
+            disable_web_page_preview: true,
         })
     } catch (error) {
        bot.answerCallbackQuery(msg.id, `Вы уже в этой категории топа`) 
@@ -237,7 +240,8 @@ async function tops(msg, bot, collection) {
 <b>${userStatus}</b>, Выберите категорю топа
         `, {
         parse_mode: "HTML",
-        ...topOptions
+        ...topOptions,
+        disable_web_page_preview: true,
     })
 }
 

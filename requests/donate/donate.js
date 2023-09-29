@@ -495,7 +495,7 @@ ${userDonatedStatus}, Вы уже купили статус <b>${statusName.toUp
 
                 await buyStatus(userId, collection, statusName, days);
                 await collection.updateOne({ id: userId }, { $inc: { uc: -cost } });
-                await collection.updateOne({ id: userId }, { $set: { "limit.0.giveMoneyLimit": moneyLimit, "depozit.0.limit": userExtraDepLimit, "depozit.0.procent": userExtraDepProcent, "depozit.0.extraLimit": 0, "depozit.0.extraProcent": 0 } })
+                await collection.updateOne({ id: userId }, { $set: { "limit.0.giveMoneyLimit": moneyLimit, "depozit.0.limit": userExtraDepLimit, "depozit.0.procent": userExtraDepProcent } })
 
                 let activeStatusSticker;
                 if (statusName === 'premium') {

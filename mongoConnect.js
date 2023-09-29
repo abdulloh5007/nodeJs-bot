@@ -12,7 +12,7 @@ async function connection() {
 }
 
 async function mongoConnect(colName) {
-    const db = client.db('testbot');
+    const db = client.db('bot');
     const collection = db.collection(colName);
 
     return collection;

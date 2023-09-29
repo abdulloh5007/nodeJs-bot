@@ -28,6 +28,7 @@ const {
     userInfoReplyToMessage,
     userMsg,
     infoFromUGameId,
+    userStatistics,
 } = require('./requests/commands/commands');
 
 const {
@@ -194,7 +195,7 @@ client.connect()
         console.log(customChalk.colorize(`ERROR CONNECTING TO DATABASE ${error}`, { style: 'italic', background: 'bgRed' }));
     })
 
-const db = client.db('testbot');
+const db = client.db('bot');
 const collection = db.collection('users');
 const collectionBot = db.collection('botInfo')
 const collectionCrypto = db.collection('crypto')
@@ -429,7 +430,7 @@ function start() {
             //
             const parts = text.split(' ')
             function SIQCCtxts(string) {
-                return `@tesLevouJs_bot ${string}`.toLowerCase()
+                return `@levouJS_bot ${string}`.toLowerCase()
             }
 
             //calc
@@ -525,7 +526,7 @@ function start() {
             else if (text.toLowerCase().startsWith(SIQCCtxts('купить ббуст'))) {
                 addBusinessSpeeds(msg, bot, collection, 3)
             }
-            else if (text.toLowerCase() === 'бизнес ускорить' || text.toLowerCase() === SIQCCtxts('бизнес ускорить')) {
+            if (text.toLowerCase() === 'бизнес ускорить' || text.toLowerCase() === SIQCCtxts('бизнес ускорить')) {
                 bustBusiness(msg, bot, collection)
             }
 
@@ -928,6 +929,10 @@ function start() {
                 testPayment(msg, bot)
             }
 
+            if (text.toLowerCase() === 'стата') {
+                userStatistics(msg, bot, collection)
+            }
+
             // Обработчик предварительного запроса по оплате.
             bot.on('pre_checkout_query', (query) => {
                 bot.answerPreCheckoutQuery(query.id, true);
@@ -1040,8 +1045,11 @@ function start() {
             if (text === 'addnewValue') {
                 await collection.updateMany({ _id: ObjectId }, {
                     $set: {
-                        "depozit.0.extraLimit": 0,
-                        "depozit.0.extraProcent": 0,
+                        stats: [{
+                            openCaseHouses: 0,
+                            openCaseCars: 0,
+                            createPromos: 0,
+                        }]
                     }
                 })
                 bot.sendMessage(chatId, `res`)
@@ -1109,18 +1117,19 @@ cron.schedule('0 9 * * *', () => {
 });
 
 cron.schedule('0 9 * * *', () => {
-    console.log('Добавление прибыли на бизнесы...');
-    addProfitEveryOneHour(collection).catch(err => {
-        console.error('Ошибка при добавлении прибыли на бизнесы:', err);
-    });
+    // auto create promo
+    autoCreatePromoCodes(bot)
+
     autoDeleteAllPromocodes(bot).catch(err => {
         console.error('Ошибка при удалении промокодов:', err);
     })
 });
 
-cron.schedule('0 */12 * * *', () => {
-    // auto create promo
-    autoCreatePromoCodes(bot)
+cron.schedule('0 0 */3 * *', () => {
+    console.log('Добавление прибыли на бизнесы...');
+    addProfitEveryOneHour(collection).catch(err => {
+        console.error('Ошибка при добавлении прибыли на бизнесы:', err);
+    });
 })
 
 // Вызывайте эту функцию регулярно, например, каждый день или час

@@ -559,8 +559,8 @@ async function gameRiceNeed(msg, bot, collection, valueIndex) {
     let carSetting = parts[valueIndex]
 
     const datamap = {
-        'мастерская': { item: 'carStatus', need: userCarSt, cost: 3, txt: 'пошли в мастерскую и починили вашу машину 🛠', img: '' },
-        'заправить': { item: 'carGasoline', need: userCarGas, cost: 2, txt: 'заправили вашу машину 🛢', img: '' },
+        'мастерская': { item: 'carStatus', need: userCarSt, cost: 3, txt: 'пошли в мастерскую и починили вашу машину 🛠', img: 'https://amastercar.ru/img/auto_service_new.jpg' },
+        'заправить': { item: 'carGasoline', need: userCarGas, cost: 2, txt: 'заправили вашу машину 🛢', img: 'https://auto.24tv.ua/resources/photos/news/202006/21771a2f138da-a6a9-40a0-b446-f6830be35db7.jpg?1592310798000&fit=cover&w=720&h=405&q=65' },
     }
 
     const carSettingKb = {

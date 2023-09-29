@@ -9,11 +9,11 @@ async function addContainers(msg) {
     const text = msg.text
 
     await collectionContainers.insertOne({
-        cName: 'CTY -> Donate Houses',
-        cPrice: 3000,
+        cName: 'CTY -> Donate Cars',
+        cPrice: 2000,
         cPriceType: 'uc',
-        cType: 'houses',
-        cInfo: `С этого контейнера будет выпадать рандомно дома`,
+        cType: 'cars',
+        cInfo: `С этого контейнера будет выпадать рандомно машины`,
         cImg: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-RiPE1nqnrJgy8IvsrrquWDO6wngqpGjzYQ&usqp=CAU',
     }).then(() => {
         console.log('ok');
@@ -31,7 +31,7 @@ async function listPriceMoneyContainers(msg, bot, collection) {
     const userDonateStatus = await donatedUsers(msg, collection)
 
     if (['конты', 'контейнеры', 'conts', 'containers'].includes(text.toLowerCase())) {
-        const containers = await collectionContainers.find({ cPriceType: 'money' }).sort({ cPrice: 1 }).toArray()
+        const containers = await collectionContainers.find({ cPriceType: 'uc' }).sort({ cPrice: 1 }).toArray()
 
         let sortedContainers = 'В данный момент контейнеров не существует';
         if (containers.length) {
@@ -46,7 +46,7 @@ ${i + 1}. <b>${e.cName}</b> - <i>${e.cPrice.toLocaleString('de-DE')} ${formatNum
         let caseOptions = {
             reply_markup: {
                 inline_keyboard: [
-                    [{ text: 'донат контейнеры', callback_data: 'donateContainers' }],
+                    // [{ text: 'донат контейнеры', callback_data: 'donateContainers' }],
                     [{ text: 'открыть контейнер', switch_inline_query_current_chat: 'Открыть контейнер ' }]
                 ]
             }
@@ -89,7 +89,7 @@ ${userDonateStatus}, введите номер контейнера из спи�
         return;
     }
 
-    const cont = await collectionContainers.find({ cPriceType: 'money' }).sort({ cPrice: 1 }).toArray()
+    const cont = await collectionContainers.find({ cPriceType: 'uc' }).sort({ cPrice: 1 }).toArray()
 
     let sortedCont = 'В данный момент нету контейнеров !'
     if (cont.length === 0) {
@@ -210,6 +210,12 @@ ${userDonateStatus}, вы открыли контейнер 🎉
 
     await collection.updateOne({ id: userId1 }, { $inc: { balance: -price } })
     await collection.updateOne({ id: userId1 }, { $inc: { balance: prisePrice } })
+    if (contType === 'houses') {
+        await collection.updateOne({ id: userId1 }, { $inc: { "stats.0.openCaseHouses": 1 } })
+    }
+    else if (contType === 'cars') {
+        await collection.updateOne({ id: userId1 }, { $inc: { "stats.0.openCaseCars": 1 } })
+    }
 }
 
 async function donateContainers(msg, bot, collection) {
@@ -226,7 +232,7 @@ async function donateContainers(msg, bot, collection) {
 
         const containers = await collectionContainers.find({ cPriceType: 'uc' }).sort({ cPrice: 1 }).toArray()
 
-        let sortedContainers = 'В данный момент контейнеров не существует';
+        let sortedContainers = `\nВ данный момент контейнеров не существует`;
         if (containers.length) {
             sortedContainers = containers.map((e, i) => {
                 return `
@@ -239,7 +245,7 @@ ${i + 1}. <b>${e.cName}</b> - <i>${e.cPrice.toLocaleString('de-DE')} ${formatNum
         let caseOptions = {
             reply_markup: {
                 inline_keyboard: [
-                    [{ text: 'донат контейнеры', callback_data: 'donateContainers' }],
+                    // [{ text: 'донат контейнеры', callback_data: 'donateContainers' }],
                     [{ text: 'открыть контейнер', switch_inline_query_current_chat: 'Открыть контейнер ' }]
                 ]
             }
@@ -247,7 +253,6 @@ ${i + 1}. <b>${e.cName}</b> - <i>${e.cPrice.toLocaleString('de-DE')} ${formatNum
 
         bot.sendMessage(chatId, `
 ${userDonateStatus}, вот контейнеры
-
 ${sortedContainers}
         `, {
             parse_mode: 'HTML',
