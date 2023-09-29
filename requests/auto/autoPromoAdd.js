@@ -13,7 +13,7 @@ async function autoCreatePromoCodes(bot) {
     const promoComents = 'Спасибо что вы с нами'
     const finishedAmountForOne = Math.floor(randomAmount / randomActivation)
 
-    let channelId = '@cty_channaldev'
+    let channelId = '@cty_channeldev'
     await bot.sendMessage(channelId, `
 <b>Промокод от бота ↓</b>
 
@@ -76,7 +76,7 @@ async function manualCreatePromoCodes(msg, bot, collection) {
     const finishedAmountForOne = Math.floor(randomAmount / randomActivation)
 
     if (userId1 === adminId) {
-        let channelId = '@cty_channaldev'
+        let channelId = '@cty_channeldev'
         await bot.sendMessage(channelId, `
 <b>Промокод от бота ↓</b>
 

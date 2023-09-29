@@ -33,8 +33,10 @@ async function userDepozit(msg, bot, collection) {
   const depOpts = {
     reply_markup: {
       inline_keyboard: [
-        [{ text: 'Депозит пополнить', switch_inline_query_current_chat: 'депозит пополнить ' }],
-        newDepDate >= findDepDateToBtn ? [{ text: 'Снять', callback_data: `pull_money_depozit__${userId}` }] : []
+        [
+            { text: '⚖️Депозит пополнить', switch_inline_query_current_chat: 'депозит пополнить ' }, { text: '⚙️Дополнительный процент', switch_inline_query_current_chat: '+деп процент' }
+            ],
+        newDepDate >= findDepDateToBtn ? [{ text: '💰Снять', callback_data: `pull_money_depozit__${userId}` }] : []
       ]
     }
   };
@@ -73,7 +75,7 @@ async function depozitAddMoney(msg, bot, collection, glLength) {
     const dateDepDate = new Date(depDate).getDate()
 
     const parts = text.split(' ')
-    const depMoney = parseInt(parseNumber(parts[glLength]))
+    let depMoney = parts[glLength]
     const date = new Date()
     date.setDate(date.getDate() + 1);
 
@@ -88,6 +90,8 @@ ${userDonateStatus}, не правильно введена сумма для д
         })
         return;
     }
+
+    depMoney = parseInt(parseNumber(parts[glLength]))
 
     if (userBalance < depMoney) {
         bot.sendMessage(chatId, `

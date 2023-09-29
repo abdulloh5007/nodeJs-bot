@@ -365,7 +365,7 @@ async function myCarInfo(msg, collection, bot, collectionCars) {
     let carSettingKb = {
         reply_markup: {
             inline_keyboard: [
-                [{ text: '🛠Пойти в мастерскую', switch_inline_query_current_chat: 'машина мастерская' }, { text: '🛢Пойти в заправку', switch_inline_query_current_chat: 'машина заправить' }],
+                [{ text: '🛠Пойти в мастерскую', switch_inline_query_current_chat: 'автомобиль мастерская' }, { text: '🛢Пойти в заправку', switch_inline_query_current_chat: 'автомобиль заправить' }],
                 [{ text: '🧨Продать машину', switch_inline_query_current_chat: 'продать машину' }]
             ]
         }

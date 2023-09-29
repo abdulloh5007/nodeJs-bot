@@ -153,6 +153,7 @@ ${userDonateStatus}, У вас нет бизнеса
 
     const profit = user.business[0].profit
     const workers = user.business[0].workers
+    const speeds = user.business[0].speeds
     const workersProfitHour = workersProfit * workers
     const localedStringProfitWorkers = `${workersProfitHour.toLocaleString('de-DE')} ${formatNumberInScientificNotation(workersProfitHour)}`
     const endProfit = Math.floor(workersProfitHour * 2)
@@ -170,6 +171,10 @@ ${userDonateStatus}, У вас нет бизнеса
                     { text: '👨‍🔧Купить бработников', switch_inline_query_current_chat: 'купить бработников 5' },
                     { text: '🧨Продать бизнес', switch_inline_query_current_chat: 'продать бизнес' }
                 ],
+                [
+                    { text: '🧰Купить ускоритель', switch_inline_query_current_chat: 'купить ббуст 1' },
+                    { text: '⚡️Ускорить', switch_inline_query_current_chat: 'бизнес ускорить' },
+                ]
             ]
         }
     }
@@ -186,6 +191,7 @@ ${userDonateStatus}, вот информация о вашем бизнесе �
 
 <i>» Общий прибыль:</i> <b>${profit.toLocaleString('de-DE')} ${formatNumberInScientificNotation(profit)}</b>
 <i>» Налоги:</i> <b>${tax.toLocaleString('de-DE')} ${formatNumberInScientificNotation(tax)}</b>
+<i>» Ускорители:</i> <b>${speeds} ⚡️</b>
 
 <i>» Прибыль от каждого работника будет состоять по:</i> <b>${workersProfit.toLocaleString('de-DE')} ${formatNumberInScientificNotation(workersProfit)}</b>
 
@@ -194,7 +200,7 @@ ${dayCountTxt}
         `,
         ...businessKb,
     })
-     
+
     // <i>Чтобы узнать о работниках напишите:</i> <u><code>инфо бработники</code></u>
     // <i>Чтобы оплатить налоги напишите:</i> <u><code>бизнес налоги</code></u>
     // <i>Чтобы снять прибыль:</i> <u><code>бизнес снять</code></u>
@@ -637,6 +643,109 @@ ${profitMsg}
     await collection.updateOne({ id: userId1 }, { $inc: { balance: incBalance } })
 }
 
+async function addBusinessSpeeds(msg, bot, collection, index) {
+    const text = msg.text
+    const userId1 = msg.from.id
+    const chatId = msg.chat.id
+    const messageId = msg.message_id
+
+    const userDonateStatus = await donatedUsers(msg, collection)
+    const parts = text.split(' ')
+    const buyAmount = parts[index]
+
+    if (!buyAmount || isNaN(buyAmount)) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, не правильно введена кол-во ускорителей
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        return;
+    }
+
+    const user = await collection.findOne({ id: userId1 })
+    const userUc = user.uc
+
+    const amount = Math.floor(buyAmount * 30)
+
+    if (amount > userUc) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, у вас не хватает донатных-валют <b>(UC)</b> 
+<i>Для покупки ${buyAmount}</i>
+<i>Вы можете купить ${Math.floor(userUc / 30)}</i>
+<b>1 ускоритель⚡️ бизнеса стоит 30 UC</b>
+
+<b>Почему бизнес ускорители так дорого стоит? Потому что вы использав ускоритель вы получаете только зарплату 1.3X больше и не получаете налоги!</b>
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        return;
+    }
+
+    bot.sendMessage(chatId, `
+${userDonateStatus}, вы успешно приобрели ${buyAmount}⚡️ для своего бизнеса
+<i>Стоимость:</i> <b>${amount.toLocaleString('de-DE')} UC</b>
+    `, {
+        parse_mode: 'HTML',
+        reply_to_message_id: messageId,
+    })
+    await collection.updateOne({ id: userId1 }, { $inc: { "business.0.speeds": parseInt(buyAmount), uc: -amount } }).then(() => {
+
+    }).catch(err => console.log('business bust err ' + err))
+}
+
+async function bustBusiness(msg, bot, collection) {
+    const userId1 = msg.from.id
+    const chatId = msg.chat.id
+    const messageId = msg.message_id
+
+    const user = await collection.findOne({ id: userId1 })
+    const bName = user.business[0].name
+    const userDonateStatus = await donatedUsers(msg, collection)
+
+    if (bName === '') {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, у вас еше нету бизнеса для ускорение
+<i>Купить бизнес:</i> <code>бизнесы</code>
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        return;
+    }
+
+    const bBusts = user.business[0].speeds
+    if (bBusts === 0) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, у вас нету бизнес ускоритель
+<i>чтобы купить:</i> <code>мой бизнес</code>
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        return;
+    }
+
+    const collectionBusiness = await mongoConnect('businesses')
+    const business = await collectionBusiness.findOne({ name: bName })
+    const workersProfit = business.workersProfit
+
+    const workers = user.business[0].workers
+    const workersProfitHour = Math.floor((workersProfit * workers) * 1.3)
+
+    bot.sendMessage(chatId, `
+${userDonateStatus}, вы успешно использовали бизнес ускоритель и получили зарплату
+<i>Получена:</i> <b>${workersProfitHour.toLocaleString('de-DE')} ${formatNumberInScientificNotation(workersProfitHour)} 🪄[1.3X]</b>
+
+<b>При этом не получили налоги!🎉</b>
+    `, {
+        parse_mode: 'HTML',
+        reply_to_message_id: messageId,
+    })
+    await collection.updateOne({ id: userId1 }, { $inc: { "business.0.profit": workersProfitHour, "business.0.speeds": -1 } })
+}
+
 module.exports = {
     addBusiness,
     listBusinesses,
@@ -649,4 +758,6 @@ module.exports = {
     payTaxForBusiness,
     manualAddProfitEveryOneHour,
     sellBusiness,
+    addBusinessSpeeds,
+    bustBusiness,
 }

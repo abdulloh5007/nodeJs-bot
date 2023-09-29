@@ -44,7 +44,6 @@ async function donatedUsers(msg, collection) {
         userStatus = `<i>PREMIUM ⭐️</i> <a href='tg://user?id=${userId}'>${userName}</a>`
     }
     else {
-        userStatus
         userStatus = `<a href='tg://user?id=${userId}'>${userName}</a>`
     }
     return userStatus
@@ -73,12 +72,13 @@ async function checkAndUpdateDonations(collection) {
         else {
             sortedStName = ''
         }
+        
+
         if (userExpireDate && userExpireDate <= currentDate) {
             console.log(userStatusName);
             try {
                 // Снимите донат и обновите статус пользователя
                 await bot.sendMessage(user.id, `
-${donatedUser},
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖
 <b>С вас был снят донат:</b> <i>${userStatusName.toUpperCase()} ${sortedStName}</i>
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖
@@ -96,7 +96,7 @@ ${donatedUser},
             await collection.updateOne(
                 { id: user.id },
                 {
-                    $set: { "status.0.statusName": "player", "status.0.statusExpireDate": 0, "status.0.purchaseDate": 0 },
+                    $set: { "status.0.statusName": "player", "status.0.statusExpireDate": 0, "status.0.purchaseDate": 0, "limit.0.giveMoneyLimit": 50000, "limit.0.givedMoney": 0, "avatar.0.waiting": '', "avaUrl": '' },
                     // Дополнительные действия, если необходимы
                 }
             );

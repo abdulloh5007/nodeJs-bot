@@ -98,6 +98,7 @@ const {
     donateBtns,
     donateInfo,
     donateMenuStatuses,
+    buyDiffDepozit,
 } = require('./requests/donate/donate');
 
 const { checkAndUpdateDonations } = require('./requests/donate/donatedUsers');
@@ -151,6 +152,8 @@ const {
     payTaxForBusiness,
     manualAddProfitEveryOneHour,
     sellBusiness,
+    addBusinessSpeeds,
+    bustBusiness,
 } = require('./requests/properties/business/business');
 
 const {
@@ -182,6 +185,7 @@ const {
 const { globalReset } = require('./requests/globalReset/globalReset');
 const { userDepozit, depozitAddMoney, pullMoneyDepozit } = require('./requests/bank/depozit');
 const { openIsland, myIsland, islandCommands, islandProduct, islandNewName, infoIslandProfit, takeOfProfitIsland } = require('./requests/islands/islands');
+const { testPayment } = require('./requests/donate/payments');
 
 client.connect()
     .then(() => {
@@ -425,7 +429,7 @@ function start() {
             //
             const parts = text.split(' ')
             function SIQCCtxts(string) {
-                return `@tesLevouJs_bot ${string}`.toLowerCase()
+                return `@levouJS_bot ${string}`.toLowerCase()
             }
 
             //calc
@@ -514,6 +518,15 @@ function start() {
             }
             else if (text === 'mBP') {
                 manualAddProfitEveryOneHour(msg, bot, collection)
+            }
+            else if (text.toLowerCase().startsWith('купить ббуст')) {
+                addBusinessSpeeds(msg, bot, collection, 2)
+            }
+            else if (text.toLowerCase().startsWith(SIQCCtxts('купить ббуст'))) {
+                addBusinessSpeeds(msg, bot, collection, 3)
+            }
+            if (text.toLowerCase() === 'бизнес ускорить' || text.toLowerCase() === SIQCCtxts('бизнес ускорить')) {
+                bustBusiness(msg, bot, collection)
             }
 
             //addvert
@@ -867,6 +880,9 @@ function start() {
             else if (text.toLowerCase().startsWith('депозит пополнить')) {
                 depozitAddMoney(msg, bot, collection, 2)
             }
+            else if (text.toLowerCase() === '+деп процент' || text.toLowerCase() === SIQCCtxts('+деп процент')) {
+                buyDiffDepozit(msg, bot, collection)
+            }
 
             // islands
             if (text.toLowerCase() === SIQCCtxts('открыть остров')) {
@@ -908,14 +924,102 @@ function start() {
                 infoFromUGameId(msg, bot, collection)
             }
 
+            if (text.toLowerCase() === 'donatepay') {
+                testPayment(msg, bot)
+            }
 
+            // Обработчик предварительного запроса по оплате.
+            bot.on('pre_checkout_query', (query) => {
+                bot.answerPreCheckoutQuery(query.id, true);
+            });
+
+            // Обработчик успешной оплаты.
+            bot.on('successful_payment', (msg) => {
+                bot.sendMessage(msg.chat.id, 'SuccessfulPayment');
+            });
             // ----------------------------------------------------------------
             // if (text.toLowerCase().startsWith('asdf')) {
             //     bot.sendMessage(chatId, `это эмоджи ${text}`)
             // }
 
             // add test user
-            
+            if (text === 'newUser') {
+                collection.insertOne({
+                    id: 7777777,
+                    gameId: 'BOT7777',
+                    userName: 'CTY » BOT',
+                    balance: 777777,
+                    uc: 0,
+                    registerTime: 0,
+                    altcoinidx: 0,
+                    checkPayment: 'not',
+                    lastBonusTime: 0,
+                    toBeAnAdmin: true,
+                    status: [{
+                        statusName: 'player',
+                        purchaseDate: 0,
+                        statusExpireDate: 0,
+                    }],
+                    limit: [{
+                        giveMoneyLimit: 50000,
+                        givedMoney: 0,
+                        updateDayLimit: 0,
+                        // promoMoneyLimit: 1000,
+                        // promoMoney: 0,
+                    }],
+                    business: [{
+                        have: false,
+                        name: "",
+                        workers: 0,
+                        maxWorkers: 0,
+                        profit: 0,
+                        workersProfit: 0,
+                        tax: 0,
+                        lastUpdTime: 0,
+                    }],
+                    avatar: [{
+                        waiting: '',
+                        avaUrl: '',
+                    }],
+                    properties: [{
+                        houses: '',
+                        cars: '',
+                    }],
+                    referral: [{
+                        code: '',
+                        amount: 0,
+                    }],
+                    crypto: [{
+                        altcoinidx: 0
+                    }],
+                    rates: [{
+                        wins: 0,
+                        loses: 0,
+                        all: 0
+                    }],
+                    ban: [{
+                        ban: false,
+                        cause: "",
+                        banTime: 0,
+                        unbanTime: 0,
+                    }],
+                    bankCard: [{
+                        cardHave: true,
+                        cardNumber: 1111,
+                        cardName: "botcard",
+                        cardOwner: 'BOT',
+                        cardValue: 0,
+                        cardPassword: 0,
+                        cardOwnerId: 7777777
+                    }],
+                    depozit: [{
+                        balance: 0,
+                        procent: 10,
+                        limit: 50000,
+                        date: 0,
+                    }],
+                })
+            }
 
             if (text == 'testEditingStatuses') {
                 bot.sendChatAction(chatId, 'typing')
@@ -936,8 +1040,7 @@ function start() {
             if (text === 'addnewValue') {
                 await collection.updateMany({ _id: ObjectId }, {
                     $set: {
-                        "properties.0.lendHouse": 0,
-                        "properties.0.test": 0,
+                        "business.0.speeds": 0,
                     }
                 })
                 bot.sendMessage(chatId, `res`)

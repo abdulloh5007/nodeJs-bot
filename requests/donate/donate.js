@@ -74,6 +74,14 @@ async function donateMenuStatuses(msg, bot, collection) {
             ]
         }
     }
+    let depOpts = {
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: 'Дополнительный процент', switch_inline_query_current_chat: '+деп процент' }],
+                [{ text: 'Назад', callback_data: 'donateMain_menu' }]
+            ]
+        }
+    }
 
     let purchase;
 
@@ -100,6 +108,16 @@ ${purchase}
 ➖➖➖➖➖➖➖➖➖➖➖➖➖
     `
 
+    const messageDepozit = `
+${userDonatedStatus}, дополнительный процент добавляет в ваш депозит 1 процент
+Каждый процент стоит по <b>50 (UC)</b>
+
+<i>Ваш доп-ый процент будет остаться навсегда, даже купив сатутс ваши купленные проценты будут добавлены на новые проценты и лимиты !</i>
+<i>Купив доп-ых процентов также вы увеличиваете лимит депозита и этот лимит тоже будет обновлен</i>
+
+<b>Например вы купили статус VIP💎 ваш депозит будет изменен сперва на сдантартный лимит и депозит который имеет VIP потом прибавяться ваши купленные ранее дополнительные проценты и лимиты !</b>
+    `
+
     if (data === 'donate_statuses') {
         bot.editMessageText(messageStatuses, {
             chat_id: chatId,
@@ -108,11 +126,19 @@ ${purchase}
             ...optionsDonate
         })
     }
+    if(data === 'donate_depozit'){
+        bot.editMessageText(messageDepozit, {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: 'HTML',
+            ...depOpts
+        })
+    }
     if (data === 'donateMain_menu') {
         let optionsDonateWithOutBack = {
             reply_markup: {
                 inline_keyboard: [
-                    [{ text: 'СТАТУСЫ', callback_data: 'donate_statuses' }],
+                    [{ text: '🪄Статусы', callback_data: 'donate_statuses' }, { text: '⚙️Депозит', callback_data: 'donate_depozit' }],
                 ]
             }
         }
@@ -123,7 +149,8 @@ ${userDonatedStatus}, вот доступные донаты
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖
         
-СТАТУСЫ
+🪄Статусы
+⚙️Депозит
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖
             `, {
@@ -208,7 +235,7 @@ async function donateMenu(msg, bot, collection) {
     let optionsDonate = {
         reply_markup: {
             inline_keyboard: [
-                [{ text: 'СТАТУСЫ', callback_data: 'donate_statuses' }],
+                [{ text: '🪄Статусы', callback_data: 'donate_statuses' }, { text: '⚙️Депозит', callback_data: 'donate_depozit' }],
             ]
         }
     }
@@ -229,7 +256,8 @@ ${userDonatedStatus}, вот доступные донаты
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖
         
-СТАТУСЫ
+🪄Статусы
+⚙️Депозит
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖
             `, { parse_mode: 'HTML', reply_to_message_id: messageId, ...optionsDonate })
@@ -274,7 +302,8 @@ ${userDonatedStatus}, вот доступные донаты
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖
 
-СТАТУСЫ
+🪄Статусы
+⚙️Депозит
 
 ➖➖➖➖➖➖➖➖➖➖➖➖➖
                 `, { parse_mode: 'HTML', ...optionsDonate })
@@ -461,9 +490,12 @@ ${userDonatedStatus}, Вы уже купили статус <b>${statusName.toUp
         } else {
             const enoughUC = user.uc >= cost;
             if (enoughUC) {
+                const userExtraDepLimit = parseInt(user.depozit[0].extraLimit) + parseInt(depLimit)
+                const userExtraDepProcent = parseInt(user.depozit[0].extraProcent) + parseInt(depProcent)
+
                 await buyStatus(userId, collection, statusName, days);
                 await collection.updateOne({ id: userId }, { $inc: { uc: -cost } });
-                await collection.updateOne({ id: userId }, { $set: { "limit.0.giveMoneyLimit": moneyLimit, "depozit.0.limit": depLimit, "depozit.0.procent": depProcent } })
+                await collection.updateOne({ id: userId }, { $set: { "limit.0.giveMoneyLimit": moneyLimit, "depozit.0.limit": userExtraDepLimit, "depozit.0.procent": userExtraDepProcent, "depozit.0.extraLimit": 0, "depozit.0.extraProcent": 0 } })
 
                 let activeStatusSticker;
                 if (statusName === 'premium') {
@@ -571,9 +603,48 @@ ${userStatus}
     `, { parse_mode: 'HTML', reply_to_message_id: messageId, })
 }
 
+async function buyDiffDepozit(msg, bot, collection) {
+    const userId1 = msg.from.id
+    const chatId = msg.chat.id
+    const messageId = msg.message_id
+
+    const user = await collection.findOne({ id: userId1 })
+    const userDepLimit = user.depozit[0].limit
+    const userUc = user.uc
+    const userDonateStatus = await donatedUsers(msg, collection)
+
+    if (userUc < 50) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, у вас не хватает донат валюты <b>(UC)</b>
+Для покупки дополнительных процентов на депозит
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        return;
+    }
+
+    const addToExtraLimit = Math.floor((userDepLimit / 20) + userDepLimit)
+    bot.sendMessage(chatId, `
+${userDonateStatus}, вы успешно купили дополнительный
+<i>1 Процент для своего депозита</i>
+
+<i>+Ваш лимит депозита увеличен !</i> 
+  <b>Было: ${userDepLimit.toLocaleString('de-DE')}</b>
+  <b>Стало: ${addToExtraLimit.toLocaleString('de-DE')}</b>
+
+<b>❗️Если вы будете покупать статусы то ваш депозит измениться и будут добавлены к новому депозиту ваши дополнительные проценты и лимит</b>
+    `, {
+        parse_mode: 'HTML',
+        reply_to_message_id: messageId,
+    })
+    await collection.updateOne({ id: userId1 }, { $inc: { uc: -50, "depozit.0.procent": 1, "depozit.0.extraProcent": 1, "depozit.0.limit": Math.floor(addToExtraLimit - userDepLimit), "depozit.0.extraLimit": Math.floor(addToExtraLimit - userDepLimit) } })
+}
+
 module.exports = {
     donateMenu,
     donateBtns,
     donateInfo,
     donateMenuStatuses,
+    buyDiffDepozit,
 }
