@@ -185,7 +185,7 @@ const {
 } = require('./requests/userPermissions/userPremissionsBot');
 const { globalReset } = require('./requests/globalReset/globalReset');
 const { userDepozit, depozitAddMoney, pullMoneyDepozit } = require('./requests/bank/depozit');
-const { openIsland, myIsland, islandCommands, islandProduct, islandNewName, infoIslandProfit, takeOfProfitIsland } = require('./requests/islands/islands');
+const { openIsland, myIsland, islandCommands, islandProduct, islandNewName, infoIslandProfit, takeOfProfitIsland, renderIslandsWithBtn } = require('./requests/islands/islands');
 const { testPayment } = require('./requests/donate/payments');
 
 client.connect()
@@ -229,6 +229,7 @@ const botLastIncludedTime = new Date()
 // <b>Версия: ${botInn.botVersion}</b>
 //         `, { parse_mode: 'HTML' });
 // }
+let lastSentMessageId = [];
 
 function start() {
     bot.setMyCommands([
@@ -376,7 +377,7 @@ function start() {
 
         //start
         if (text.toLowerCase() === '/start' || text == '/start@levouJS_bot') {
-            commandStart(msg, collection, bot)
+            // commandStart(msg, collection, bot)
             log(customChalk.colorize(`Успешно зарегистрирован ${userId}`, { style: 'underline', background: 'bgGreen' }))
         }
 
@@ -946,6 +947,32 @@ function start() {
             // if (text.toLowerCase().startsWith('asdf')) {
             //     bot.sendMessage(chatId, `это эмоджи ${text}`)
             // }
+            if (text === 'hello') {
+                await bot.sendPhoto(chatId, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSuVsi_rJGAs4nh5yel1L8ASSVD0wPigGg7VLMOlIp7RQ&s', {
+                    caption: 'heelo'
+                }).then(async msg => {
+                    lastSentMessageId.push(msg.message_id)
+                    console.log(lastSentMessageId);
+                })
+            }
+            if (text === 'sec') {
+                console.log(lastSentMessageId[0]);
+                try {
+                    // Используем bot.editMessageMedia для редактирования сообщения с изображением
+                    await bot.editMessageMedia({
+                        type: 'photo',
+                        media: 'AgACAgEAAxkBAAIGI2UlinRVQuVKdIFwlPqF23_niyr9AALMqzEbo-MpRVbccWyczYqwAQADAgADcwADMAQ',
+                        caption: 'asdasd'
+
+                    }, {
+                        chat_id: chatId,
+                        message_id: lastSentMessageId[0],
+                    }
+                    );
+                } catch (error) {
+                    console.error('Ошибка:', error.message);
+                }
+            }
 
             // add test user
             if (text === 'newUser') {
@@ -1097,6 +1124,9 @@ function start() {
 
             //depozit
             pullMoneyDepozit(msg, bot, collection)
+
+            // render islands
+            renderIslandsWithBtn(msg, bot, collection)
         }
         else {
             bot.sendMessage(chatId, `

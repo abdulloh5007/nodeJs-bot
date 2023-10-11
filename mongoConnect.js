@@ -19,7 +19,7 @@ async function mongoConnect(colName) {
 }
 
 function botUrl(string) {
-    const botUrl = `<a href='https://t.me/tesLevouJs_bot'>${string}</a>`
+    const botUrl = `<a href='https://t.me/levouJs_bot'>${string}</a>`
     return botUrl;
 }
 

@@ -1,4 +1,4 @@
-const { donatedUsers } = require('../../donate/donatedUsers');
+const { donatedUsers, adminDonatedUsers } = require('../../donate/donatedUsers');
 const { formatNumberInScientificNotation } = require('../../systems/systemRu');
 const { customChalk } = require('../../../customChalk');
 const { mongoConnect } = require('../../../mongoConnect');
@@ -377,7 +377,6 @@ ${message}
 
 async function addProfitEveryOneHour(collection) {
     const users = await collection.find({ "business.0.have": true }).toArray()
-    const userDonateStatus = await donatedUsers(msg, collection)
 
     for (let i = 0; i < users.length; i++) {
         const el = users[i];
@@ -387,11 +386,12 @@ async function addProfitEveryOneHour(collection) {
         const usertax = el.business[0].tax
         const endTax = Math.floor(addToProfit * 2)
         const daysCount = Math.floor((endTax - usertax) / (addToProfit / 2)) - 1
+        const adminDonateStatus = await adminDonatedUsers(el.id, collection)
 
         if (usertax >= endTax) {
             try {
                 await bot.sendMessage(el.id, `
-${userDonateStatus}, <b>Ваш бизнес автоматически был закрыт так как вы не платили налоги 💣</i>
+${adminDonateStatus}, <b>Ваш бизнес автоматически был закрыт так как вы не платили налоги 💣</i>
 <b>Не скажи что мы не говорили</b>
                 `, {
                     parse_mode: 'HTML',
@@ -422,7 +422,7 @@ ${userDonateStatus}, <b>Ваш бизнес автоматически был з
 
         try {
             await bot.sendMessage(el.id, `
-${userDonateStatus}, <b>СКОРЕЕ ! ПИШИ</b> <code>бизнес налоги</code>
+${adminDonateStatus}, <b>СКОРЕЕ ! ПИШИ</b> <code>бизнес налоги</code>
 <b>А то после ${daysCount} дня твоего бизнеса не будет !</b>
 
 <b>САМАЯ ГЛАВНАЯ НОВОСТЬ Я ПРИНЕС ТЕБЕ ЗАРПЛАТУ😉</b>
@@ -445,7 +445,6 @@ ${userDonateStatus}, <b>СКОРЕЕ ! ПИШИ</b> <code>бизнес нало�
 
 async function manualAddProfitEveryOneHour(msg, bot, collection) {
     const users = await collection.find({ "business.0.have": true }).toArray()
-    const userDonateStatus = await donatedUsers(msg, collection)
 
     for (let i = 0; i < users.length; i++) {
         const el = users[i];
@@ -454,13 +453,14 @@ async function manualAddProfitEveryOneHour(msg, bot, collection) {
         const addToProfit = userworkers * userworkersProfit
         const usertax = el.business[0].tax
         const endTax = Math.floor(addToProfit * 2)
-        const daysCount = Math.floor((endTax - usertax) / (addToProfit / 2)) - 1
+        const daysCount = Math.floor((endTax - usertax) / (addToProfit / 2))
+        const adminDonateStatus = await adminDonatedUsers(el.id, collection)
 
         if (usertax >= endTax) {
             try {
                 await bot.sendMessage(el.id, `
-${userDonateStatus}, <b>Ваш бизнес автоматически был закрыт так как вы не платили налоги 💣</b>
-<b>Не скажи что мы не говорили</b>
+${adminDonateStatus}, <b>Ваш бизнес автоматически был закрыт так как вы не платили налоги 💣</b>
+<b>Не скажи что мы не говорили</b> 
                 `, {
                     parse_mode: 'HTML',
                 })
@@ -487,15 +487,16 @@ ${userDonateStatus}, <b>Ваш бизнес автоматически был з
             })
             return;
         }
-
+        const imgUrl = 'https://img4.rudalle.ru/images/66/1f/cd/661fcd85086f4b69a388513d4bd2ae15_00000.jpg'
         try {
-            await bot.sendMessage(el.id, `
-${userDonateStatus}, <b>СКОРЕЕ ! ПИШИ</b> <code>бизнес налоги</code>
+            await bot.sendPhoto(el.id, imgUrl, {
+                parse_mode: 'HTML',
+                caption:
+`${adminDonateStatus}, <b>СКОРЕЕ ! ПИШИ</b> <code>бизнес налоги</code>
 <b>А то после ${daysCount} дня твоего бизнеса не будет !</b>
 
 <b>САМАЯ ГЛАВНАЯ НОВОСТЬ Я ПРИНЕС ТЕБЕ ЗАРПЛАТУ😉</b>
-            `, {
-                parse_mode: 'HTML',
+                `,
             })
         } catch (err) {
             if (err.response && err.response.statusCode === 403) {

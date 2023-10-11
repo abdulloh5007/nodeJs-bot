@@ -33,7 +33,7 @@ async function checkAndUpdateIslands(userId1) {
     const allWorks = (airLines + restaurants + shops + boats + carFactory) * 6;
 
     // island workers profit
-    const islandWorkersProfit = Math.floor(allWorks * 10);
+    const islandWorkersProfit = Math.floor(allWorks * 200);
     const islandWorkersBalance = Math.floor((islandWorkersProfit / 100) * 40);
     const islandOwnerBalance = Math.floor((islandWorkersProfit / 100) * 60);
 
@@ -183,7 +183,7 @@ ${userDonateStatus}, у вас нет острова, чтобы открыть 
     nextProfitDate.setDate(nextProfitDate.getDate() + 1);
 
     const allWorks = (airLines + restaurants + shops + boats + carFactory) * 6;
-    const islandWorkersProfit = Math.floor(allWorks * 10);
+    const islandWorkersProfit = Math.floor(allWorks * 200);
     const islandWorkersBalance = Math.floor((islandWorkersProfit / 100) * 40);
     const islandOwnerBalance = Math.floor((islandWorkersProfit / 100) * 60);
 
@@ -250,11 +250,16 @@ ${userDonateStatus}, вот информация за ваш остров🏝
 ${txtMessage}
 
 <b>😊Все команды острова🏝 можно узнать отправив команду!</b> <code>команды острова</code>
-<b>💸Вы сами обновляете ежедневную зарплату.
-Сделано чтобы острова хоть этим способом привлекали внимание 😜.</b>
-
-<b>Напишите:</b> <code>остров инфо</code> чтобы узнать что это за функция
+<b>Напишите:</b> <code>остров инфо</code> чтобы узнать инфу об острове
     `
+
+    let renderIslands = {
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: '🔄Обновить', callback_data: `renderIslands_${userId}` }]
+            ]
+        }
+    }
 
     // warn foods
     if (willUpdImg === 1) {
@@ -262,6 +267,7 @@ ${txtMessage}
             parse_mode: 'HTML',
             reply_to_message_id: messageId,
             caption: txtOfInfoIsland,
+            ...renderIslands,
         }).then(async () => {
             // update successfull
         }).catch((err) => {
@@ -274,6 +280,7 @@ ${txtMessage}
             parse_mode: 'HTML',
             reply_to_message_id: messageId,
             caption: txtOfInfoIsland,
+            ...renderIslands,
         }).then(async () => {
             // update successfull
         }).catch((err) => {
@@ -286,11 +293,198 @@ ${txtMessage}
             parse_mode: 'HTML',
             reply_to_message_id: messageId,
             caption: txtOfInfoIsland,
+            ...renderIslands,
         }).then(async () => {
             // update successfull
         }).catch((err) => {
             console.log(err);
         });
+    }
+}
+
+async function renderIslandsWithBtn(msg, bot, collection) {
+    const collectionIslands = await mongoConnect('islands')
+
+    const data = msg.data;
+    const userId = msg.from.id;
+    const chatId = msg.message.chat.id;
+    const messageId = msg.message.message_id;
+
+    const userDonateStatus = await donatedUsers(msg, collection);
+    const island = await collectionIslands.findOne({ id: userId });
+
+    if (!island) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, у вас нет острова, чтобы открыть его вам нужно прописать команду открыть остров 
+<i>Открытие острова бесплатно !</i> <code>открыть остров</code>
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        });
+        return;
+    }
+
+    const {
+        name: islandName,
+        owner: islandOwner,
+        population: islandPopulation,
+        workPopulation: islandWorkPopulation,
+        maxFoods: islandMaxFoods,
+        maxWaters: islandMaxWaters,
+        place: islandPlace,
+        lastProfitTime,
+        balance,
+        foods,
+        waters,
+        airLines,
+        restaurants,
+        shops,
+        boats,
+        carFactory,
+    } = island;
+
+    const lastProfitDate = new Date(lastProfitTime).getDate().toLocaleString();
+    const currentDate = new Date().getDate().toLocaleString();
+    const formattedLastProfitDate = new Date(lastProfitTime).toLocaleString();
+    const nextProfitDate = new Date();
+    nextProfitDate.setDate(nextProfitDate.getDate() + 1);
+
+    const allWorks = (airLines + restaurants + shops + boats + carFactory) * 6;
+    const islandWorkersProfit = Math.floor(allWorks * 200);
+    const islandWorkersBalance = Math.floor((islandWorkersProfit / 100) * 40);
+    const islandOwnerBalance = Math.floor((islandWorkersProfit / 100) * 60);
+
+    let txtMessage = `<i>» 📅Время зарплаты:</i>\n  <i>» Дата:</i> <b>${formattedLastProfitDate}</b>`;
+    let willUpdImg = 1
+
+    let mathIslandFoods = islandPopulation * 2
+    if (mathIslandFoods > foods || mathIslandFoods > waters) {
+        if (lastProfitDate <= currentDate) {
+            willUpdImg = 2
+            txtMessage = `<i>» Не возможно получить ЗП</i>\n  <i>» Причина:</i> <b>Не хватка пищи !</b>`
+        }
+    }
+
+    if (lastProfitDate <= currentDate && willUpdImg === 1) {
+        await collectionIslands.updateOne({ id: userId }, {
+            $inc: {
+                balance: islandOwnerBalance,
+                foods: -islandPopulation * 2,
+                waters: -islandPopulation * 2,
+            },
+        }).then(() => {
+            // updating profit
+        }).catch((err) => {
+            console.log('error island add profit ' + err);
+        });
+
+        await collectionIslands.updateOne({ id: userId }, { $set: { lastProfitTime: nextProfitDate } });
+
+        txtMessage = `<i>» 📅Время зарплаты:</i>\n  <b>Вы успешно обновили следующую выдачу зарплаты ↓</b>\n  <i>» Новая дата:</i> <b>${nextProfitDate.toLocaleDateString()}</b>\n  <i>» Зарплата успешно получена:</i> <b>${islandOwnerBalance}</b>`;
+        willUpdImg = 3
+    }
+
+    await checkAndUpdateIslands(userId);
+    const newIslandBal = balance.toLocaleString('de-DE');
+    const islandFoods = foods;
+    const islandWaters = waters;
+    const txtOfInfoIsland = `
+${userDonateStatus}, вот информация за ваш остров🏝
+
+┌ <i>🏄‍♂Мер:</i> <i>${islandOwner}</i>
+├ <i>😎Название:</i> <i>${islandName}</i>
+├ <i>💰Казна:</i> <i>${newIslandBal}$</i>
+└ <i>👫Жителей:</i> <i>${islandPopulation}</i>
+    <i>» 👨‍🌾Работающие:</i> <i>${islandWorkPopulation}</i>
+
+<i>» ⚖️Зарплата:</i>
+    <i>» Мера:</i> <b>${islandOwnerBalance.toLocaleString('de-DE')}</b>$ (60%)
+    <i>» Работающих:</i> <b>${islandWorkersBalance.toLocaleString('de-DE')}</b>$ (40%)
+
+<i>» 🙎‍♂Территория:</i> <b>${islandPlace}</b> км²
+
+<i>» 🥑Пищи:</i>
+    <i>» 🌭Еды:</i> <b>${islandFoods} / ${islandMaxFoods}</b>
+    <i>» 💦Воды:</i> <b>${islandWaters} / ${islandMaxWaters}</b>
+
+<i>» 👷‍♂Работы:</i>
+    <i>» 👨‍✈️Авиакомпании:</i> <b>${airLines} / 10</b>
+    <i>» 🏫Рестораны:</i> <b>${restaurants} / 10</b>
+    <i>» 🏪Магазины:</i> <b>${shops} / 10</b>
+    <i>» 🛥Кораблей:</i> <b>${boats} / 10</b>
+    <i>» 🚙Завод машин:</i> <b>${carFactory} / 10</b>
+
+${txtMessage}
+
+<b>😊Все команды острова🏝 можно узнать отправив команду!</b> <code>команды острова</code>
+<b>Напишите:</b> <code>остров инфо</code> чтобы узнать инфу об острове
+    `
+
+    let renderIslands = {
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: '🔄Обновить', callback_data: `renderIslands_${userId}` }]
+            ]
+        }
+    }
+
+    const [txt, uId] = data.split('_')
+    if (txt === 'renderIslands') {
+        if (userId != uId) {
+            return bot.answerCallbackQuery(msg.id, 'Это кнопка не для тебя🤬')
+        }
+        // warn foods
+        try {
+            if (willUpdImg === 1) {
+                await bot.editMessageMedia({
+                    type: 'photo',
+                    media: 'https://th.bing.com/th/id/OIG.ThA5E_3NFpgSfzAiCSjK?pid=ImgGn',
+                    caption: txtOfInfoIsland,
+                    parse_mode: 'HTML',
+                }, {
+                    chat_id: chatId,
+                    message_id: messageId,
+                    ...renderIslands,
+                })
+            }
+        } catch (error) {
+            return bot.answerCallbackQuery(msg.id, 'Нечего обновлять')
+        }
+        // success
+        try {
+            if (willUpdImg === 2) {
+                await bot.editMessageMedia({
+                    type: 'photo',
+                    media: 'https://th.bing.com/th/id/OIG.IFstvdD4MfSJei_iWp1H?pid=ImgGn',
+                    caption: txtOfInfoIsland,
+                    parse_mode: 'HTML',
+                }, {
+                    chat_id: chatId,
+                    message_id: messageId,
+                    ...renderIslands,
+                })
+            }
+        } catch (error) {
+            return bot.answerCallbackQuery(msg.id, 'Нечего обновлять')
+        }
+        // success upd time
+        try {
+            if (willUpdImg === 3) {
+                await bot.editMessageMedia({
+                    type: 'photo',
+                    media: 'https://th.bing.com/th/id/OIG.mgtWLLSCtkqH1IdrXK6Z?pid=ImgGn&rs=1',
+                    caption: txtOfInfoIsland,
+                    parse_mode: 'HTML',
+                }, {
+                    chat_id: chatId,
+                    message_id: messageId,
+                    ...renderIslands,
+                })
+            }
+        } catch (error) {
+            return bot.answerCallbackQuery(msg.id, 'Нечего обновлять')
+        }
+
     }
 }
 
@@ -649,4 +843,5 @@ module.exports = {
     islandNewName,
     infoIslandProfit,
     takeOfProfitIsland,
+    renderIslandsWithBtn,
 }

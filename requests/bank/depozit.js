@@ -11,37 +11,37 @@ const { formatNumberInScientificNotation, parseNumber } = require("../systems/sy
  * @returns {Promise<void>}
  */
 async function userDepozit(msg, bot, collection) {
-  const userId = msg.from.id;
-  const chatId = msg.chat.id;
-  const messageId = msg.message_id;
+    const userId = msg.from.id;
+    const chatId = msg.chat.id;
+    const messageId = msg.message_id;
 
-  const userDonateStatus = await donatedUsers(msg, collection);
-  const user = await collection.findOne({ id: userId });
-  const depozit = user.depozit[0];
+    const userDonateStatus = await donatedUsers(msg, collection);
+    const user = await collection.findOne({ id: userId });
+    const depozit = user.depozit[0];
 
-  const depBalance = depozit.balance;
-  const depLimit = depozit.limit;
-  const depProcent = depozit.procent;
-  const depDate = depozit.date;
+    const depBalance = depozit.balance;
+    const depLimit = depozit.limit;
+    const depProcent = depozit.procent;
+    const depDate = depozit.date;
 
-  const findDepDate = depDate !== 0 ? `<i>⌛️Дата снятие: <b>${depDate.toLocaleString()}</b></i>\n` : '';
+    const findDepDate = depDate !== 0 ? `<i>⌛️Дата снятие: <b>${depDate.toLocaleString()}</b></i>\n` : '';
 
-  const newDepDate = new Date().getDate();
-  const dateDepDate = new Date(depDate).getDate();
-  const findDepDateToBtn = depDate === 0 ? 999 : dateDepDate;
+    const newDepDate = new Date().getDate();
+    const dateDepDate = new Date(depDate).getDate();
+    const findDepDateToBtn = depDate === 0 ? 999 : dateDepDate;
 
-  const depOpts = {
-    reply_markup: {
-      inline_keyboard: [
-        [
-            { text: '⚖️Депозит пополнить', switch_inline_query_current_chat: 'депозит пополнить ' }, { text: '⚙️Дополнительный процент', switch_inline_query_current_chat: '+деп процент' }
-            ],
-        newDepDate >= findDepDateToBtn ? [{ text: '💰Снять', callback_data: `pull_money_depozit__${userId}` }] : []
-      ]
-    }
-  };
+    const depOpts = {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    { text: '⚖️Депозит пополнить', switch_inline_query_current_chat: 'депозит пополнить ' }, { text: '⚙️Дополнительный процент', switch_inline_query_current_chat: '+деп процент' }
+                ],
+                newDepDate >= findDepDateToBtn ? [{ text: '💰Снять', callback_data: `pull_money_depozit__${userId}` }] : []
+            ]
+        }
+    };
 
-  const message = `
+    const message = `
 ${userDonateStatus}, информация о вашем депозите
 
 <i>💳Ваш баланс в депозите:</i> <b>${depBalance.toLocaleString('de-DE')} ${formatNumberInScientificNotation(depBalance)}</b>
@@ -52,11 +52,11 @@ ${findDepDate}
 <b>⏹Кнопка снять появиться когда придёт дата снятие</b> 🤖
   `;
 
-  await bot.sendMessage(chatId, message, {
-    parse_mode: 'HTML',
-    reply_to_message_id: messageId,
-    ...depOpts,
-  });
+    await bot.sendMessage(chatId, message, {
+        parse_mode: 'HTML',
+        reply_to_message_id: messageId,
+        ...depOpts,
+    });
 }
 
 async function depozitAddMoney(msg, bot, collection, glLength) {
@@ -75,7 +75,17 @@ async function depozitAddMoney(msg, bot, collection, glLength) {
     const dateDepDate = new Date(depDate).getDate()
 
     const parts = text.split(' ')
-    let depMoney = parts[glLength]
+    if (!parts[glLength]) {
+        return bot.sendMessage(chatId, `
+${userDonateStatus}, отправьте сумму для пополнение депозита
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+    }
+
+    let depMoney = parseInt(parseNumber(parts[glLength]))
+    console.log(depMoney);
     const date = new Date()
     date.setDate(date.getDate() + 1);
 
@@ -90,8 +100,6 @@ ${userDonateStatus}, не правильно введена сумма для д
         })
         return;
     }
-
-    depMoney = parseInt(parseNumber(parts[glLength]))
 
     if (userBalance < depMoney) {
         bot.sendMessage(chatId, `

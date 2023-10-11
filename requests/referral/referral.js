@@ -38,7 +38,7 @@ async function referral(msg, bot, collection) {
     const refAmount = user.referral[0].amount
 
     // Отправка пользователю ссылки для приглашения
-    const referralLink = `https://t.me/levouJS_bot?start=${referralCode}`;
+    const referralLink = `https://t.me/tesLevouJs_bot?start=${referralCode}`;
     bot.sendMessage(chatId, `
 <b>Приглашая пользователей через реферальной ссылкой вы получаете за каждого регистрированного
 пользователя по 1.000 $</b>

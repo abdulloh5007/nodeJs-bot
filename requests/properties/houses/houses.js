@@ -385,7 +385,8 @@ async function myHouseInfo(msg, collection, bot, collectionHouses) {
 
         const userLendHouse = user.properties[0].lendHouse
         const currentDate = Date.now()
-        const remainingTime = userLendHouse > 0 ? formatRemainingTime(bonusCooldown - (currentDate - userLendHouse)) : '<b>Дайте в аренду</b>';
+        const remainingTime = userLendHouse > 0 ? formatRemainingTime(bonusCooldown - (currentDate - userLendHouse)) : '<b>Можете дать в аренду</b>';
+
 
         if (userStatus === 'premium' || userStatus === 'vip') {
             bonusCooldown = 12 * 60 * 60 * 1000;
@@ -650,7 +651,7 @@ ${userDonateStatus}, у вас нету дома чтобы дать его в �
     }
 
     const house = await collectionHouses.findOne({ name: userHouse })
-    const houseProfit = Math.floor(house.price / 20)
+    const houseProfit = Math.floor(house.price / 40)
     const userLendHouse = user.properties[0].lendHouse
     const userStatus = user.status[0].statusName
 
