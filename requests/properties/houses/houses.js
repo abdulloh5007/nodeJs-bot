@@ -385,7 +385,7 @@ async function myHouseInfo(msg, collection, bot, collectionHouses) {
 
         const userLendHouse = user.properties[0].lendHouse
         const currentDate = Date.now()
-        const remainingTime = userLendHouse > 0 ? formatRemainingTime(bonusCooldown - (currentDate - userLendHouse)) : '<b>Можете дать в аренду</b>';
+        const remainingTime = bonusCooldown - (currentDate - userLendHouse) > 0 ? formatRemainingTime(bonusCooldown - (currentDate - userLendHouse)) : '<b>Можете дать в аренду</b>';
 
 
         if (userStatus === 'premium' || userStatus === 'vip') {
