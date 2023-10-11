@@ -1,13 +1,13 @@
 const { customChalk } = require("../../customChalk");
 const { donatedUsers } = require("./donatedUsers")
 
-let imgDonateMenu = 'AgACAgEAAxkBAAIGq2Umfeot_TvCQMMH3MZwrlnDjUSCAAJQrTEbZsI5Rb0tl54beC9jAQADAgADcwADMAQ'
-let imgStandartStatus = 'AgACAgEAAxkBAAIGDWUlb6lwsJZ8JXvsrRQ-zE_JojShAALAqzEbo-MpReMJdb9GXfa7AQADAgADcwADMAQ'
-let imgVipStatus = 'AgACAgEAAxkBAAIGEWUlcMZQNf1JlP-EWxNQTYbAU58qAALCqzEbo-MpRdJBZAEPhQLjAQADAgADcwADMAQ'
-let imgPremiumStatus = 'AgACAgEAAxkBAAIGE2UlcZQ1UqZONOMJYqGIZiNKWipWAALDqzEbo-MpRe8KDwdV4MW6AQADAgADcwADMAQ'
-let imgDonateDepozit = 'AgACAgEAAxkBAAIGs2UmgllmaPl1dtomjXVaJejhvfqAAAJTrTEbZsI5RahAupDz4LDXAQADAgADcwADMAQ'
-let imgSuccessfullDonate = 'AgACAgEAAxkBAAIG5mUmiUjmxo9fFzNNqU83CGmB1Qg8AAJWrTEbZsI5RSzY0ccldaIFAQADAgADcwADMAQ'
-let imgErrorPayment = 'AgACAgEAAxkBAAIG6mUmiiKNBW1-8sUXkKZZrGKo1P41AAJYrTEbZsI5RZFtJW92q5ExAQADAgADcwADMAQ'
+let imgDonateMenu = 'AgACAgEAAxkBAAJFdGUmrFA7MK-VNiZhvF5rAAFARTLm7gACUK0xG2bCOUWhQRDBKTv6xAEAAwIAA3MAAzAE'
+let imgStandartStatus = 'AgACAgEAAxkBAAJFeGUmrIFK3RF7rI5t0OirD82r-DKQAALAqzEbo-MpRS3QL7l3ryHsAQADAgADcwADMAQ'
+let imgVipStatus = 'AgACAgEAAxkBAAJFemUmrJb7a98z9G7Fax7abHUUCkImAALCqzEbo-MpRe23stfg-rBRAQADAgADcwADMAQ'
+let imgPremiumStatus = 'AgACAgEAAxkBAAJFfGUmrKc0GZXMG2TVOpW_cSv2M2ErAALDqzEbo-MpRb93aezBpL7jAQADAgADcwADMAQ'
+let imgDonateDepozit = 'AgACAgEAAxkBAAJFfmUmrMkkuVjY9eCHhmvSkmj9w39bAAJTrTEbZsI5RQQtv8_fV4TwAQADAgADcwADMAQ'
+let imgSuccessfullDonate = 'AgACAgEAAxkBAAJFgmUmrQKnO9Rawtx2fQAB1L8ZKdnKaAACVq0xG2bCOUXYpCNqXs8gAQEAAwIAA3MAAzAE'
+let imgErrorPayment = 'AgACAgEAAxkBAAJFgGUmrOZmg2ZNkrr1vSaKCp7_7xhgAAJYrTEbZsI5RVU_ffEDpk02AQADAgADcwADMAQ'
 
 async function sendMessage(msg, text, options = {}, bot) {
     const chatId = msg.message.chat.id
