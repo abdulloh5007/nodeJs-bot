@@ -1,13 +1,13 @@
 const { customChalk } = require("../../customChalk");
 const { donatedUsers } = require("./donatedUsers")
 
-let imgDonateMenu = 'AgACAgEAAxkBAAJFdGUmrFA7MK-VNiZhvF5rAAFARTLm7gACUK0xG2bCOUWhQRDBKTv6xAEAAwIAA3MAAzAE'
-let imgStandartStatus = 'AgACAgEAAxkBAAJFeGUmrIFK3RF7rI5t0OirD82r-DKQAALAqzEbo-MpRS3QL7l3ryHsAQADAgADcwADMAQ'
-let imgVipStatus = 'AgACAgEAAxkBAAJFemUmrJb7a98z9G7Fax7abHUUCkImAALCqzEbo-MpRe23stfg-rBRAQADAgADcwADMAQ'
-let imgPremiumStatus = 'AgACAgEAAxkBAAJFfGUmrKc0GZXMG2TVOpW_cSv2M2ErAALDqzEbo-MpRb93aezBpL7jAQADAgADcwADMAQ'
-let imgDonateDepozit = 'AgACAgEAAxkBAAJFfmUmrMkkuVjY9eCHhmvSkmj9w39bAAJTrTEbZsI5RQQtv8_fV4TwAQADAgADcwADMAQ'
-let imgSuccessfullDonate = 'AgACAgEAAxkBAAJFgmUmrQKnO9Rawtx2fQAB1L8ZKdnKaAACVq0xG2bCOUXYpCNqXs8gAQEAAwIAA3MAAzAE'
-let imgErrorPayment = 'AgACAgEAAxkBAAJFgGUmrOZmg2ZNkrr1vSaKCp7_7xhgAAJYrTEbZsI5RVU_ffEDpk02AQADAgADcwADMAQ'
+let imgDonateMenu = 'https://ibb.co/k3M3hB9'
+let imgStandartStatus = 'https://ibb.co/zZ9jYFV'
+let imgVipStatus = 'https://ibb.co/DwmNPJX'
+let imgPremiumStatus = 'https://ibb.co/q53M2wG'
+let imgDonateDepozit = 'https://ibb.co/q1zpSw9'
+let imgSuccessfullDonate = 'https://ibb.co/q1zpSw9'
+let imgErrorPayment = 'https://ibb.co/qmWrvbL'
 
 async function sendMessage(msg, text, options = {}, bot) {
     const chatId = msg.message.chat.id
