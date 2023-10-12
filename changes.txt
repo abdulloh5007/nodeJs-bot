@@ -1,0 +1,3 @@
+deletedValues: altcoinidx, checkPayment
+
+added to collectionCars: speed

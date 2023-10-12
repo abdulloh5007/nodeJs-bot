@@ -230,6 +230,14 @@ async function carBuy(msg, collection, bot, collectionCars) {
     const parts = text.split(' ');
     const carNumberToBuy = parseInt(parts[2]);
 
+    const racing = {
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: '🕹Гонка', switch_inline_query_current_chat: 'бгонка 1e3' }]
+            ]
+        }
+    }
+
     if (!isNaN(carNumberToBuy)) {
         const sortedCars = await collectionCars.find({ donate: false }).sort({ price: 1 }).toArray();
 
@@ -241,14 +249,17 @@ async function carBuy(msg, collection, bot, collectionCars) {
             if (userCar === '') {
                 if (userBalance >= selectedCar.price) {
                     const carInfo = `
-Вы успешно сделали покупку машину информацию о машине №${carNumberToBuy}:
+Вы успешно приобрели машину №${carNumberToBuy}
 
-Название: ${selectedCar.name}
-Цена: ${selectedCar.price.toLocaleString('de-DE')} $
-Сезон: ${selectedCar.season}
+<i>Название:</i> <b>${selectedCar.name}</b>
+<i>Цена:</i> <b>${selectedCar.price.toLocaleString('de-DE')} $</b>
+<i>Скорость:</i> <b>${selectedCar.speed} км/ч</b>
+
+<b>Ваша машина заправлено 100%🔋</b>
+<i><b>BOT →</b> СЫГРАЕМ В ГОНКУ ?!</i>
                         `;
-                    bot.sendPhoto(chatId, selectedCar.img, { caption: carInfo, parse_mode: 'HTML' });
-                    collection.updateOne({ id: userId }, { $set: { "properties.0.cars": selectedCar.name } })
+                    bot.sendPhoto(chatId, selectedCar.img, { caption: carInfo, parse_mode: 'HTML', ...racing });
+                    collection.updateOne({ id: userId }, { $set: { "properties.0.cars": selectedCar.name, "properties.0.carGasoline": 100, "properties.0.carStatus": 100 } })
 
                     collection.updateOne({ id: userId }, { $inc: { balance: -selectedCar.price } })
                 } else {
@@ -378,6 +389,7 @@ async function myCarInfo(msg, collection, bot, collectionCars) {
         const car = await collectionCars.findOne({ "name": userCarName2 })
         const carName = car.name
         const carDonate = car.donate
+        const carSpeed = car.speed
 
         if (carName !== '') {
             if (carDonate === true) {
@@ -402,7 +414,8 @@ ${userStatus}, вот информация о вашей донат машине
 ${userStatus}, вот информация о вашей машине:
 
 ┌ <i>Название:</i> <b>${userCarName2}</b>
-└ <i>Цена:</i> <b>${userCarPrice.toLocaleString('de-DE')}$ ${userCarPrice > 1000 ? `${formatNumberInScientificNotation(userCarPrice)}` : ''}</b>
+├ <i>Цена:</i> <b>${userCarPrice.toLocaleString('de-DE')}$ ${userCarPrice > 1000 ? `${formatNumberInScientificNotation(userCarPrice)}` : ''}</b>
+└ <i>Скорость:</i> <b>${carSpeed} км/ч</b>
 
 <i>Заправлено »</i> <b>${userCarGas} / 100</b>
 <i>Починено »</i> <b>${userCarSt} / 100</b>

@@ -1,7 +1,7 @@
 require('dotenv').config();
 const { formatNumberInScientificNotation } = require('../systems/systemRu');
 const { donatedUsers } = require('../donate/donatedUsers');
-const { mongoConnect } = require('../../mongoConnect');
+const { mongoConnect, chatName } = require('../../mongoConnect');
 const adminId = parseInt(process.env.ADMIN_ID_INT)
 
 async function autoCreatePromoCodes(bot) {
@@ -13,7 +13,7 @@ async function autoCreatePromoCodes(bot) {
     const promoComents = 'Спасибо что вы с нами'
     const finishedAmountForOne = Math.floor(randomAmount / randomActivation)
 
-    let channelId = '@cty_channaldev'
+    let channelId = chatName
     await bot.sendMessage(channelId, `
 <b>Промокод от бота ↓</b>
 
@@ -76,7 +76,7 @@ async function manualCreatePromoCodes(msg, bot, collection) {
     const finishedAmountForOne = Math.floor(randomAmount / randomActivation)
 
     if (userId1 === adminId) {
-        let channelId = '@cty_channaldev'
+        let channelId = chatName
         await bot.sendMessage(channelId, `
 <b>Промокод от бота ↓</b>
 

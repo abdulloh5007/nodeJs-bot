@@ -1,6 +1,6 @@
 const { mongoConnect } = require("../../mongoConnect");
 const { againGameOptions } = require("../../options");
-const { donatedUsers } = require("../donate/donatedUsers");
+const { donatedUsers, adminDonatedUsers } = require("../donate/donatedUsers");
 const { parseNumber, formatNumberInScientificNotation } = require("../systems/systemRu");
 const { gameWinStickers, gameLoseStickers } = require("./gameStickers");
 
@@ -412,6 +412,8 @@ ${userDonateStatus}, Подождите 2 секунды перед начало
 }
 
 async function gameRice(msg, bot, collection, valueIndex) {
+    const collectionCars = await mongoConnect('cars');
+
     const userId1 = msg.from.id
     const chatId = msg.chat.id
     const messageId = msg.message_id
@@ -423,14 +425,27 @@ async function gameRice(msg, bot, collection, valueIndex) {
     const userCarSt = user.properties[0].carStatus
     const userCarGas = user.properties[0].carGasoline
     const balance = user.balance
+    const car = await collectionCars.findOne({ name: user.properties[0].cars })
+    const carSpeed = car.speed
 
     const parts = text.split(' ')
+
+    if (parts.length <= valueIndex) {
+        return bot.sendMessage(chatId, `
+${userDonateStatus}, не правильно введена команда
+<i>Пример:</i> <code>бгонка 1е3</code>
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+    }
+
     const summ = parseInt(parseNumber(parts[valueIndex]))
 
     const riceKb = {
         reply_markup: {
             inline_keyboard: [
-                [{ text: '🕹Сыграть заново', switch_inline_query_current_chat: 'гонка 1е3' }]
+                [{ text: '🕹Сыграть заново', switch_inline_query_current_chat: 'бгонка 1е3' }]
             ]
         }
     }
@@ -513,17 +528,23 @@ ${userDonateStatus}, Подождите 2 секунды перед начало
         return;
     }
 
-    isGameInProgress = false;
-    const randomNum = Math.floor(Math.random() * 100);
+    function getRandomNumber(min, max) {
+        // Генерируем случайное число в диапазоне от min (включительно) до max (включительно)
+        return Math.floor(Math.random() * (max - min + 1) + min);
+    }
 
-    let resultText = `<i>Жаль</i> <b>Вы проиграли 0x</b> ${gameLoseStickers()}\n<b>-${summ}</b>`;
+    isGameInProgress = false;
+    let inGameUserCarSpeed = getRandomNumber(70, carSpeed)
+    let inGameBotCarSpeed = getRandomNumber(70, carSpeed + 50)
+
+    let resultText = `<i>Жаль</i> <b>Вы проиграли 0x</b> ${gameLoseStickers()}\n<b>-${summ}</b>\n\n<i>Машина бота обогнала вашу машину достигая скорости:</i> <b>${inGameBotCarSpeed} км/ч</b>\n<i>Ваша машина достигла:</i> <b>${inGameUserCarSpeed} км/ч</b>`;
     let winValue = 0;
 
-    if (randomNum < 35) {
+    if (inGameUserCarSpeed >= inGameBotCarSpeed) {
         winValue = Math.floor(summ * 2);
-        resultText = `<i>Поздравляем</i> <b>Вы выиграли 2x ${gameWinStickers()}</b>\n<b>+${winValue}</b>`;
+        resultText = `<i>Поздравляем</i> <b>Вы выиграли 2x ${gameWinStickers()}</b>\n<b>+${winValue}</b>\n\n<i>Скорость вашей машины достигла до:</i> ${inGameUserCarSpeed} км/ч`;
     }
-    
+
     await collection.updateOne({ id: userId1 }, { $inc: { balance: -summ } })
 
     bot.sendMessage(chatId, `
@@ -540,6 +561,365 @@ ${resultText}
     setTimeout(() => {
         isGameInProgress = true;
     }, 2000); // Задержка в 2000 миллисекунд (2 секунды)
+}
+
+async function gameRiceWithUser(msg, bot, collection, valueIndex) {
+    const collectionCars = await mongoConnect('cars');
+
+    const text = msg.text.split(' ')
+    const userId1 = msg.from.id
+    const chatId = msg.chat.id
+    const messageId = msg.message_id
+    const secondUser = msg.reply_to_message
+
+    const userDonateStatus = await donatedUsers(msg, collection)
+    const user1 = await collection.findOne({ id: userId1 })
+
+    if (text.length <= valueIndex) {
+        return bot.sendMessage(chatId, `
+${userDonateStatus}, не правильно введена команда
+<i>Пример:</i> <code>гонка 1е3</code> ответом на сообщение пользователя
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+    }
+
+    const summ = parseInt(parseNumber(text[valueIndex]))
+    if (isNaN(summ)) {
+        return bot.sendMessage(chatId, `
+${userDonateStatus}, сумма введена не правильно
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+    }
+
+    if (secondUser === undefined) {
+        return bot.sendMessage(chatId, `
+${userDonateStatus}, ответьте сообщением на пользователя
+который вы хотите играть гонку
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+    }
+
+    if (secondUser.from.id === userId1) {
+        return bot.sendMessage(chatId, `
+${userDonateStatus}, <b>не возможно играть гонку самим !</b>
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+    }
+
+    let riceOptsWithBot = {
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: 'Играть с ботом', switch_inline_query_current_chat: 'бгонка 1е3' }]
+            ]
+        }
+    }
+
+    if (secondUser.from.is_bot === true) {
+        return bot.sendMessage(chatId, `
+${userDonateStatus}, не возможно играть гонку с ботом
+если хотите играть гонку с ботом то ниже есть кнопка
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+            ...riceOptsWithBot,
+        })
+    }
+
+    const user2 = await collection.findOne({ id: secondUser.from.id })
+
+    if (!user2) {
+        return bot.sendMessage(chatId, `
+${userDonateStatus}, игрок не найден 
+<b>Попросите игрока чтобы он зарегистрировался в боте</b>
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+    }
+
+    const user1CarName = user1.properties[0].cars
+    const user2CarName = user2.properties[0].cars
+
+    if (user1CarName === '') {
+        return bot.sendMessage(chatId, `
+${userDonateStatus}, у вас нету машины для игры гонка
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+    }
+    if (user2CarName === '') {
+        return bot.sendMessage(chatId, `
+${userDonateStatus}, у игрока который вы хотите играть гонку нету машины
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+    }
+
+    const user2Bal = user2.balance
+    const user1Bal = user1.balance
+
+    if (summ > user1Bal) {
+        return bot.sendMessage(chatId, `
+${userDonateStatus}, у вас нехватает средств
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+    }
+
+    if (summ > user2Bal) {
+        return bot.sendMessage(chatId, `
+${userDonateStatus}, у игрока который вы хотите играть гонку не хватает средств
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+    }
+
+    const gameRiceBtns = {
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: '✅Принять', callback_data: `riceWithUserAcc_${userId1}_${secondUser.from.id}_${summ}` }],
+                [{ text: '❌Отклонить', callback_data: `riceWithUserRej` }]
+            ]
+        }
+    }
+    bot.sendMessage(chatId, `
+${userDonateStatus}, этот игрока хочет сыграть гонку с вами вы можете 
+<b>Принять или Отказать</b> нажав на кнопку ниже
+    `, {
+        parse_mode: 'HTML',
+        reply_to_message_id: secondUser.message_id,
+        ...gameRiceBtns,
+    })
+}
+
+async function gameRiceWithUserBtns(msg, bot, collection) {
+    const collectionCars = await mongoConnect('cars');
+
+    const data = msg.data
+    const userId1 = msg.from.id
+    const chatId = msg.message.chat.id
+    const messageId = msg.message.message_id
+    const [txt, user1Sender2, user2Accepter2, summ2] = data.split('_')
+    const user1Sender = parseInt(user1Sender2)
+    const user2Accepter = parseInt(user2Accepter2)
+    const summ = parseInt(summ2)
+
+    const secondUserDonateStatus = await adminDonatedUsers(user2Accepter, collection)
+    const user1 = await collection.findOne({ id: user1Sender })
+    const user2 = await collection.findOne({ id: user2Accepter })
+
+    if (!user1 || !user2) {
+        return bot.editMessageText(`Игра не найдена или была закончена`, {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: 'HTML'
+        })
+    }
+    const user1CarName = user1.properties[0].cars
+    const user2CarName = user2.properties[0].cars
+    const user1Bal = user1.balance
+    const user2Bal = user2.balance
+
+    const user1CarGasoilne = user1.properties[0].carGasoline
+    const user1CarStatus = user1.properties[0].carStatus
+    const user2CarGasoilne = user2.properties[0].carGasoline
+    const user2CarStatus = user2.properties[0].carStatus
+
+    const user1Car = await collectionCars.findOne({ name: user1CarName })
+    const user2Car = await collectionCars.findOne({ name: user2CarName })
+
+    if (txt === 'riceWithUserAcc') {
+        if (userId1 !== user2Accepter) {
+            bot.answerCallbackQuery(msg.id, { show_alert: true, text: 'Это кнопка не для тебя', })
+            return;
+        }
+        const firstUserDonateStatus = await adminDonatedUsers(user1Sender, collection)
+        if (summ > user1Bal) {
+            bot.editMessageText(chatId, `
+${firstUserDonateStatus}, у него либо закончились деньги либо дал кому то
+            `, {
+                chat_id: chatId,
+                message_id: messageId,
+                parse_mode: 'HTML',
+            })
+
+            try {
+                await bot.sendMessage(user1Sender, `
+${firstUserDonateStatus}, у вас не хватало средств для игры гонки с пользователем ${secondUserDonateStatus} поэтому игра автоматический была закончена
+                `, {
+                    parse_mode: 'HTML',
+                })
+            } catch (error) {
+                console.log('error in game rice with user send money ' + error);
+            }
+            return;
+        }
+
+        if (summ > user2Bal) {
+            bot.answerCallbackQuery(msg.id, {
+                parse_mode: 'HTML',
+                show_alert: true,
+                text: `
+у вас не хватает средств для принятие гонки
+                `
+            })
+            return;
+        }
+
+        if (user1CarGasoilne <= 10 || user1CarStatus <= 10) {
+            bot.editMessageText(chatId, `
+${firstUserDonateStatus}, у него не хватает бензина и у него машина сломана
+            `, {
+                chat_id: chatId,
+                message_id: messageId,
+                parse_mode: 'HTML',
+            })
+
+            try {
+                await bot.sendMessage(user1Sender, `
+${firstUserDonateStatus}, у вас не хватало бензина и ваша машина была сломана для игры гонки с пользователем ${secondUserDonateStatus} поэтому игра автоматический была закончена
+                `, {
+                    parse_mode: 'HTML',
+                })
+            } catch (error) {
+                console.log('error in game rice with user send money ' + error);
+            }
+            return;
+        }
+
+        if (user2CarGasoilne <= 10 || user2CarStatus <= 10) {
+            bot.answerCallbackQuery(msg.id, {
+                parse_mode: 'HTML',
+                show_alert: true,
+                text: `
+у вас не хватает бензина и ваша машина сломана
+Чтобы принять гонку почините машину и заправьте
+                `
+            })
+            return;
+        }
+
+        function getRandomNumber(min, max) {
+            // Генерируем случайное число в диапазоне от min (включительно) до max (включительно)
+            return Math.floor(Math.random() * (max - min + 1) + min);
+        }
+        const user1FindedCarName = user1Car.name
+        const user2FindedCarName = user2Car.name
+        const user1FindedCarSpeed = user1Car.speed
+        const user2FindedCarSpeed = user2Car.speed
+
+        const winnerPrice = Math.floor(summ * 2)
+        const user1RandomedSpeed = getRandomNumber(70, user1FindedCarSpeed)
+        const user2RandomedSpeed = getRandomNumber(70, user2FindedCarSpeed)
+        async function findLargerNumber(number1, number2) {
+            if (number1 > number2) {
+                try {
+                    await bot.sendMessage(user1Sender, `
+${firstUserDonateStatus}, выигрыш есть можно поесть !
+<b>Вы получили ${winnerPrice.toLocaleString('de-DE')} ${formatNumberInScientificNotation(winnerPrice)} $</b>
+
+<b>Вы выиграли в гонке с игроком ${secondUserDonateStatus}</b>
+                    `, {
+                        parse_mode: 'HTML',
+                    })
+
+                    await bot.sendMessage(user2Accepter, `
+${secondUserDonateStatus}, не расстраиваемся повезёт следующий раз
+<b>С вас отняли ${summ.toLocaleString('de-DE')} ${formatNumberInScientificNotation(summ)} $</b>
+
+<b>Вы проиграли в гонке с игроком ${firstUserDonateStatus}</b>
+                    `, {
+                        parse_mode: 'HTML',
+                    })
+
+                    await collection.updateOne({ id: user1Sender }, { $inc: { balance: summ } })
+                    await collection.updateOne({ id: user2Accepter }, { $inc: { balance: -summ } })
+                } catch (error) {
+                    console.log('error winner winner chicken dinner firstUser' + error);
+                }
+                return `${firstUserDonateStatus}`;
+            } else {
+                try {
+                    await bot.sendMessage(user2Accepter, `
+${secondUserDonateStatus}, выигрыш есть можно поесть !
+<b>Вы получили ${winnerPrice.toLocaleString('de-DE')} ${formatNumberInScientificNotation(winnerPrice)} $</b>
+
+<b>Вы выиграли в гонке с игроком ${firstUserDonateStatus}</b>
+                    `, {
+                        parse_mode: 'HTML',
+                    })
+
+                    await bot.sendMessage(user1Sender, `
+${firstUserDonateStatus}, не расстраиваемся повезёт следующий раз
+<b>С вас отняли ${summ.toLocaleString('de-DE')} ${formatNumberInScientificNotation(summ)} $</b>
+
+<b>Вы проиграли в гонке с игроком ${secondUserDonateStatus}</b>
+                    `, {
+                        parse_mode: 'HTML',
+                    })
+
+                    await collection.updateOne({ id: user2Accepter }, { $inc: { balance: summ } })
+                    await collection.updateOne({ id: user1Sender }, { $inc: { balance: -summ } })
+                } catch (error) {
+                    console.log('error winner winner chicken dinner seondUser' + error);
+                }
+                return `${secondUserDonateStatus}`;
+            }
+        }
+        const riceWinner = await findLargerNumber(user1RandomedSpeed, user2RandomedSpeed)
+
+        bot.editMessageText(`
+<b>Игра гонка успешно проведена между игроками</b>
+${firstUserDonateStatus} и ${secondUserDonateStatus}
+
+<i>У ${firstUserDonateStatus} машина достигла скорость:</i> <b>${user1RandomedSpeed} км/ч</b>
+<i>A у ${secondUserDonateStatus} машина достигла скорость:</i> <b>${user2RandomedSpeed} км/ч</b>
+
+<i>Победитель:</i> ${riceWinner}
+        `, {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: 'HTML',
+        })
+        return;
+    }
+    if (txt === 'riceWithUserRej') {
+        if (userId1 === user2Accepter) {
+            bot.editMessageText(`
+<b>Гонка отклонена игроком</b> ${secondUserDonateStatus}
+                    `, {
+                chat_id: chatId,
+                message_id: messageId,
+                parse_mode: 'HTML',
+            })
+
+            try {
+                await bot.sendMessage(user1Sender, `
+${secondUserDonateStatus}, этот игрок отменил гонку который вы хотели играть с ним
+                        `, {
+                    parse_mode: 'HTML',
+                })
+            } catch (error) {
+                // error message
+                console.log('error in game with user ' + error);
+            }
+            return;
+        }
+        bot.answerCallbackQuery(msg.id, { show_alert: true, text: 'Это кнопка не для тебя' })
+        return;
+    }
 }
 
 async function gameRiceNeed(msg, bot, collection, valueIndex) {
@@ -599,7 +979,7 @@ ${userDonateStatus}, у вас нету машины чтобы приобрес
         const riceKb = {
             reply_markup: {
                 inline_keyboard: [
-                    [{ text: '🕹Сыграть гонку', switch_inline_query_current_chat: 'гонка 1е3' }]
+                    [{ text: '🕹Сыграть гонку', switch_inline_query_current_chat: 'бгонка 1е3' }]
                 ]
             }
         }
@@ -652,4 +1032,6 @@ module.exports = {
     gameFootball,
     gameRice,
     gameRiceNeed,
+    gameRiceWithUser,
+    gameRiceWithUserBtns,
 };

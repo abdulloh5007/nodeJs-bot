@@ -416,7 +416,7 @@ ${userStatus}, вот информация о вашем донат доме:
 ${userStatus}, вот информация о вашем доме:
 
 <i>Название:</i> <b>${userHouseName2}</b>
-<i>Цена:</i> <b>${userHousePrice.toLocaleString('de-DE')} UC</b>
+<i>Цена:</i> <b>${userHousePrice.toLocaleString('de-DE')} $</b>
 
 <i>До новый аренды:</i> <b>${remainingTime}</b>
     `;

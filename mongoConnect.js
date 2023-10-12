@@ -23,7 +23,14 @@ function botUrl(string) {
     return botUrl;
 }
 
+const botName = '@levouJS_bot'
+const mongoDbCollectionName = 'bot'
+const chatName = '@cty_channeldev'
+
 module.exports = {
     mongoConnect,
     botUrl,
+    botName,
+    mongoDbCollectionName,
+    chatName,
 }

@@ -313,6 +313,10 @@ async function renderIslandsWithBtn(msg, bot, collection) {
     const userDonateStatus = await donatedUsers(msg, collection);
     const island = await collectionIslands.findOne({ id: userId });
 
+    const [txt, uId] = data.split('_')
+    if (txt !== 'renderIslands') {
+        return;
+    }
     if (!island) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, у вас нет острова, чтобы открыть его вам нужно прописать команду открыть остров 
@@ -428,7 +432,6 @@ ${txtMessage}
         }
     }
 
-    const [txt, uId] = data.split('_')
     if (txt === 'renderIslands') {
         if (userId != uId) {
             return bot.answerCallbackQuery(msg.id, 'Это кнопка не для тебя🤬')
@@ -484,7 +487,7 @@ ${txtMessage}
         } catch (error) {
             return bot.answerCallbackQuery(msg.id, 'Нечего обновлять')
         }
-
+        return;
     }
 }
 

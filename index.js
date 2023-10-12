@@ -18,6 +18,8 @@ const {
     gameFootball,
     gameRice,
     gameRiceNeed,
+    gameRiceWithUser,
+    gameRiceWithUserBtns,
 } = require('./requests/games/games');
 
 const {
@@ -187,6 +189,7 @@ const { globalReset } = require('./requests/globalReset/globalReset');
 const { userDepozit, depozitAddMoney, pullMoneyDepozit } = require('./requests/bank/depozit');
 const { openIsland, myIsland, islandCommands, islandProduct, islandNewName, infoIslandProfit, takeOfProfitIsland, renderIslandsWithBtn } = require('./requests/islands/islands');
 const { testPayment } = require('./requests/donate/payments');
+const { botName, mongoDbCollectionName } = require('./mongoConnect');
 
 client.connect()
     .then(() => {
@@ -195,7 +198,7 @@ client.connect()
         console.log(customChalk.colorize(`ERROR CONNECTING TO DATABASE ${error}`, { style: 'italic', background: 'bgRed' }));
     })
 
-const db = client.db('bot');
+const db = client.db(mongoDbCollectionName);
 const collection = db.collection('users');
 const collectionBot = db.collection('botInfo')
 const collectionCrypto = db.collection('crypto')
@@ -431,7 +434,7 @@ function start() {
             //
             const parts = text.split(' ')
             function SIQCCtxts(string) {
-                return `@levouJS_bot ${string}`.toLowerCase()
+                return `${botName} ${string}`.toLowerCase()
             }
 
             //calc
@@ -581,10 +584,10 @@ function start() {
                 let valueIndex = 1
                 kazino(msg, collection, bot, valueIndex)
             }
-            else if (text.toLowerCase().startsWith('гонка')) {
+            else if (text.toLowerCase().startsWith('бгонка')) {
                 gameRice(msg, bot, collection, 1)
             }
-            else if (text.toLowerCase().startsWith(SIQCCtxts('гонка'))) {
+            else if (text.toLowerCase().startsWith(SIQCCtxts('бгонка'))) {
                 gameRice(msg, bot, collection, 2)
             }
             else if (text.toLowerCase().startsWith(SIQCCtxts('спин'))) {
@@ -595,21 +598,8 @@ function start() {
                 let valueIndex = 1
                 gameSpin(msg, bot, collection, valueIndex)
             }
-            else if (text.toLowerCase().startsWith(SIQCCtxts('боул'))) {
-                let valueIndex = 2
-                gameBouling(msg, bot, collection, valueIndex)
-            }
-            else if (text.toLowerCase().startsWith('боул')) {
-                let valueIndex = 1
-                gameBouling(msg, bot, collection, valueIndex)
-            }
-            else if (text.toLowerCase().startsWith(SIQCCtxts('футбол'))) {
-                let valueIndex = 2
-                gameFootball(msg, bot, collection, valueIndex)
-            }
-            else if (text.toLowerCase().startsWith('футбол')) {
-                let valueIndex = 1
-                gameFootball(msg, bot, collection, valueIndex)
+            else if (text.toLowerCase().startsWith('гонка')) {
+                gameRiceWithUser(msg, bot, collection, 1)
             }
 
             // car settings
@@ -948,30 +938,7 @@ function start() {
             //     bot.sendMessage(chatId, `это эмоджи ${text}`)
             // }
             if (text === 'hello') {
-                await bot.sendPhoto(chatId, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSuVsi_rJGAs4nh5yel1L8ASSVD0wPigGg7VLMOlIp7RQ&s', {
-                    caption: 'heelo'
-                }).then(async msg => {
-                    lastSentMessageId.push(msg.message_id)
-                    console.log(lastSentMessageId);
-                })
-            }
-            if (text === 'sec') {
-                console.log(lastSentMessageId[0]);
-                try {
-                    // Используем bot.editMessageMedia для редактирования сообщения с изображением
-                    await bot.editMessageMedia({
-                        type: 'photo',
-                        media: 'AgACAgEAAxkBAAIGI2UlinRVQuVKdIFwlPqF23_niyr9AALMqzEbo-MpRVbccWyczYqwAQADAgADcwADMAQ',
-                        caption: 'asdasd'
 
-                    }, {
-                        chat_id: chatId,
-                        message_id: lastSentMessageId[0],
-                    }
-                    );
-                } catch (error) {
-                    console.error('Ошибка:', error.message);
-                }
             }
 
             // add test user
@@ -1057,7 +1024,7 @@ function start() {
                 bot.sendChatAction(chatId, 'typing')
                 await collection.updateMany({ _id: ObjectId }, {
                     $unset: {
-                        "properties.0.lendHouses": 0
+                        "properties.0.test": 0
                     }
                 });
                 bot.sendMessage(chatId, 'Успешна обновлена датабаза')
@@ -1070,13 +1037,9 @@ function start() {
                 })
             }
             if (text === 'addnewValue') {
-                await collection.updateMany({ _id: ObjectId }, {
+                await collectionCars.updateOne({ name: '' }, {
                     $set: {
-                        stats: [{
-                            openCaseHouses: 0,
-                            openCaseCars: 0,
-                            createPromos: 0,
-                        }]
+                        speed: 0
                     }
                 })
                 bot.sendMessage(chatId, `res`)
@@ -1127,6 +1090,9 @@ function start() {
 
             // render islands
             renderIslandsWithBtn(msg, bot, collection)
+
+            // game rice with user
+            gameRiceWithUserBtns(msg, bot, collection)
         }
         else {
             bot.sendMessage(chatId, `
