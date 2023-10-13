@@ -163,7 +163,7 @@ ${userDonateStatus}, Напишите новый ник, который не д�
         return;
     }
 
-    const prohibitedStickers = ["🎁", "💎", "⭐️"]; // Запрещенные стикеры
+    const prohibitedStickers = ["🎁", "💎", "⭐️", "🎃"]; // Запрещенные стикеры
     const user = await collection.findOne({ id: userId });
     const newName = text.slice(12);
     const userStatus = user.status[0].statusName

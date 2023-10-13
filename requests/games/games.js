@@ -424,6 +424,7 @@ async function gameRice(msg, bot, collection, valueIndex) {
     const userCar = user.properties[0].cars
     const userCarSt = user.properties[0].carStatus
     const userCarGas = user.properties[0].carGasoline
+    const userStatus = user.status[0].statusName
     const balance = user.balance
     const car = await collectionCars.findOne({ name: user.properties[0].cars })
     const carSpeed = car.speed
@@ -533,16 +534,18 @@ ${userDonateStatus}, Подождите 2 секунды перед начало
         return Math.floor(Math.random() * (max - min + 1) + min);
     }
 
+    const botSpeed = userStatus === 'helloween' ? 20 : 50
+    const successTxtHelloween = userStatus === 'helloween' ? `${userDonateStatus} ваш статус помог ускорить вашу машину !` : ''
     isGameInProgress = false;
     let inGameUserCarSpeed = getRandomNumber(70, carSpeed)
-    let inGameBotCarSpeed = getRandomNumber(70, carSpeed + 50)
+    let inGameBotCarSpeed = getRandomNumber(70, carSpeed + botSpeed)
 
     let resultText = `<i>Жаль</i> <b>Вы проиграли 0x</b> ${gameLoseStickers()}\n<b>-${summ}</b>\n\n<i>Машина бота обогнала вашу машину достигая скорости:</i> <b>${inGameBotCarSpeed} км/ч</b>\n<i>Ваша машина достигла:</i> <b>${inGameUserCarSpeed} км/ч</b>`;
     let winValue = 0;
 
     if (inGameUserCarSpeed >= inGameBotCarSpeed) {
         winValue = Math.floor(summ * 2);
-        resultText = `<i>Поздравляем</i> <b>Вы выиграли 2x ${gameWinStickers()}</b>\n<b>+${winValue}</b>\n\n<i>Скорость вашей машины достигла до:</i> ${inGameUserCarSpeed} км/ч`;
+        resultText = `<i>Поздравляем</i> <b>Вы выиграли 2x ${gameWinStickers()}</b>\n<b>+${winValue}</b>\n\n<i>Скорость вашей машины достигла до:</i> ${inGameUserCarSpeed} км/ч\n${successTxtHelloween}`;
     }
 
     await collection.updateOne({ id: userId1 }, { $inc: { balance: -summ } })
@@ -690,7 +693,7 @@ ${userDonateStatus}, у игрока который вы хотите играт
         reply_markup: {
             inline_keyboard: [
                 [{ text: '✅Принять', callback_data: `riceWithUserAcc_${userId1}_${secondUser.from.id}_${summ}` }],
-                [{ text: '❌Отклонить', callback_data: `riceWithUserRej` }]
+                [{ text: '❌Отклонить', callback_data: `riceWithUserRej_${userId1}_${secondUser.from.id}_${summ}` }]
             ]
         }
     }
@@ -716,9 +719,38 @@ async function gameRiceWithUserBtns(msg, bot, collection) {
     const user2Accepter = parseInt(user2Accepter2)
     const summ = parseInt(summ2)
 
+    const firstUserDonateStatus = await adminDonatedUsers(user1Sender, collection)
     const secondUserDonateStatus = await adminDonatedUsers(user2Accepter, collection)
+
     const user1 = await collection.findOne({ id: user1Sender })
     const user2 = await collection.findOne({ id: user2Accepter })
+    if (txt === 'riceWithUserRej') {
+        if (userId1 === user2Accepter || userId1 === user1Sender) {
+            bot.editMessageText(`
+<b>Гонка отменена пользователем</b> ${userId1 === user1Sender ? firstUserDonateStatus : secondUserDonateStatus}
+                    `, {
+                chat_id: chatId,
+                message_id: messageId,
+                parse_mode: 'HTML',
+            })
+
+            if (userId1 === user2Accepter) {
+                try {
+                    await bot.sendMessage(user1Sender, `
+${secondUserDonateStatus}, этот пользователь отменил гонку который вы хотели играть с ним
+                            `, {
+                        parse_mode: 'HTML',
+                    })
+                } catch (error) {
+                    // error message
+                    console.log('error in game with user ' + error);
+                }
+            }
+            return;
+        }
+        bot.answerCallbackQuery(msg.id, { show_alert: true, text: 'Это кнопка не для тебя' })
+        return;
+    }
 
     if (!user1 || !user2) {
         return bot.editMessageText(`Игра не найдена или была закончена`, {
@@ -745,7 +777,7 @@ async function gameRiceWithUserBtns(msg, bot, collection) {
             bot.answerCallbackQuery(msg.id, { show_alert: true, text: 'Это кнопка не для тебя', })
             return;
         }
-        const firstUserDonateStatus = await adminDonatedUsers(user1Sender, collection)
+
         if (summ > user1Bal) {
             bot.editMessageText(chatId, `
 ${firstUserDonateStatus}, у него либо закончились деньги либо дал кому то
@@ -893,31 +925,6 @@ ${firstUserDonateStatus} и ${secondUserDonateStatus}
             message_id: messageId,
             parse_mode: 'HTML',
         })
-        return;
-    }
-    if (txt === 'riceWithUserRej') {
-        if (userId1 === user2Accepter) {
-            bot.editMessageText(`
-<b>Гонка отклонена игроком</b> ${secondUserDonateStatus}
-                    `, {
-                chat_id: chatId,
-                message_id: messageId,
-                parse_mode: 'HTML',
-            })
-
-            try {
-                await bot.sendMessage(user1Sender, `
-${secondUserDonateStatus}, этот игрок отменил гонку который вы хотели играть с ним
-                        `, {
-                    parse_mode: 'HTML',
-                })
-            } catch (error) {
-                // error message
-                console.log('error in game with user ' + error);
-            }
-            return;
-        }
-        bot.answerCallbackQuery(msg.id, { show_alert: true, text: 'Это кнопка не для тебя' })
         return;
     }
 }

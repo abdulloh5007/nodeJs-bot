@@ -314,9 +314,6 @@ async function renderIslandsWithBtn(msg, bot, collection) {
     const island = await collectionIslands.findOne({ id: userId });
 
     const [txt, uId] = data.split('_')
-    if (txt !== 'renderIslands') {
-        return;
-    }
     if (!island) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, у вас нет острова, чтобы открыть его вам нужно прописать команду открыть остров 

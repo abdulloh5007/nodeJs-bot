@@ -1089,10 +1089,14 @@ function start() {
             pullMoneyDepozit(msg, bot, collection)
 
             // render islands
-            renderIslandsWithBtn(msg, bot, collection)
+            if (data.startsWith('renderIslands')) {
+                renderIslandsWithBtn(msg, bot, collection)
+            }
 
             // game rice with user
-            gameRiceWithUserBtns(msg, bot, collection)
+            if (data.startsWith('riceWithUserAcc') || data.startsWith('riceWithUserRej')) {
+                gameRiceWithUserBtns(msg, bot, collection)
+            }
         }
         else {
             bot.sendMessage(chatId, `

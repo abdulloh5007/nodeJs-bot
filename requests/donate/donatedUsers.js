@@ -17,10 +17,13 @@ async function adminDonatedUsers(userId1, collection) {
         else if (userStatusName === 'premium') {
             userStatus = `<a href='tg://user?id=${userId}'>${userName} "⭐️"</a>`
         }
+        else if (userStatusName === 'helloween') {
+            userStatus = `<a href='tg://user?id=${userId}'>${userName} "🎃"</a>`
+        }
         else {
-            userStatus
             userStatus = `<a href='tg://user?id=${userId}'>${userName}</a>`
         }
+
         return userStatus
     }
 }
@@ -42,6 +45,9 @@ async function donatedUsers(msg, collection) {
     }
     else if (userStatusName === 'premium') {
         userStatus = `<i>PREMIUM ⭐️</i> <a href='tg://user?id=${userId}'>${userName}</a>`
+    }
+    else if (userStatusName === 'helloween') {
+        userStatus = `<i>HALLOWEEN 🎃</i> <a href='tg://user?id=${userId}'>${userName}</a>`
     }
     else {
         userStatus = `<a href='tg://user?id=${userId}'>${userName}</a>`
@@ -74,7 +80,7 @@ async function checkAndUpdateDonations(collection) {
         else {
             sortedStName = ''
         }
-        
+
 
         if (userExpireDate && userExpireDate <= currentDate) {
             console.log(userStatusName);
@@ -86,7 +92,7 @@ async function checkAndUpdateDonations(collection) {
 ➖➖➖➖➖➖➖➖➖➖➖➖➖➖
                 `, { parse_mode: 'HTML' })
             }
-            catch (err){
+            catch (err) {
                 if (err.response && err.response.statusCode === 403) {
                     console.log(customChalk.colorize(`сд Пользователь ${user.id} заблокировал бота`, { style: 'italic', background: 'bgRed' }));
                 } else if (err.response && err.response.statusCode === 400) {
