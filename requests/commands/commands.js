@@ -116,6 +116,7 @@ async function commandStart(msg, collection, bot) {
                 workersProfit: 0,
                 tax: 0,
                 lastUpdTime: 0,
+                speeds: 1,
             }],
             avatar: [{
                 waiting: '',
@@ -124,13 +125,13 @@ async function commandStart(msg, collection, bot) {
             properties: [{
                 houses: '',
                 cars: '',
+                lendHouse: 0,
+                carGasoline: 0,
+                carStatus: 0,
             }],
             referral: [{
                 code: '',
                 amount: 0,
-            }],
-            crypto: [{
-                altcoinidx: 0
             }],
             rates: [{
                 wins: 0,
@@ -158,6 +159,11 @@ async function commandStart(msg, collection, bot) {
                 limit: 50000,
                 date: 0,
             }],
+            stats: [{
+                openCaseHouses: 0,
+                openCaseCars: 0,
+                createPromos: 0,
+            }]
         })
     }
 

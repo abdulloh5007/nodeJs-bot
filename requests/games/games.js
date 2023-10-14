@@ -534,8 +534,8 @@ ${userDonateStatus}, Подождите 2 секунды перед начало
         return Math.floor(Math.random() * (max - min + 1) + min);
     }
 
-    const botSpeed = userStatus === 'helloween' ? 20 : 50
-    const successTxtHelloween = userStatus === 'helloween' ? `${userDonateStatus} ваш статус помог ускорить вашу машину !` : ''
+    const botSpeed = userStatus === 'halloween' ? 20 : 50
+    const successTxtHelloween = userStatus === 'halloween' ? `${userDonateStatus} ваш статус помог ускорить вашу машину !` : ''
     isGameInProgress = false;
     let inGameUserCarSpeed = getRandomNumber(70, carSpeed)
     let inGameBotCarSpeed = getRandomNumber(70, carSpeed + botSpeed)

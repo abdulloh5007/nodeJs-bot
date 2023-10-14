@@ -109,7 +109,7 @@ async function startWithRef(msg, bot, collection) {
                 id: userId,
                 gameId: onlyUsersId,
                 userName: 'Игрок',
-                balance: 10000,
+                balance: 5000,
                 uc: 0,
                 registerTime: registerUserTime,
                 altcoinidx: 0,
@@ -137,6 +137,7 @@ async function startWithRef(msg, bot, collection) {
                     workersProfit: 0,
                     tax: 0,
                     lastUpdTime: 0,
+                    speeds: 1,
                 }],
                 avatar: [{
                     waiting: '',
@@ -145,13 +146,13 @@ async function startWithRef(msg, bot, collection) {
                 properties: [{
                     houses: '',
                     cars: '',
+                    lendHouse: 0,
+                    carGasoline: 0,
+                    carStatus: 0,
                 }],
                 referral: [{
                     code: '',
                     amount: 0,
-                }],
-                crypto: [{
-                    altcoinidx: 0
                 }],
                 rates: [{
                     wins: 0,
@@ -179,6 +180,11 @@ async function startWithRef(msg, bot, collection) {
                     limit: 50000,
                     date: 0,
                 }],
+                stats: [{
+                    openCaseHouses: 0,
+                    openCaseCars: 0,
+                    createPromos: 0,
+                }]
             })
 
             try {

@@ -17,7 +17,7 @@ async function adminDonatedUsers(userId1, collection) {
         else if (userStatusName === 'premium') {
             userStatus = `<a href='tg://user?id=${userId}'>${userName} "⭐️"</a>`
         }
-        else if (userStatusName === 'helloween') {
+        else if (userStatusName === 'halloween') {
             userStatus = `<a href='tg://user?id=${userId}'>${userName} "🎃"</a>`
         }
         else {
@@ -46,7 +46,7 @@ async function donatedUsers(msg, collection) {
     else if (userStatusName === 'premium') {
         userStatus = `<i>PREMIUM ⭐️</i> <a href='tg://user?id=${userId}'>${userName}</a>`
     }
-    else if (userStatusName === 'helloween') {
+    else if (userStatusName === 'halloween') {
         userStatus = `<i>HALLOWEEN 🎃</i> <a href='tg://user?id=${userId}'>${userName}</a>`
     }
     else {
@@ -76,6 +76,9 @@ async function checkAndUpdateDonations(collection) {
         }
         else if (userStatusName === 'premium') {
             sortedStName = '⭐️'
+        }
+        else if (userStatusName === 'halloween') {
+            sortedStName = '🎃'
         }
         else {
             sortedStName = ''

@@ -1,14 +1,12 @@
 const { customChalk } = require("../../customChalk");
-const { donatedUsers } = require("./donatedUsers")
+const { donatedUsers } = require("./donatedUsers");
+const { donateStatuses, donateStatusesCheck, donateStatusBuy, donateInfoUserName, actived_donates, options_donate, actived_donate_menu } = require("./optionsDonate");
 
 let imgDonateMenu = 'https://ibb.co/k3M3hB9'
-let imgStandartStatus = 'https://ibb.co/zZ9jYFV'
-let imgVipStatus = 'https://ibb.co/DwmNPJX'
-let imgPremiumStatus = 'https://ibb.co/q53M2wG'
 let imgDonateDepozit = 'https://ibb.co/q1zpSw9'
 let imgSuccessfullDonate = 'https://ibb.co/qsq6Jzb'
 let imgErrorPayment = 'https://ibb.co/qmWrvbL'
-let helvinImg = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQLhlz7Tl63V6HPcVBveuqaIsh9C5jqbwbQ-g&usqp=CAU'
+let halloween = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQLhlz7Tl63V6HPcVBveuqaIsh9C5jqbwbQ-g&usqp=CAU'
 
 async function sendMessage(msg, text, options = {}, bot) {
     const chatId = msg.message.chat.id
@@ -32,30 +30,11 @@ async function donateMain(msg, bot, collection) {
     const userDonatedStatus = await donatedUsers(msg, collection);
     const purchase = userStatusName.toLowerCase() !== 'player' ? `<b>Вы приобрели статус:</b> <i>${userStatusName.toUpperCase()}</i>` : '';
 
-    const optionsDonate = {
-        reply_markup: {
-            inline_keyboard: [
-                [{ text: '🎁', callback_data: 'donate_standart' }, { text: '💎', callback_data: 'donate_vip' }, { text: '⭐️', callback_data: 'donate_premium' }],
-                [{ text: '🎃', callback_data: 'donate_helvin' }],
-                [{ text: 'НАЗАД', callback_data: 'donateMain_menu' }]
-            ]
-        }
-    };
-
     sendMessage(msg, `
 ${userDonatedStatus}, вот доступные донат статусы
 ${purchase}
-1 UC = 0.5 Р
-
-➖➖➖➖➖➖➖➖➖➖➖➖➖
-
-<b>🎁STANDART</b> = <i>БЕСПЛАТНО 7 дней</i>
-<b>💎VIP</b> = <i>99 UC - 30 дней</i>
-<b>⭐️PREMIUM</b> = <i>300 UC - 30 дней</i>
-<b>🎃HALLOWEEN</b> = <i>60 UC - 15 дней</i>
-
-➖➖➖➖➖➖➖➖➖➖➖➖➖
-    `, optionsDonate, bot);
+${actived_donates}
+`, options_donate, bot);
 }
 
 async function buyStatus(userId, collection, statusName, days) {
@@ -81,15 +60,6 @@ async function donateMenuStatuses(msg, bot, collection) {
     const userStatusName = user.status[0].statusName
     const userDonatedStatus = await donatedUsers(msg, collection)
 
-    let optionsDonate = {
-        reply_markup: {
-            inline_keyboard: [
-                [{ text: '🎁', callback_data: 'donate_standart' }, { text: '💎', callback_data: 'donate_vip' }, { text: '⭐️', callback_data: 'donate_premium' }],
-                [{ text: '🎃', callback_data: 'donate_helvin' }],
-                [{ text: 'Назад', callback_data: 'donateMain_menu' }]
-            ]
-        }
-    }
     let depOpts = {
         reply_markup: {
             inline_keyboard: [
@@ -113,17 +83,8 @@ async function donateMenuStatuses(msg, bot, collection) {
     const messageStatuses = `
 ${userDonatedStatus}, вот доступные донаты
 ${purchase}
-1 UC = 0.5 Р
-
-➖➖➖➖➖➖➖➖➖➖➖➖➖
-    
-<b>🎁STANDART</b> = <i>БЕСПЛАТНО 7 дней</i>
-<b>💎VIP</b> = <i>99 UC - 30 дней</i>
-<b>⭐️PREMIUM</b> = <i>300 UC - 30 дней</i>
-<b>🎃HALLOWEEN</b> = <i>60 UC - 15 дней</i>
-
-➖➖➖➖➖➖➖➖➖➖➖➖➖
-    `
+${actived_donates}
+`
 
     const messageDepozit = `
 ${userDonatedStatus}, дополнительный процент добавляет в ваш депозит 1 процент
@@ -140,7 +101,7 @@ ${userDonatedStatus}, дополнительный процент добавля
             chat_id: chatId,
             message_id: messageId,
             parse_mode: 'HTML',
-            ...optionsDonate
+            ...options_donate
         })
         return;
     }
@@ -169,16 +130,8 @@ ${userDonatedStatus}, дополнительный процент добавля
             media: imgDonateMenu,
             caption: `
 ${userDonatedStatus}, вот доступные донаты
-
-1 UC = 0.5 Р
-
-➖➖➖➖➖➖➖➖➖➖➖➖➖
-        
-🪄Статусы
-⚙️Депозит
-
-➖➖➖➖➖➖➖➖➖➖➖➖➖
-            `,
+${actived_donate_menu}
+        `,
             parse_mode: 'HTML',
         }, {
             chat_id: chatId,
@@ -188,86 +141,7 @@ ${userDonatedStatus}, вот доступные донаты
     }
 }
 
-let txtOfHelvinStatus = `
-<b><u>Этот статус прийдет раз в год на 20 дней, не пропусти его</u></b>
-
-<b>Отключена реклама ✅
-Хелоуинский аватар в профиле ✅
-Отметка в профиле <i>"🎃"</i> ✅
-Увеличен лимит передачи 400.000 (400е3) ✅
-Увеличен процент в депозиет 13% ✅
-Увеличен лимит пополнения депозита до 150.000 (150е3) ✅
-
-Увеличена удача в гонке с ботом, это возможность есть только в этом статусе ✅
-  ↑команда "<code>бгонка 1е3</code>"
-</b>
-<i>Так что не пропусти его !</i>
-`
-
-let txtOfStandartStatus = `
-➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-
-<i>✅ - ИМЕЕТСЯ
-❌ - НЕ ИМЕЕТСЯ</i>
-
-<b>ОТКЛЮЧЕНИЕ РЕКЛАМЫ ❌
-ЕЖЕДНЕВНЫЙ БОНУС УВЕЛИЧЁН НА 2X ❌
-ВОЗМОЖНОСТЬ ПОСТАВИТЬ СВОЮ АВУ ❌
-ВОЗМОЖНОСТЬ ПОСТАВИТЬ НИК ДО 16 СИМВОЛОВ ❌
-СОКРАЩЕНО ПОЛУЧЕНИЕ БОНУСА 2 РАЗА ❌
-СКИДКА НА ЛЮБЫХ БРАБОТНИКОВ 5% ✅
-ОТМЕТКА В ПРОФИЛЕ <b>"🎁"</b> ✅
-УВЕЛИЧЁН ЛИМИТ ПЕРЕДАЧИ НА 300.000 (300е3) ✅
-УВЕЛИЧЁН ПРОЦЕНТ В ДЕПОЗИТЕ ДО 12% ✅
-УВЕЛИЧЁН ЛИМИТ ПОПОЛНЕНИЕ ДЕПОЗИТА ДО 100.000 (100е3) ✅</b>
-
-➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-`
-
-let txtOfVipStatus = `
-➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-
-<i>✅ - ИМЕЕТСЯ
-❌ - НЕ ИМЕЕТСЯ</i>
-
-<b>ВОЗМОЖНОСТЬ ПОСТАВИТЬ СВОЮ АВУ ❌
-ОТКЛЮЧЕНИЕ РЕКЛАМЫ ✅
-ЕЖЕДНЕВНЫЙ БОНУС УВЕЛИЧЁН НА 2X ✅
-СКИДКА НА ЛЮБЫХ БРАБОТНИКОВ 7% ✅
-ОТМЕТКА В ПРОФИЛЕ <b>"💎"</b> ✅
-УВЕЛИЧЁН ЛИМИТ ПЕРЕДАЧИ НА 600.000 (600е3) ✅
-УВЕЛИЧЁН ПРОЦЕНТ В ДЕПОЗИТЕ ДО 15% ✅
-УВЕЛИЧЁН ЛИМИТ ПОПОЛНЕНИЕ ДЕПОЗИТА ДО 200.000 (200е3) ✅
-ВОЗМОЖНОСТЬ ПОСТАВИТЬ НИК ДО 16 СИМВОЛОВ ✅
-СОКРАЩЕНО ПОЛУЧЕНИЕ БОНУСА 2 РАЗА ✅
-СОКРАЩЕНО ВЫДАЧА ДОМА В АРЕНДУ 2 РАЗА ✅</b>
-
-➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-`
-
-let txtOfPremiumStatus = `
-➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-
-<i>✅ - ИМЕЕТСЯ
-❌ - НЕ ИМЕЕТСЯ</i>
-
-<b>ВОЗМОЖНОСТЬ ПОСТАВИТЬ СВОЮ АВУ ✅
-ОТКЛЮЧЕНИЕ РЕКЛАМЫ ✅
-ЕЖЕДНЕВНЫЙ БОНУС УВЕЛИЧЁН НА 2X ✅
-СКИДКА НА ЛЮБЫХ БРАБОТНИКОВ 10% ✅
-ОТМЕТКА В ПРОФИЛЕ <b>"⭐️"</b> ✅
-УВЕЛИЧЁН ЛИМИТ ПЕРЕДАЧИ НА 1.000.000 (1е16) ✅
-УВЕЛИЧЁН ПРОЦЕНТ В ДЕПОЗИТЕ ДО 18% ✅
-УВЕЛИЧЁН ЛИМИТ ПОПОЛНЕНИЕ ДЕПОЗИТА ДО 400.000 (400е3) ✅
-ВОЗМОЖНОСТЬ ПОСТАВИТЬ НИК ДО 16 СИМВОЛОВ ✅
-СОКРАЩЕНО ПОЛУЧЕНИЕ БОНУСА 2 РАЗА ✅
-СОКРАЩЕНО ВЫДАЧА ДОМА В АРЕНДУ 2 РАЗА ✅</b>
-
-➖➖➖➖➖➖➖➖➖➖➖➖➖➖
-`
-
 async function donateMenu(msg, bot, collection) {
-    const text = msg.text
     const chatId = msg.chat.id
     const userId1 = msg.from.id
     const messageId = msg.message_id
@@ -288,56 +162,21 @@ async function donateMenu(msg, bot, collection) {
             ]
         }
     }
+    const txt = `
+${userDonatedStatus}, вот доступные донаты
+${actived_donate_menu}
+    `
     if (chatId === userId1) {
-
         await bot.sendPhoto(chatId, imgDonateMenu,
             {
                 parse_mode: 'HTML',
                 reply_to_message_id: messageId,
                 ...optionsDonate,
-                caption: `
-${userDonatedStatus}, вот доступные донаты
-
-1 UC = 0.5 Р
-
-➖➖➖➖➖➖➖➖➖➖➖➖➖
-        
-🪄Статусы
-⚙️Депозит
-
-➖➖➖➖➖➖➖➖➖➖➖➖➖
-                `,
+                caption: txt,
             }
         )
     }
     else {
-        //             // Проверка доступности ЛС с ботом
-        //             const chat = await bot.getChat(userId1);
-        //             if (!!chat.photo) {
-        //                 bot.sendMessage(chatId, `
-        // ${userDonatedStatus}, Я отправил вам донат меню в лс
-        //                     `, { parse_mode: 'HTML', reply_to_message_id: messageId, ...goBot })
-
-        //                 bot.sendMessage(userId1, `
-        // ${userDonatedStatus}, вот доступные донаты
-
-        // 1 UC = 0.5 Р
-
-        // ➖➖➖➖➖➖➖➖➖➖➖➖➖
-
-        // СТАТУСЫ
-        // ДОНАТ МАШИНЫ
-        // ДОНАТ ДОМА
-
-        // ➖➖➖➖➖➖➖➖➖➖➖➖➖
-        //                     `, { parse_mode: 'HTML', ...optionsDonate })
-        //                 return;
-        //             }
-        //             else {
-        //                 bot.sendMessage(chatId, `
-        // ${userDonatedStatus}, Вы заблокировали бота не имев приватный чат с ботом вы не можете увидеть донаты
-        //                 `, { parse_mode: 'HTML', reply_to_message_id: messageId, ...goBot })
-        //             }
         try {
             await bot.sendMessage(chatId, `
 ${userDonatedStatus}, Я отправил вам донат меню в лс
@@ -347,18 +186,7 @@ ${userDonatedStatus}, Я отправил вам донат меню в лс
                 {
                     parse_mode: 'HTML',
                     ...optionsDonate,
-                    caption: `
-${userDonatedStatus}, вот доступные донаты
-
-1 UC = 0.5 Р
-
-➖➖➖➖➖➖➖➖➖➖➖➖➖
-        
-🪄Статусы
-⚙️Депозит
-
-➖➖➖➖➖➖➖➖➖➖➖➖➖
-                    `,
+                    caption: txt,
                 }
             )
         } catch (err) {
@@ -391,111 +219,34 @@ async function donateBtns(msg, bot, collection) {
 
     const userDonatedStatus = await donatedUsers(msg, collection)
 
-    if (data === 'donate_helvin') {
-        let optionsHelvin = {
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: 'АКТИВИРОВАТЬ 🎃', callback_data: 'active_donate_helvin' }],
-                    [{ text: 'Назад', callback_data: 'donate_main' }],
-                ]
-            }
-        }
+    if (data in donateStatuses) {
+        const { txt, infoStatus, optionsTxt, img, callbackCheck } = donateStatuses[data]
 
+        let statusOptions = {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: `${optionsTxt}`, callback_data: `${callbackCheck}` }],
+                    [{ text: 'Назад', callback_data: 'donate_main' }],
+                ]
+            }
+        }
         bot.editMessageMedia({
             type: 'photo',
-            media: helvinImg,
+            media: img,
             caption: `
-${userDonatedStatus}, Вот данные за донат статус <b>HALLOWEEN 🎃</b>
-${txtOfHelvinStatus}
+${userDonatedStatus}, ${infoStatus}
+${txt}
             `,
             parse_mode: 'HTML',
         }, {
             chat_id: chatId,
             message_id: messageId,
-            ...optionsHelvin,
+            ...statusOptions,
         })
     }
 
-    if (data === 'donate_standart') {
-        let optionsStandart = {
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: 'АКТИВИРОВАТЬ 🎁', callback_data: 'active_donate_standart' }],
-                    [{ text: 'Назад', callback_data: 'donate_main' }],
-                ]
-            }
-        }
-
-        bot.editMessageMedia({
-            type: 'photo',
-            media: imgStandartStatus,
-            caption: `
-${userDonatedStatus}, Вот данные за донат статус <b>STANDART 🎁</b>
-${txtOfStandartStatus}
-            `,
-            parse_mode: 'HTML',
-        }, {
-            chat_id: chatId,
-            message_id: messageId,
-            ...optionsStandart,
-        })
-    }
-    if (data === 'donate_vip') {
-        let optionsVip = {
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: 'АКТИВИРОВАТЬ 💎', callback_data: 'active_donate_vip' }],
-                    [{ text: 'Назад', callback_data: 'donate_main' }],
-                ]
-            }
-        }
-        bot.editMessageMedia({
-            type: 'photo',
-            media: imgVipStatus,
-            caption: `
-${userDonatedStatus}, Вот данные за донат статус <b>VIP 💎</b>
-${txtOfVipStatus}
-            `,
-            parse_mode: 'HTML',
-        }, {
-            chat_id: chatId,
-            message_id: messageId,
-            ...optionsVip,
-        })
-    }
-    if (data === 'donate_premium') {
-        let optionsPremium = {
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: 'АКТИВИРОВАТЬ ⭐️', callback_data: 'active_donate_premium' }],
-                    [{ text: 'Назад', callback_data: 'donate_main' }],
-                ]
-            }
-        }
-        bot.editMessageMedia({
-            type: 'photo',
-            media: imgPremiumStatus,
-            caption: `
-${userDonatedStatus}, Вот данные за донат статус <b>PREMIUM ⭐️</b>
-${txtOfPremiumStatus}
-            `,
-            parse_mode: 'HTML',
-        }, {
-            chat_id: chatId,
-            message_id: messageId,
-            ...optionsPremium,
-        })
-    }
     if (data === 'donate_main') {
         donateMain(msg, bot, collection)
-    }
-
-    let optionsDonateMain = {
-        reply_markup: {
-            inline_keyboard: [
-                [{ text: 'Назад', callback_data: 'donate_main' }],
-            ]
-        }
     }
 
     let userStatusSticker;
@@ -506,177 +257,90 @@ ${txtOfPremiumStatus}
         userStatusSticker = '💎';
     } else if (userStatusName === 'premium') {
         userStatusSticker = '⭐️';
-    } else if (userStatusName === 'helloween') {
+    } else if (userStatusName === 'halloween') {
         userStatusSticker = '🎃';
     } else {
         userStatusSticker = '';
     }
 
-    if (data === 'active_donate_helvin') {
-        if (userStatusName === 'premium' || userStatusName === 'vip') {
-            let opts = {
-                reply_markup: {
-                    inline_keyboard: [
-                        [{ text: 'АКТИВИРОВАТЬ 🎃', callback_data: 'active_donate_helvin2' }],
-                        [{ text: 'Назад', callback_data: 'donate_main' }]
-                    ]
-                }
-            }
-            bot.editMessageCaption(`
-${userDonatedStatus}, вы точно хотите приобрести статус <b>HALLOWEEN 🎃</b> при этом имея сатус ${userStatusName.toUpperCase()}
-        `, {
-                chat_id: chatId,
-                message_id: messageId,
-                parse_mode: 'HTML',
-                ...opts,
-            })
-            return;
-        }
-        return;
-    }
-
-    const dataMap = {
-        'active_donate_standart': { statusName: 'standart', days: 7, cost: 0, moneyLimit: 300000, depLimit: 100000, depProcent: 12 },
-        'active_donate_helvin2': { statusName: 'helloween', days: 15, cost: 60, moneyLimit: 400000, depLimit: 150000, depProcent: 13 },
-        'active_donate_helvin': { statusName: 'helloween', days: 15, cost: 60, moneyLimit: 400000, depLimit: 150000, depProcent: 13 },
-        'active_donate_vip': { statusName: 'vip', days: 30, cost: 99, moneyLimit: 600000, depLimit: 200000, depProcent: 15 },
-        'active_donate_premium': { statusName: 'premium', days: 30, cost: 300, moneyLimit: 1000000, depLimit: 400000, depProcent: 18 }
-    };
-
-    if (data in dataMap) {
-        const { statusName, days, cost, moneyLimit, depLimit, depProcent } = dataMap[data];
+    if (data in donateStatusesCheck) {
+        const { txt, optionsTxt, callbackBuy } = donateStatusesCheck[data]
         const remainingTime = userStatusExpireDate - new Date();
         const remainingDays = Math.ceil(remainingTime / (24 * 60 * 60 * 1000));
         const remainingHours = Math.floor((remainingTime % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
         const remainingMinutes = Math.floor((remainingTime % (60 * 60 * 1000)) / (60 * 1000));
 
-        if (userStatusName === 'premium' && statusName !== 'helloween') {
-            // Пользователь уже имеет статус "premium"
-            bot.editMessageCaption(`
-${userDonatedStatus}, Вы уже имеете статус <b>${userStatusName.toUpperCase()} ${userStatusSticker}</b>.
-<b>Подождите до:</b> <i>${userStatusExpireDate.toLocaleString()}</i>
-
-<b>Еще ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут</b>, прежде чем вы сможете купить другой статус.
-            `, {
-                chat_id: chatId,
-                message_id: messageId,
-                parse_mode: 'HTML',
-                ...optionsDonateMain,
-            });
-        } else if (userStatusName === statusName) {
-            // Пользователь уже имеет запрашиваемый статус
-            // (но это не "premium")
-            bot.editMessageCaption(`
-${userDonatedStatus}, Вы уже купили статус <b>${statusName.toUpperCase()} ${userStatusSticker}</b>.
-<b>Подождите до:</b> <i>${userStatusExpireDate.toLocaleString()}</i>
-
-<b>Еще ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут</b>, прежде чем вы сможете купить другой статус.
-            `, {
-                chat_id: chatId,
-                message_id: messageId,
-                parse_mode: 'HTML',
-                ...optionsDonateMain,
-            });
-        } else if (statusName === 'vip' && userStatusName !== 'premium' && userStatusName !== 'helloween') {
-            // Пользователь имеет статус "vip", но не "premium"
-            bot.editMessageCaption(`
-${userDonatedStatus}, Вы уже купили статус <b>${statusName.toUpperCase()} ${userStatusSticker}</b>.
-<b>Подождите до:</b> <i>${userStatusExpireDate.toLocaleString()}</i>
-
-<b>Еще ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут</b>, прежде чем вы сможете купить другой статус.
-            `, {
-                chat_id: chatId,
-                message_id: messageId,
-                parse_mode: 'HTML',
-                ...optionsDonateMain,
-            });
-        } else if (statusName === 'standart' && userStatusName === 'standart') {
-            // Пользователь уже имеет статус "standart" и хочет купить "standart"
-            bot.editMessageCaption(`
-${userDonatedStatus}, Вы уже купили статус <b>${statusName.toUpperCase()} ${userStatusSticker}</b>.
-<b>Подождите до:</b> <i>${userStatusExpireDate.toLocaleString()}</i>
-
-<b>Еще ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут</b>, прежде чем вы сможете купить другой статус.
-            `, {
-                chat_id: chatId,
-                message_id: messageId,
-                parse_mode: 'HTML',
-                ...optionsDonateMain,
-            });
-        } else if (userStatusName === 'helloween' && statusName === 'standart') {
-            // Пользователь уже имеет статус "standart" и хочет купить "standart"
-            bot.editMessageCaption(`
-${userDonatedStatus}, Вы уже купили статус <b>${userStatusName.toUpperCase()} ${userStatusSticker}</b>.
-<b>Подождите до:</b> <i>${userStatusExpireDate.toLocaleString()}</i>
-
-<b>Еще ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут</b>, прежде чем вы сможете купить другой статус.
-            `, {
-                chat_id: chatId,
-                message_id: messageId,
-                parse_mode: 'HTML',
-                ...optionsDonateMain,
-            });
-        } else {
-            let activeStatusSticker;
-            if (statusName === 'premium') {
-                activeStatusSticker = '⭐️';
+        let opts = {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: `${optionsTxt}`, callback_data: `${callbackBuy}` }],
+                    [{ text: 'Назад', callback_data: 'donate_main' }]
+                ]
             }
-            else if (statusName === 'vip') {
-                activeStatusSticker = '💎';
-            }
-            else if (statusName === 'standart') {
-                activeStatusSticker = '🎁';
-            }
-            else if (statusName === 'helloween') {
-                activeStatusSticker = '🎃';
+        }
+        bot.editMessageCaption(`
+${userDonatedStatus}, ${txt} ${userStatusName.toUpperCase()} ${userStatusSticker}
+${userStatusName === 'player' ? '' : `
+<b>Ваш статус активен и у вас есть еще время</b>
+<i>${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут</i>
+`}
+<b>Если хотите купить не смотря на оставшееся время то нажмите <i>${optionsTxt}</i>, а если нет то <i>Назад</i></b>
+            `, {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: 'HTML',
+            ...opts,
+        })
+        return;
+    }
+
+    if (data in donateStatusBuy) {
+        const { txt, errTxt, name, days, cost, moneyLimit, depLimit, depProcent } = donateStatusBuy[data];
+
+        const enoughUC = user.uc >= cost;
+        if (enoughUC) {
+            const userExtraDepLimit = parseInt(user.depozit[0].extraLimit) + parseInt(depLimit)
+            const userExtraDepProcent = parseInt(user.depozit[0].extraProcent) + parseInt(depProcent)
+
+            await buyStatus(userId, collection, name, days);
+            await collection.updateOne({ id: userId }, { $inc: { uc: -cost } });
+            await collection.updateOne({ id: userId }, { $set: { "limit.0.giveMoneyLimit": moneyLimit, "depozit.0.limit": userExtraDepLimit, "depozit.0.procent": userExtraDepProcent } })
+            if (name === 'halloween') {
+                await collection.updateOne({ id: userId }, { $set: { "avatar.0.avaUrl": halloween } })
             }
             else {
-                activeStatusSticker = '';
+                await collection.updateOne({ id: userId }, { $set: { "avatar.0.avaUrl": '' } })
             }
-            const enoughUC = user.uc >= cost;
-            if (enoughUC) {
-                const userExtraDepLimit = parseInt(user.depozit[0].extraLimit) + parseInt(depLimit)
-                const userExtraDepProcent = parseInt(user.depozit[0].extraProcent) + parseInt(depProcent)
 
-                await buyStatus(userId, collection, statusName, days);
-                await collection.updateOne({ id: userId }, { $inc: { uc: -cost } });
-                await collection.updateOne({ id: userId }, { $set: { "limit.0.giveMoneyLimit": moneyLimit, "depozit.0.limit": userExtraDepLimit, "depozit.0.procent": userExtraDepProcent } })
-                if (statusName === 'helloween') {
-                    await collection.updateOne({ id: userId }, { $set: { "avatar.0.avaUrl": helvinImg } })
+            bot.editMessageMedia({
+                type: 'photo',
+                media: imgSuccessfullDonate,
+                caption: `${userDonatedStatus}, ${txt}`,
+                parse_mode: 'HTML',
+            }, {
+                chat_id: chatId,
+                message_id: messageId,
+            })
+        } else {
+            const optionsDonateMain = {
+                reply_markup: {
+                    inline_keyboard: [
+                        [{ text: 'Назад', callback_data: 'donate_main' }]
+                    ]
                 }
-                else {
-                    await collection.updateOne({ id: userId }, { $set: { "avatar.0.avaUrl": '' } })
-                }
-
-                bot.editMessageMedia({
-                    type: 'photo',
-                    media: imgSuccessfullDonate,
-                    caption: `
-${userDonatedStatus},
-Вы успешно активировали статус <b>${statusName.toUpperCase()} ${activeStatusSticker}</b>.
-
-<b>Спасибо вам огромное что покупали наш товар</b>
-                    `,
-                    parse_mode: 'HTML',
-                }, {
-                    chat_id: chatId,
-                    message_id: messageId,
-                })
-            } else {
-                bot.editMessageMedia({
-                    type: 'photo',
-                    media: imgErrorPayment,
-                    caption: `
-${userDonatedStatus}, У вас не достаточно UC для покупки 
-Статуса <b>${statusName.toUpperCase()} ${activeStatusSticker}</b>.
-                    `,
-                    parse_mode: 'HTML',
-                }, {
-                    chat_id: chatId,
-                    message_id: messageId,
-                    ...optionsDonateMain,
-                })
             }
+            bot.editMessageMedia({
+                type: 'photo',
+                media: imgErrorPayment,
+                caption: `
+${userDonatedStatus}, ${errTxt}
+                    `,
+                parse_mode: 'HTML',
+            }, {
+                chat_id: chatId,
+                message_id: messageId,
+                ...optionsDonateMain,
+            })
         }
     }
 }
@@ -707,47 +371,16 @@ async function donateInfo(msg, bot, collection) {
         userStatusSticker = '💎';
     } else if (userStatusName === 'premium') {
         userStatusSticker = '⭐️';
-    } else if (userStatusName === 'helloween') {
+    } else if (userStatusName === 'halloween') {
         userStatusSticker = '🎃';
     } else {
         userStatusSticker = '';
     }
 
-    if (userStatusName === 'standart') {
+    if (userStatusName in donateInfoUserName) {
+        const { txt } = donateInfoUserName[userStatusName]
         userStatus = `
-${txtOfStandartStatus}
-
-<b>Срок действия:</b> ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут
-<b>Был совершен в:</b> ${purchaseDate.toLocaleString()}
-        `
-    }
-    if (userStatusName === 'helloween') {
-        userStatus = `
-<b>Отключена реклама ✅
-Хелоуинский аватар в профиле ✅
-Отметка в профиле <i>"🎃"</i> ✅
-Увеличен лимит передачи 400.000 (400е3) ✅
-Увеличен процент в депозиет 13% ✅
-Увеличен лимит пополнения депозита до 150.000 (150е3) ✅
-
-Увеличена удача в гонке с ботом, это возможность есть только в этом статусе ✅
-    ↑команда "<code>бгонка 1е3</code>"</b>
-
-<b>Срок действия:</b> ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут
-<b>Был совершен в:</b> ${purchaseDate.toLocaleString()}
-        `
-    }
-    else if (userStatusName === 'vip') {
-        userStatus = `
-${txtOfVipStatus}
-
-<b>Срок действия:</b> ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут
-<b>Был совершен в:</b> ${purchaseDate.toLocaleString()}
-        `
-    }
-    else if (userStatusName === 'premium') {
-        userStatus = `
-${txtOfPremiumStatus}
+${txt}
 
 <b>Срок действия:</b> ${remainingDays} дней, ${remainingHours} часов, ${remainingMinutes} минут
 <b>Был совершен в:</b> ${purchaseDate.toLocaleString()}
