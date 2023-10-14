@@ -11,7 +11,7 @@ function getStatusSticker(status) {
         return '💎';
     } else if (status === 'premium') {
         return '⭐️';
-    } else if (status === 'helloween') {
+    } else if (status === 'halloween') {
         return '🎃';
     }else {
         return '';
