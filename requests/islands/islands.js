@@ -69,6 +69,7 @@ async function checkAndUpdateIslands(userId1) {
 }
 
 async function openIsland(msg, bot, collection) {
+    const collectionAchievs = await mongoConnect('achievs');
     const collectionIslands = await mongoConnect('islands')
 
     const userId1 = msg.from.id
@@ -84,6 +85,25 @@ async function openIsland(msg, bot, collection) {
 
     const date = new Date()
     date.setDate(date.getDate() + 1);
+
+    const achiev = await collectionAchievs.findOne({ id: userId1 })
+    const openIsland = achiev.island[0].openIsland
+    const islandCost = achiev.island[0].cost
+
+    if (openIsland === false) {
+        await collectionAchievs.updateOne({ id: userId1 }, { $set: { 'island.0.openIsland': true } }).then(async (el) => {
+            if (el.modifiedCount === 1) {
+                bot.sendMessage(chatId, `
+${userDonateStatus}, поздравляем вы выполнили достижения откыть остров ✅
+<b>Вам выдано ${islandCost} UC</b>
+                    `, {
+                    parse_mode: 'HTML',
+                    reply_to_message_id: messageId,
+                })
+                await collection.updateOne({ id: userId1 }, { $inc: { uc: islandCost } })
+            }
+        })
+    }
 
     if (!userIsland) {
         bot.sendMessage(chatId, `

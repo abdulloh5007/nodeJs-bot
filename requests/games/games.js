@@ -4,7 +4,6 @@ const { donatedUsers, adminDonatedUsers } = require("../donate/donatedUsers");
 const { parseNumber, formatNumberInScientificNotation } = require("../systems/systemRu");
 const { gameWinStickers, gameLoseStickers } = require("./gameStickers");
 
-let isGameInProgress = true; // Флаг для отслеживания текущей игры
 
 /**
  * Asynchronous function that handles the logic for a casino game.
@@ -14,10 +13,13 @@ let isGameInProgress = true; // Флаг для отслеживания тек�
  * @param {number} valueIndex - Index indicating the position of the value in the text input.
  */
 async function kazino(msg, collection, bot, valueIndex) {
+    const collectionAchievs = await mongoConnect('achievs');
+
     const chatId = msg.chat.id;
     const text = msg.text;
     const userId = msg.from.id;
     const messageId = msg.message_id;
+    let isGameInProgress = true
 
     const userDonateStatus = await donatedUsers(msg, collection);
     const user = await collection.findOne({ id: userId });
@@ -63,25 +65,23 @@ ${userDonateStatus}, Подождите 2 секунды перед начало
     let winCoefficient = 0;
     let resultText = '';
 
-    if (randomNum < 7) {
+    if (randomNum < 10) {
         winCoefficient = 5;
         resultText = 'Вы выиграли 5x';
-    } else if (randomNum < 15) {
-        winCoefficient = 3;
-        resultText = 'Вы выиграли 3x';
-    } else if (randomNum < 20) {
+    } else if (randomNum < 30) {
         winCoefficient = 2;
         resultText = 'Вы выиграли 2x';
-    } else if (randomNum < 40) {
+    } else if (randomNum < 50) {
         winCoefficient = 1;
         resultText = 'Вы выиграли 1x';
     } else {
         resultText = 'Вы проиграли 0x';
     }
 
+    await collection.updateOne({ id: userId }, { $inc: { balance: -value } })
+
     const userStatus = await donatedUsers(msg, collection);
     const winAmount = value * winCoefficient;
-    const newBalance = resultText.includes('выиграли') ? balance + winAmount : balance - value;
 
     const resultMessage = `
 <b>${userStatus}</b>
@@ -98,8 +98,32 @@ ${userDonateStatus}, Подождите 2 секунды перед начало
     } else {
         ratesUpdate.$inc["rates.0.loses"] = 1;
     }
+    try {
+        await collection.updateOne({ id: userId }, { ...ratesUpdate });
+        await collection.updateOne({ id: userId }, { $inc: { balance: winAmount } })
+    } catch (error) {
+        console.log(error);
+    }
 
-    collection.updateOne({ id: userId }, { $set: { balance: parseInt(newBalance) }, ...ratesUpdate });
+    const achiev = await collectionAchievs.findOne({ id: userId })
+    const kazino = achiev.kazino[0].kazino
+    const maxKazino = achiev.kazino[0].maxKazino
+    const kazinoCost = achiev.kazino[0].cost
+    if (kazino < maxKazino + 1) {
+        await collectionAchievs.updateOne({ id: userId }, { $inc: { "kazino.0.kazino": 1 } })
+    }
+
+    if (kazino === maxKazino - 1) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, поздравляем вы выполнили достижения сыграть казино ${maxKazino} раз ✅
+<b>Вам выдано ${kazinoCost} UC</b>
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        await collection.updateOne({ id: userId }, { $inc: { uc: kazinoCost } })
+    }
+
     setTimeout(() => {
         isGameInProgress = true;
     }, 2000); // Задержка в 2000 миллисекунд (2 секунды)
@@ -117,6 +141,7 @@ async function gameSpin(msg, bot, collection, valueIndex) {
     const text = msg.text;
     const userId = msg.from.id;
     const messageId = msg.message_id;
+    let isGameInProgress = true
 
     const userDonateStatus = await donatedUsers(msg, collection);
     const user = await collection.findOne({ id: userId });
@@ -218,6 +243,7 @@ async function gameBouling(msg, bot, collection, valueIndex) {
     const text = msg.text;
     const userId = msg.from.id;
     const messageId = msg.message_id;
+    let isGameInProgress = true
 
     const userDonateStatus = await donatedUsers(msg, collection);
     const user = await collection.findOne({ id: userId });
@@ -319,6 +345,7 @@ async function gameFootball(msg, bot, collection, valueIndex) {
     const text = msg.text;
     const userId = msg.from.id;
     const messageId = msg.message_id;
+    let isGameInProgress = true
 
     const userDonateStatus = await donatedUsers(msg, collection);
     const user = await collection.findOne({ id: userId });
@@ -412,7 +439,9 @@ ${userDonateStatus}, Подождите 2 секунды перед начало
 }
 
 async function gameRice(msg, bot, collection, valueIndex) {
+    const collectionAchievs = await mongoConnect('achievs');
     const collectionCars = await mongoConnect('cars');
+    let isGameInProgress;
 
     const userId1 = msg.from.id
     const chatId = msg.chat.id
@@ -427,7 +456,6 @@ async function gameRice(msg, bot, collection, valueIndex) {
     const userStatus = user.status[0].statusName
     const balance = user.balance
     const car = await collectionCars.findOne({ name: user.properties[0].cars })
-    const carSpeed = car.speed
 
     const parts = text.split(' ')
 
@@ -533,10 +561,11 @@ ${userDonateStatus}, Подождите 2 секунды перед начало
         // Генерируем случайное число в диапазоне от min (включительно) до max (включительно)
         return Math.floor(Math.random() * (max - min + 1) + min);
     }
-
+    const carSpeed = car.speed
     const botSpeed = userStatus === 'halloween' ? 20 : 50
     const successTxtHelloween = userStatus === 'halloween' ? `${userDonateStatus} ваш статус помог ускорить вашу машину !` : ''
     isGameInProgress = false;
+
     let inGameUserCarSpeed = getRandomNumber(70, carSpeed)
     let inGameBotCarSpeed = getRandomNumber(70, carSpeed + botSpeed)
 
@@ -561,14 +590,32 @@ ${resultText}
     })
     await collection.updateOne({ id: userId1 }, { $inc: { balance: winValue, "properties.0.carStatus": -10, "properties.0.carGasoline": -10 } })
 
+    const achiev = await collectionAchievs.findOne({ id: userId1 })
+    const botRacing = achiev.race[0].botRacing
+    const maxBotRacing = achiev.race[0].maxBotRacing
+    const raceCost = achiev.race[0].cost
+
+    if (botRacing < maxBotRacing + 1) {
+        await collectionAchievs.updateOne({ id: userId1 }, { $inc: { "race.0.botRacing": 1 } })
+    }
+
+    if (botRacing === maxBotRacing - 1) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, поздравляем вы выполнили достижение сыграть гонку с ботом ${maxBotRacing} раз ✅
+<b>Вам выдано ${raceCost} UC</b>
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+        collection.updateOne({ id: userId1 }, { $inc: { uc: raceCost } })
+    }
+
     setTimeout(() => {
         isGameInProgress = true;
-    }, 2000); // Задержка в 2000 миллисекунд (2 секунды)
+    }, 5000); // Задержка в 2000 миллисекунд (2 секунды)
 }
 
 async function gameRiceWithUser(msg, bot, collection, valueIndex) {
-    const collectionCars = await mongoConnect('cars');
-
     const text = msg.text.split(' ')
     const userId1 = msg.from.id
     const chatId = msg.chat.id
@@ -779,7 +826,7 @@ ${secondUserDonateStatus}, этот пользователь отменил го
         }
 
         if (summ > user1Bal) {
-            bot.editMessageText(chatId, `
+            bot.editMessageText(`
 ${firstUserDonateStatus}, у него либо закончились деньги либо дал кому то
             `, {
                 chat_id: chatId,
@@ -811,7 +858,7 @@ ${firstUserDonateStatus}, у вас не хватало средств для и
         }
 
         if (user1CarGasoilne <= 10 || user1CarStatus <= 10) {
-            bot.editMessageText(chatId, `
+            bot.editMessageText(`
 ${firstUserDonateStatus}, у него не хватает бензина и у него машина сломана
             `, {
                 chat_id: chatId,
@@ -910,6 +957,8 @@ ${firstUserDonateStatus}, не расстраиваемся повезёт сл�
                 return `${secondUserDonateStatus}`;
             }
         }
+        await collection.updateOne({ id: user2Accepter }, { $inc: { "properties.0.carStatus": -10, "properties.0.carGasoline": -10 } })
+        await collection.updateOne({ id: user1Sender }, { $inc: { "properties.0.carStatus": -10, "properties.0.carGasoline": -10 } })
         const riceWinner = await findLargerNumber(user1RandomedSpeed, user2RandomedSpeed)
 
         bot.editMessageText(`
@@ -946,8 +995,8 @@ async function gameRiceNeed(msg, bot, collection, valueIndex) {
     let carSetting = parts[valueIndex]
 
     const datamap = {
-        'мастерская': { item: 'carStatus', need: userCarSt, cost: 3, txt: 'пошли в мастерскую и починили вашу машину 🛠', img: 'https://amastercar.ru/img/auto_service_new.jpg' },
-        'заправить': { item: 'carGasoline', need: userCarGas, cost: 2, txt: 'заправили вашу машину 🛢', img: 'https://auto.24tv.ua/resources/photos/news/202006/21771a2f138da-a6a9-40a0-b446-f6830be35db7.jpg?1592310798000&fit=cover&w=720&h=405&q=65' },
+        'мастерская': { item: 'carStatus', need: userCarSt, cost: 30, txt: 'пошли в мастерскую и починили вашу машину 🛠', img: 'https://amastercar.ru/img/auto_service_new.jpg' },
+        'заправить': { item: 'carGasoline', need: userCarGas, cost: 20, txt: 'заправили вашу машину 🛢', img: 'https://auto.24tv.ua/resources/photos/news/202006/21771a2f138da-a6a9-40a0-b446-f6830be35db7.jpg?1592310798000&fit=cover&w=720&h=405&q=65' },
     }
 
     const carSettingKb = {
@@ -1021,7 +1070,7 @@ ${userDonateStatus}, вам необходимо ${valueCost.toLocaleString('de-
             reply_to_message_id: messageId,
             caption: `
 ${userDonateStatus}, вы успешно ${txt}
-<i>За »</i> <b>${valueCost.toLocaleString('de-DE')} ${formatNumberInScientificNotation(valueCost)}</b>
+<i>За »</i> <b>${valueCost.toLocaleString('de-DE')} $ ${formatNumberInScientificNotation(valueCost)}</b>
             `
         })
         const updateObj = {}

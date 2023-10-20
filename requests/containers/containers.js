@@ -64,6 +64,7 @@ ${sortedContainers}
 }
 
 async function buyPriceMoneyContainer(msg, bot, collection, glLength) {
+    const collectionAchievs = await mongoConnect('achievs');
     const collectionContainers = await mongoConnect('containers')
 
     const text = msg.text
@@ -139,6 +140,25 @@ ${userDonateStatus}, у вас не хватает средст для откр�
     const img = selectedCont.cImg
     const price = selectedCont.cPrice
     contPriseType(msg, contType, collection, userId1, bot, chatId, img, price)
+
+    const achiev = await collectionAchievs.findOne({ id: userId1 })
+    const openCase = achiev.case[0].openCase
+    const maxOpenCase = achiev.case[0].maxOpenCase
+    const caseCost = achiev.case[0].cost
+
+    if (openCase < maxOpenCase + 1) {
+        await collectionAchievs.updateOne({ id: userId1 }, { $inc: { 'case.0.openCase': 1 } })
+    }
+
+    if (openCase === maxOpenCase - 1) {
+        bot.sendMessage(chatId, `
+${userDonateStatus}, поздравляем вы выполнили достижение открыть кейс ${maxOpenCase} раза ✅
+<b>Вам выдано ${caseCost} UC</b> 
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+    }
 }
 
 async function contPriseType(msg, contType, collection, userId1, bot, chatId, img, price) {
@@ -208,13 +228,48 @@ ${userDonateStatus}, вы открыли контейнер 🎉
     const newContPrise = await contPrise.findOne({ name: randomedPrise.name })
     const prisePrice = newContPrise.price * 0.9
 
+    const collectionAchievs = await mongoConnect('achievs');
+    const achiev = await collectionAchievs.findOne({ id: userId1 })
+
     await collection.updateOne({ id: userId1 }, { $inc: { balance: -price } })
     await collection.updateOne({ id: userId1 }, { $inc: { balance: prisePrice } })
     if (contType === 'houses') {
         await collection.updateOne({ id: userId1 }, { $inc: { "stats.0.openCaseHouses": 1 } })
+        const buyHouse = achiev.house[0].buyHouse
+        const houseCost = achiev.house[0].cost
+
+        if (buyHouse === false) {
+            await collectionAchievs.updateOne({ id: userId1 }, { $set: { 'house.0.buyHouse': true } }).then(async (el) => {
+                if (el.modifiedCount === 1) {
+                    bot.sendMessage(chatId, `
+${userDonateStatus}, поздравляем вы выполнили достижения купить дом ✅
+<b>Вам выдано ${houseCost} UC</b>
+                        `, {
+                        parse_mode: 'HTML',
+                    })
+                    await collection.updateOne({ id: userId1 }, { $inc: { uc: houseCost } })
+                }
+            })
+        }
     }
     else if (contType === 'cars') {
         await collection.updateOne({ id: userId1 }, { $inc: { "stats.0.openCaseCars": 1 } })
+        const buyCar = achiev.car[0].buyCar
+        const carCost = achiev.car[0].cost
+
+        if (buyCar === false) {
+            await collectionAchievs.updateOne({ id: userId1 }, { $set: { 'car.0.buyCar': true } }).then(async (el) => {
+                if (el.modifiedCount === 1) {
+                    bot.sendMessage(chatId, `
+${userDonateStatus}, поздравляем вы выполнили достижения купить машину ✅
+<b>Вам выдано ${carCost} UC</b>
+                        `, {
+                        parse_mode: 'HTML',
+                    })
+                    await collection.updateOne({ id: userId1 }, { $inc: { uc: carCost } })
+                }
+            })
+        }
     }
 }
 

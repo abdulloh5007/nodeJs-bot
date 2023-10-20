@@ -64,6 +64,7 @@ const {
     toBeAnAdministrtorBot,
     useKey,
     deleteGenKeys,
+    infoWithTgId,
 } = require('./requests/admin/adminCommands');
 
 const {
@@ -189,7 +190,8 @@ const { globalReset } = require('./requests/globalReset/globalReset');
 const { userDepozit, depozitAddMoney, pullMoneyDepozit } = require('./requests/bank/depozit');
 const { openIsland, myIsland, islandCommands, islandProduct, islandNewName, infoIslandProfit, takeOfProfitIsland, renderIslandsWithBtn } = require('./requests/islands/islands');
 const { testPayment } = require('./requests/donate/payments');
-const { botName, mongoDbCollectionName } = require('./mongoConnect');
+const { botName, mongoDbCollectionName, addingToDB, mongoConnect } = require('./mongoConnect');
+const { myAchievements } = require('./requests/achievements/achievements');
 
 client.connect()
     .then(() => {
@@ -380,7 +382,7 @@ function start() {
 
         //start
         if (text.toLowerCase() === '/start' || text == '/start@levouJS_bot') {
-            // commandStart(msg, collection, bot)
+            commandStart(msg, collection, bot)
             log(customChalk.colorize(`Успешно зарегистрирован ${userId}`, { style: 'underline', background: 'bgGreen' }))
         }
 
@@ -915,6 +917,9 @@ function start() {
             if (text.toLowerCase().startsWith('.info_id')) {
                 infoFromUGameId(msg, bot, collection)
             }
+            else if (text.toLowerCase().startsWith('/info_id')) {
+                infoWithTgId(msg, bot, collection)
+            }
 
             if (text.toLowerCase() === 'donatepay') {
                 testPayment(msg, bot)
@@ -922,6 +927,9 @@ function start() {
 
             if (text.toLowerCase() === 'стата') {
                 userStatistics(msg, bot, collection)
+            }
+            else if (text.toLowerCase() === 'достижения') {
+                myAchievements(msg, bot, collection)
             }
 
             // Обработчик предварительного запроса по оплате.
@@ -937,87 +945,87 @@ function start() {
             // if (text.toLowerCase().startsWith('asdf')) {
             //     bot.sendMessage(chatId, `это эмоджи ${text}`)
             // }
-            if (text === 'hello') {
+            if (text.toLowerCase() === 'test') {
+                const width = 300;
+                const height = 200;
 
+                // new Jimp(width, height, (err, image) => {
+                //     if (err) {
+                //         console.error(err);
+                //         return;
+                //     }
+
+                //     Jimp.read('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSAjEAS2zJ_0rhf7IZP0TAUwpPSZjfU_bXK1w&usqp=CAU', async (backgroundErr, background) => {
+                //         if (backgroundErr) {
+                //             console.error(backgroundErr);
+                //             return;
+                //         }
+
+                //         const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
+
+                //         image.composite(background, 0, 0, {
+                //             mode: Jimp.BLEND_SOURCE_OVER,
+                //             opacityDest: 1,
+                //             opacitySource: 1,
+                //         }); // Устанавливаем фоновое изображение
+                //         image.print(font, 10, 10, 'hello'); // Добавляем текст
+
+                //         image.getBuffer(Jimp.MIME_PNG, (bufferErr, buffer) => {
+                //             if (bufferErr) {
+                //                 console.error(bufferErr);
+                //                 return;
+                //             }
+
+                //             bot.sendPhoto(chatId, buffer);
+                //         });
+                //     });
+                // });
+            }
+            if (text === 'hellsadasd') {
+                const collectionAchievs = await mongoConnect('achievs');
+                const user = await collection.find({ _id: ObjectId })
+                const deletedUsers = await user.map((doc) => doc.id).toArray();
+                await deletedUsers.forEach(async (e) => {
+                    await collectionAchievs.insertOne({
+                        id: e,
+                        race: [{
+                            botRacing: 0,
+                            maxBotRacing: 50,
+                            cost: 5,
+                        }],
+                        kazino: [{
+                            kazino: 0,
+                            maxKazino: 100,
+                            cost: 5,
+                        }],
+                        case: [{
+                            openCase: 0,
+                            maxOpenCase: 10,
+                            cost: 10,
+                        }],
+                        car: [{
+                            buyCar: false,
+                            cost: 5,
+                        }],
+                        house: [{
+                            buyHouse: false,
+                            cost: 5,
+                        }],
+                        island: [{
+                            openIsland: false,
+                            cost: 5,
+                        }],
+                        business: [{
+                            buyBusiness: false,
+                            cost: 10,
+                        }]
+                    })
+                })
             }
 
             // add test user
             if (text === 'newUser') {
-                collection.insertOne({
-                    id: 7777777,
-                    gameId: 'BOT7777',
-                    userName: 'CTY » BOT',
-                    balance: 777777,
-                    uc: 0,
-                    registerTime: 0,
-                    altcoinidx: 0,
-                    checkPayment: 'not',
-                    lastBonusTime: 0,
-                    toBeAnAdmin: true,
-                    status: [{
-                        statusName: 'player',
-                        purchaseDate: 0,
-                        statusExpireDate: 0,
-                    }],
-                    limit: [{
-                        giveMoneyLimit: 50000,
-                        givedMoney: 0,
-                        updateDayLimit: 0,
-                        // promoMoneyLimit: 1000,
-                        // promoMoney: 0,
-                    }],
-                    business: [{
-                        have: false,
-                        name: "",
-                        workers: 0,
-                        maxWorkers: 0,
-                        profit: 0,
-                        workersProfit: 0,
-                        tax: 0,
-                        lastUpdTime: 0,
-                    }],
-                    avatar: [{
-                        waiting: '',
-                        avaUrl: '',
-                    }],
-                    properties: [{
-                        houses: '',
-                        cars: '',
-                    }],
-                    referral: [{
-                        code: '',
-                        amount: 0,
-                    }],
-                    crypto: [{
-                        altcoinidx: 0
-                    }],
-                    rates: [{
-                        wins: 0,
-                        loses: 0,
-                        all: 0
-                    }],
-                    ban: [{
-                        ban: false,
-                        cause: "",
-                        banTime: 0,
-                        unbanTime: 0,
-                    }],
-                    bankCard: [{
-                        cardHave: true,
-                        cardNumber: 1111,
-                        cardName: "botcard",
-                        cardOwner: 'BOT',
-                        cardValue: 0,
-                        cardPassword: 0,
-                        cardOwnerId: 7777777
-                    }],
-                    depozit: [{
-                        balance: 0,
-                        procent: 10,
-                        limit: 50000,
-                        date: 0,
-                    }],
-                })
+                await addingToDB(collection, 888)
             }
 
             if (text == 'testEditingStatuses') {
@@ -1067,7 +1075,7 @@ function start() {
             // avatar
             avaChekAdmins(msg, bot)
 
-            // conts
+            // conts 
             donateContainers(msg, bot, collection)
 
             // crypto currence
@@ -1137,7 +1145,13 @@ cron.schedule('0 */12 * * *', () => {
     checkAndUpdateDonations(collection);
 }) // 24 часа или 12 часа или 6
 
-start()
-collectionBot.updateOne({}, { $set: { botLastIncTime: botLastIncludedTime } })
+if (process.argv.includes('abdullohTOP')) {
+    // collectionBot.updateOne({}, { $set: { botLastIncTime: botLastIncludedTime } })
+    // пароль для кода
+}
+else {
+    console.log('неправильно введена пароль кода');
+}
 
+start()
 log(customChalk.colorize(`Бот запущён и работает </>`, { style: 'bold', background: 'bgBlue' }))

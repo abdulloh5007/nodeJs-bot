@@ -64,12 +64,14 @@ ${sortedBusinesses}
 }
 
 async function buyBusiness(msg, bot, collection, glLength) {
+    const collectionAchievs = await mongoConnect('achievs');
     const collectionBusiness = await mongoConnect('businesses')
     const business = await collectionBusiness.find({}).sort({ price: 1 }).toArray()
 
     const text = msg.text
     const chatId = msg.chat.id
     const userId1 = msg.from.id
+    const messageId = msg.message_id
 
     const user = await collection.findOne({ id: userId1 })
     const userDonateStatus = await donatedUsers(msg, collection)
@@ -124,6 +126,25 @@ ${userDonateStatus}, вы успешно приобрели новый бизн�
 
     await collection.updateOne({ id: userId1 }, { $set: { "business.0.name": selectedBusiness.name, "business.0.maxWorkers": selectedBusiness.maxWorkers, "business.0.workersProfit": selectedBusiness.workersProfit, "business.0.tax": selectedBusiness.tax, "business.0.have": true, "business.0.workers": 20 } })
     await collection.updateOne({ id: userId1 }, { $inc: { balance: -selectedBusiness.price } })
+
+    const achiev = await collectionAchievs.findOne({ id: userId1 })
+    const buyBusiness = achiev.business[0].buyBusiness
+    const businessCost = achiev.business[0].cost
+
+    if (buyBusiness === false) {
+        await collectionAchievs.updateOne({ id: userId1 }, { $set: { 'business.0.buyBusiness': true } }).then(async (el) => {
+            if (el.modifiedCount === 1) {
+                bot.sendMessage(chatId, `
+${userDonateStatus}, поздравляем вы выполнили достижения купить бизнес ✅
+<b>Вам выдано ${businessCost} UC</b>
+                    `, {
+                    parse_mode: 'HTML',
+                    reply_to_message_id: messageId,
+                })
+                await collection.updateOne({ id: userId1 }, { $inc: { uc: businessCost } })
+            }
+        })
+    }
 }
 
 async function infoBusiness(msg, bot, collection) {
@@ -492,7 +513,7 @@ ${adminDonateStatus}, <b>Ваш бизнес автоматически был �
             await bot.sendPhoto(el.id, imgUrl, {
                 parse_mode: 'HTML',
                 caption:
-`${adminDonateStatus}, <b>СКОРЕЕ ! ПИШИ</b> <code>бизнес налоги</code>
+                    `${adminDonateStatus}, <b>СКОРЕЕ ! ПИШИ</b> <code>бизнес налоги</code>
 <b>А то после ${daysCount} дня твоего бизнеса не будет !</b>
 
 <b>САМАЯ ГЛАВНАЯ НОВОСТЬ Я ПРИНЕС ТЕБЕ ЗАРПЛАТУ😉</b>

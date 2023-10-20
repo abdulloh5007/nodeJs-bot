@@ -1,3 +1,4 @@
+const { mongoConnect } = require('../../../mongoConnect');
 const { donatedUsers } = require('../../donate/donatedUsers')
 const { parseNumber, formatNumberInScientificNotation } = require('../../systems/systemRu')
 const { formatRemainingTime } = require('../../user/bonusCollectBtn')
@@ -224,6 +225,8 @@ ${userStatus}, вот доступные дома:
 }
 
 async function houseBuy(msg, collection, bot, collectionHouses) {
+    const collectionAchievs = await mongoConnect('achievs');
+
     const text = msg.text
     const userId = msg.from.id
     const chatId = msg.chat.id
@@ -232,6 +235,7 @@ async function houseBuy(msg, collection, bot, collectionHouses) {
 
     const parts = text.split(' ');
     const houseNumberToBuy = parseInt(parts[2]);
+    const userDonateStatus = await donatedUsers(msg, collection)
 
     if (!isNaN(houseNumberToBuy)) {
         const sortedHouses = await collectionHouses.find({ donate: false }).sort({ price: 1 }).toArray();
@@ -244,16 +248,34 @@ async function houseBuy(msg, collection, bot, collectionHouses) {
             if (userHouse === '') {
                 if (userBalance >= selectedHouse.price) {
                     const houseInfo = `
-Вы успешно совершили покупку дом информацию о доме №${houseNumberToBuy}:
+<b>Покупка дома №${houseNumberToBuy}:</b>
 
 <i>Название:</i> <b>${selectedHouse.name}</b>
 <i>Цена:</i> <b>${selectedHouse.price.toLocaleString('de-DE')} $</b>
-<i>Сезон:</i> <b>${selectedHouse.season}</b>
                         `;
                     bot.sendPhoto(chatId, selectedHouse.img, { caption: houseInfo, parse_mode: 'HTML' });
                     collection.updateOne({ id: userId }, { $set: { "properties.0.houses": selectedHouse.name } })
 
                     collection.updateOne({ id: userId }, { $inc: { balance: -selectedHouse.price } })
+
+                    const achiev = await collectionAchievs.findOne({ id: userId })
+                    const buyHouse = achiev.house[0].buyHouse
+                    const houseCost = achiev.house[0].cost
+
+                    if (buyHouse === false) {
+                        await collectionAchievs.updateOne({ id: userId }, { $set: { 'house.0.buyHouse': true } }).then(async (el) => {
+                            if (el.modifiedCount === 1) {
+                                bot.sendMessage(chatId, `
+${userDonateStatus}, поздравляем вы выполнили достижения купить дом ✅
+<b>Вам выдано ${houseCost} UC</b>
+                                `, {
+                                    parse_mode: 'HTML',
+                                    reply_to_message_id: msg.message_id,
+                                })
+                                await collection.updateOne({ id: userId }, { $inc: { uc: houseCost } })
+                            }
+                        })
+                    }
                 } else {
                     bot.sendMessage(chatId, 'У вас не хватает средств для покупку этого дома')
                 }

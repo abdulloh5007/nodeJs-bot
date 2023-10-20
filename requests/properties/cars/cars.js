@@ -1,3 +1,4 @@
+const { mongoConnect } = require('../../../mongoConnect')
 const { donatedUsers } = require('../../donate/donatedUsers')
 const { parseNumber, formatNumberInScientificNotation } = require('../../systems/systemRu')
 const { checkUserPerms } = require('../../userPermissions/userPremissionsBot')
@@ -175,7 +176,7 @@ async function cars(msg, collection, bot, collectionCars) {
     const chatId = msg.chat.id;
 
     const userStatus = await donatedUsers(msg, collection)
-    
+
     const sortedCars = await collectionCars.find({ donate: false }).sort({ price: 1 }).toArray();
     const carNamesString = sortedCars.map((car, index) => `${index + 1}. ${car.name} - ${car.price.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(car.price)}`).join('\n');
     bot.sendMessage(chatId, `
@@ -221,6 +222,8 @@ ${userStatus}, вот доступные машины:
 }
 
 async function carBuy(msg, collection, bot, collectionCars) {
+    const collectionAchievs = await mongoConnect('achievs');
+
     const text = msg.text
     const userId = msg.from.id
     const chatId = msg.chat.id
@@ -249,7 +252,7 @@ async function carBuy(msg, collection, bot, collectionCars) {
             if (userCar === '') {
                 if (userBalance >= selectedCar.price) {
                     const carInfo = `
-Вы успешно приобрели машину №${carNumberToBuy}
+<b>Покупка машины №${carNumberToBuy}</b>
 
 <i>Название:</i> <b>${selectedCar.name}</b>
 <i>Цена:</i> <b>${selectedCar.price.toLocaleString('de-DE')} $</b>
@@ -262,6 +265,25 @@ async function carBuy(msg, collection, bot, collectionCars) {
                     collection.updateOne({ id: userId }, { $set: { "properties.0.cars": selectedCar.name, "properties.0.carGasoline": 100, "properties.0.carStatus": 100 } })
 
                     collection.updateOne({ id: userId }, { $inc: { balance: -selectedCar.price } })
+
+                    const userDonateStatus = await donatedUsers(msg, collection)
+                    const achiev = await collectionAchievs.findOne({ id: userId })
+                    const buyCar = achiev.car[0].buyCar
+                    const carCost = achiev.car[0].cost
+
+                    if (buyCar === false) {
+                        await collectionAchievs.updateOne({ id: userId }, { $set: { 'car.0.buyCar': true } }).then(async (el) => {
+                            if (el.modifiedCount === 1) {
+                                bot.sendMessage(chatId, `
+${userDonateStatus}, поздравляем вы выполнили достижения купить машину ✅
+<b>Вам выдано ${carCost} UC</b>
+                        `, {
+                                    parse_mode: 'HTML',
+                                })
+                                await collection.updateOne({ id: userId }, { $inc: { uc: carCost } })
+                            }
+                        })
+                    }
                 } else {
                     bot.sendMessage(chatId, 'У вас не хватает средств для покупку этой машины')
                 }
@@ -580,7 +602,7 @@ ${userDonateStatus}, Номер машины который вы хотите у
     const sortedCars = await collectionCars.find({ donate: false }).sort({ price: 1 }).toArray()
 
     const carToUpdate = sortedCars[carNum - 1];
-    try{
+    try {
         await collectionCars.deleteOne({ _id: carToUpdate._id }).then(async () => {
             await bot.sendMessage(chatId, `
 ${userDonateStatus}, Вы успешно удалили машину
@@ -596,7 +618,7 @@ ${userDonateStatus}, Произошла ошибка при удалении м�
                 reply_to_message_id: messageId,
             })
         })
-    }catch(err) {
+    } catch (err) {
         bot.sendMessage(chatId, `
 ${userDonateStatus}, произошла ошибка при удалении машины проверьте есть ли машина который вы указали в списке машин <code>машины</code>
         `, {

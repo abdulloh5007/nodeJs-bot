@@ -1,16 +1,9 @@
+const { addingToDB } = require("../../mongoConnect");
 const { startOptions, helpOption, backOption } = require("../../options");
 const { donatedUsers } = require("../donate/donatedUsers");
 const { formatNumberInScientificNotation } = require("../systems/systemRu");
 require('dotenv').config();
 const adminId = parseInt(process.env.ADMIN_ID)
-
-const date = new Date()
-const year = date.getFullYear()
-const month = date.getMonth()
-const day = date.getDate()
-const hours = date.getHours()
-const minutes = date.getMinutes()
-const registerUserTime = `${day}-${month}-${year} ${hours}:${minutes}`
 
 const txtHelp = 
 `<b>🥴Разделы</b>
@@ -26,22 +19,6 @@ const txtHelp =
 
 🗄 Беседа - официальные чаты и канал бота.
 `
-
-function generateRandomElementsOnlyUsers(letters, numbers) {
-    const alphabet = letters;
-    const randomLetter = alphabet[Math.floor(Math.random() * alphabet.length)];
-
-    let randomNumberString = '';
-    for (let i = 0; i < numbers; i++) {
-        randomNumberString += Math.floor(Math.random() * 10);
-    }
-
-    return randomLetter + randomNumberString;
-}
-
-// Пример использования функции
-const onlyUsersId = generateRandomElementsOnlyUsers('BFNPRS', 7);
-
 
 async function commandStart(msg, collection, bot) {
     const chatId = msg.chat.id
@@ -75,96 +52,8 @@ async function commandStart(msg, collection, bot) {
 <i>😎И не забудь☆написать: инфо карта, чтобы узнать информацию о карте, приятной игры! 🙃</i>
         `, { parse_mode: 'HTML', ...startOptions, reply_to_message_id: msg.message_id })
             })
-        const prefix = "5444";
-        let cardNumber = prefix;
-        for (let i = 0; i < 12; i++) {
-            if (i % 4 === 0) {
-                cardNumber += " ";
-            }
-            cardNumber += Math.floor(Math.random() * 10).toString();
-        }
 
-        collection.insertOne({
-            id: userId,
-            gameId: onlyUsersId,
-            userName: 'Игрок',
-            balance: 5000,
-            uc: 0,
-            registerTime: registerUserTime,
-            altcoinidx: 0,
-            checkPayment: 'not',
-            lastBonusTime: 0,
-            toBeAnAdmin: true,
-            status: [{
-                statusName: 'player',
-                purchaseDate: 0,
-                statusExpireDate: 0,
-            }],
-            limit: [{
-                giveMoneyLimit: 50000,
-                givedMoney: 0,
-                updateDayLimit: 0,
-                // promoMoneyLimit: 1000,
-                // promoMoney: 0,
-            }],
-            business: [{
-                have: false,
-                name: "",
-                workers: 0,
-                maxWorkers: 0,
-                profit: 0,
-                workersProfit: 0,
-                tax: 0,
-                lastUpdTime: 0,
-                speeds: 1,
-            }],
-            avatar: [{
-                waiting: '',
-                avaUrl: '',
-            }],
-            properties: [{
-                houses: '',
-                cars: '',
-                lendHouse: 0,
-                carGasoline: 0,
-                carStatus: 0,
-            }],
-            referral: [{
-                code: '',
-                amount: 0,
-            }],
-            rates: [{
-                wins: 0,
-                loses: 0,
-                all: 0
-            }],
-            ban: [{
-                ban: false,
-                cause: "",
-                banTime: 0,
-                unbanTime: 0,
-            }],
-            bankCard: [{
-                cardHave: true,
-                cardNumber: cardNumber,
-                cardName: "mastercard",
-                cardOwner: 'Игрок',
-                cardValue: 0,
-                cardPassword: 0,
-                cardOwnerId: userId
-            }],
-            depozit: [{
-                balance: 0,
-                procent: 10,
-                limit: 50000,
-                date: 0,
-            }],
-            stats: [{
-                openCaseHouses: 0,
-                openCaseCars: 0,
-                createPromos: 0,
-            }]
-        })
+        await addingToDB(collection, userId)
     }
 
     // ЕСЛИ ХОЧЕШЬ ОТПРАВИТЬ ФОТО ВМЕСТО СТИКЕРА

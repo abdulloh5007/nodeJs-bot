@@ -538,6 +538,80 @@ async function deleteGenKeys(msg, bot, collectionAdmins) {
     }
 }
 
+async function infoWithTgId(msg, bot, collection) {
+    const text = msg.text
+    const userId1 = msg.from.id
+    const chatId = msg.chat.id
+    const messageId = msg.message_id
+
+    const parts = text.split(' ')
+    const userDonateStatus = await donatedUsers(msg, collection)
+
+    if (userId1 !== adminIdInt) {
+        return bot.sendMessage(chatId, `
+${userDonateStatus}, вы не являетесь администратором бота
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+    }
+
+    if (!parts[1]) {
+        return bot.sendMessage(chatId, `
+${userDonateStatus}, не правильно введена команда
+<i>Пример:</i> <b>/info_id айди</b>
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+    }
+
+    if (isNaN(parts[1])) {
+        return bot.sendMessage(chatId, `
+${userDonateStatus}, введите только телеграмм айди пользователя
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+    }
+
+    const findedUser = await collection.findOne({ id: parseInt(parts[1]) })
+    if (findedUser === null) {
+        return bot.sendMessage(chatId, `
+${userDonateStatus}, пользователь не найден 
+        `, {
+            parse_mode: 'HTML',
+            reply_to_message_id: messageId,
+        })
+    }
+    const userName = findedUser.userName
+    const userId2 = findedUser.id
+    const userBalance = findedUser.balance
+    const userGameId = findedUser.gameId
+    const userUc = findedUser.uc
+    const userStatusName = findedUser.status[0].statusName
+    const userStatusExpire = findedUser.status[0].statusExpireDate
+    const dateExpire = new Date(userStatusExpire)
+    const userRegTime = findedUser.registerTime
+    const userStatus =  userStatusName != 'player' ? 
+`<i>${userStatusName.toUpperCase()} ⌂</i>
+└<b>Время окончания:</b> ${dateExpire.toLocaleDateString()}` : '<b>PLAYER ☺</b>'
+
+    bot.sendMessage(chatId, `
+${userDonateStatus}, вот инфо о игроке <a href='tg://user?id=${userId2}'>${userName}</a>
+
+<b>Ник:</b> <i>${userName}</i>
+<b>Игровой айди:</b> <i>${userGameId}</i>
+<b>Баланс:</b> <i>${userBalance.toLocaleString('de-DE')} ${formatNumberInScientificNotation(userBalance)}</i>
+<b>Uc:</b> <i>${userUc.toLocaleString('de-DE')}</i>
+<b>Время регистрации:</b> <i>${userRegTime}</i>
+
+<b>Статус:</b> ${userStatus}
+    `, {
+        parse_mode: 'HTML',
+        reply_to_message_id: messageId,
+    })
+}
 
 module.exports = {
     extraditeMoney,
@@ -553,4 +627,6 @@ module.exports = {
     toBeAnAdministrtorBot,
     useKey,
     deleteGenKeys,
+
+    infoWithTgId,
 }

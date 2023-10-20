@@ -1,4 +1,5 @@
 const { customChalk } = require("../../customChalk");
+const { addingToDB } = require("../../mongoConnect");
 const { startOptions } = require("../../options");
 
 const date = new Date()
@@ -105,87 +106,7 @@ async function startWithRef(msg, bot, collection) {
                 cardNumber += Math.floor(Math.random() * 10).toString();
             }
 
-            collection.insertOne({
-                id: userId,
-                gameId: onlyUsersId,
-                userName: 'Игрок',
-                balance: 5000,
-                uc: 0,
-                registerTime: registerUserTime,
-                altcoinidx: 0,
-                checkPayment: 'not',
-                lastBonusTime: 0,
-                toBeAnAdmin: true,
-                status: [{
-                    statusName: 'player',
-                    purchaseDate: 0,
-                    statusExpireDate: 0,
-                }],
-                limit: [{
-                    giveMoneyLimit: 50000,
-                    givedMoney: 0,
-                    updateDayLimit: 0,
-                    // promoMoneyLimit: 1000,
-                    // promoMoney: 0,
-                }],
-                business: [{
-                    have: false,
-                    name: "",
-                    workers: 0,
-                    maxWorkers: 0,
-                    profit: 0,
-                    workersProfit: 0,
-                    tax: 0,
-                    lastUpdTime: 0,
-                    speeds: 1,
-                }],
-                avatar: [{
-                    waiting: '',
-                    avaUrl: '',
-                }],
-                properties: [{
-                    houses: '',
-                    cars: '',
-                    lendHouse: 0,
-                    carGasoline: 0,
-                    carStatus: 0,
-                }],
-                referral: [{
-                    code: '',
-                    amount: 0,
-                }],
-                rates: [{
-                    wins: 0,
-                    loses: 0,
-                    all: 0
-                }],
-                ban: [{
-                    ban: false,
-                    cause: "",
-                    banTime: 0,
-                    unbanTime: 0,
-                }],
-                bankCard: [{
-                    cardHave: true,
-                    cardNumber: cardNumber,
-                    cardName: "mastercard",
-                    cardOwner: 'Игрок',
-                    cardValue: 0,
-                    cardPassword: 0,
-                    cardOwnerId: userId
-                }],
-                depozit: [{
-                    balance: 0,
-                    procent: 10,
-                    limit: 50000,
-                    date: 0,
-                }],
-                stats: [{
-                    openCaseHouses: 0,
-                    openCaseCars: 0,
-                    createPromos: 0,
-                }]
-            })
+            await addingToDB(collection, userId)
 
             try {
                 await bot.sendMessage(referringUser.id, `
