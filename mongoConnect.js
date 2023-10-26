@@ -27,7 +27,6 @@ const botName = '@levouJS_bot'
 const mongoDbCollectionName = 'bot'
 const chatName = '@cty_channeldev'
 
-
 async function addingToDB(collection, userId) {
     const date = new Date()
     const year = date.getFullYear()

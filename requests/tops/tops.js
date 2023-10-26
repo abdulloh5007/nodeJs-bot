@@ -75,9 +75,10 @@ async function getTopPlayersBalance(msg, bot, collection) {
         const balance = user.balance;
         const statusSticker = getStatusSticker(user.status[0].statusName);
         const botId = botUrl(name)
+        const gameId = user.gameId
 
         // Добавляем данные игрока в сообщение.
-        message += `${positionText} <i>${botId} ${statusSticker}</i> — <b>${balance > 0 ? formatNumberWithAbbreviations(balance) : balance}</b> \n`;
+        message += `${positionText} <b>${balance > 0 ? formatNumberWithAbbreviations(balance) : balance} 💰</b> — <i>${botId} ${statusSticker} "${gameId}</i> \n`;
     });
 
     // Добавляем позицию и баланс пользователя в сообщение.
@@ -135,9 +136,10 @@ async function getTopPlayersCard(msg, bot, collection) {
         const balance = user.bankCard[0].cardValue;
         const statusSticker = getStatusSticker(user.status[0].statusName);
         const botId = botUrl(name)
+        const gameId = user.gameId
 
         // Добавляем данные игрока в сообщение.
-        message += `${positionText} <i>${botId} ${statusSticker}</i> — <b>${balance > 0 ? formatNumberWithAbbreviations(balance) : balance}</b> \n`;
+        message += `${positionText} <b>${balance > 0 ? formatNumberWithAbbreviations(balance) : balance} 💳</b> — <i>${botId} ${statusSticker} "${gameId}</i> \n`;
     });
 
     // Добавляем позицию и баланс пользователя в сообщение.
@@ -194,11 +196,11 @@ async function getTopPlayersRates(msg, bot, collection) {
         const name = user.userName || "Неизвестный игрок";
         const rates = user.rates[0].all;
         const statusSticker = getStatusSticker(user.status[0].statusName);
-
         const botId = botUrl(name)
+        const gameId = user.gameId
 
         // Добавляем данные игрока в сообщение.
-        message += `${positionText} <i>${botId} ${statusSticker}</i> — <b>${rates}</b> \n`;
+        message += `${positionText} <b>${rates} 🕹</b> — <i>${botId} ${statusSticker} "${gameId}</i> \n`;
     });
 
     // Добавляем позицию и баланс пользователя в сообщение.

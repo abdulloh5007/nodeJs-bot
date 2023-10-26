@@ -9,23 +9,29 @@ async function autoCreatePromoCodes(bot) {
 
     const randomPromoName = generateRandomString(10);
     const randomActivation = Math.floor(Math.random() * 11)
-    const randomAmount = generateRandomNumber(30000)
-    const promoComents = 'Спасибо что вы с нами'
+    const randomAmount = generateRandomNumber(50000)
+    function getRandomText(textOptions) {
+        const randomIndex = Math.floor(Math.random() * textOptions.length);
+        return textOptions[randomIndex];
+    }
+
+    const promoComents = ['Скоро зима🥶', 'Сегодня отличный день!🤩', 'Спасибо за отслеживание новостей🫡'];
+    const randomText = getRandomText(promoComents);
     const finishedAmountForOne = Math.floor(randomAmount / randomActivation)
 
     let channelId = chatName
     await bot.sendMessage(channelId, `
-<b>Промокод от бота ↓</b>
+<i>💾Новый промокод 🤖</i>
 
-<b>Название:</b> <code>${randomPromoName}</code>
-<b>Количество использований:</b> ${randomActivation}
-<b>Приз каждому по:</b> ${finishedAmountForOne.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(finishedAmountForOne)}
+┌<i>📌Клик:</i> <code>промо ${randomPromoName}</code>
+├<i>🔑Количество активаций:</i> <b>${randomActivation}</b>
+└<i>💸Приз каждому по:</i> <b>${finishedAmountForOne.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(finishedAmountForOne)}</b>
 
-<b>Коментарии:</b> <u>${promoComents}</u>
+<i>✉️Коментарии:</i> <b><u>${randomText}</u></b>
         `, {
         parse_mode: 'HTML',
     }).then(() => {
-        
+
     }).catch(async err => {
         await bot.sendMessage(adminId, `Bot is not a member channel chat`)
         console.log('channel error ' + err);
@@ -72,19 +78,25 @@ async function manualCreatePromoCodes(msg, bot, collection) {
     const randomPromoName = generateRandomString(10);
     const randomActivation = Math.floor(Math.random() * 11) + 1
     const randomAmount = generateRandomNumber(30000)
-    const promoComents = 'Спасибо что вы с нами'
     const finishedAmountForOne = Math.floor(randomAmount / randomActivation)
+    
+    function getRandomText(textOptions) {
+        const randomIndex = Math.floor(Math.random() * textOptions.length);
+        return textOptions[randomIndex];
+    }
 
+    const promoComents = ['Скоро зима🥶', 'Сегодня отличный день!🤩', 'Спасибо за отслеживание новостей🫡'];
+    const randomText = getRandomText(promoComents);
     if (userId1 === adminId) {
         let channelId = chatName
         await bot.sendMessage(channelId, `
-<b>Промокод от бота ↓</b>
+<i>💾Новый промокод 🤖</i>
 
-<b>Название:</b> <code>${randomPromoName}</code>
-<b>Количество использований:</b> ${randomActivation}
-<b>Приз каждому по:</b> ${finishedAmountForOne.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(finishedAmountForOne)}
+┌<i>📌Клик:</i> <code>промо ${randomPromoName}</code>
+├<i>🔑Количество активаций:</i> <b>${randomActivation}</b>
+└<i>💸Приз каждому по:</i> <b>${finishedAmountForOne.toLocaleString('de-DE')}$ ${formatNumberInScientificNotation(finishedAmountForOne)}</b>
 
-<b>Коментарии:</b> <u>${promoComents}</u>
+<i>✉️Коментарии:</i> <b><u>${randomText}</u></b>
         `, {
             parse_mode: 'HTML',
         }).then(() => {

@@ -68,7 +68,7 @@ ${userDonateStatus}, Подождите 2 секунды перед начало
     if (randomNum < 10) {
         winCoefficient = 5;
         resultText = 'Вы выиграли 5x';
-    } else if (randomNum < 30) {
+    } else if (randomNum < 25) {
         winCoefficient = 2;
         resultText = 'Вы выиграли 2x';
     } else if (randomNum < 50) {
@@ -569,12 +569,12 @@ ${userDonateStatus}, Подождите 2 секунды перед начало
     let inGameUserCarSpeed = getRandomNumber(70, carSpeed)
     let inGameBotCarSpeed = getRandomNumber(70, carSpeed + botSpeed)
 
-    let resultText = `<i>Жаль</i> <b>Вы проиграли 0x</b> ${gameLoseStickers()}\n<b>-${summ}</b>\n\n<i>Машина бота обогнала вашу машину достигая скорости:</i> <b>${inGameBotCarSpeed} км/ч</b>\n<i>Ваша машина достигла:</i> <b>${inGameUserCarSpeed} км/ч</b>`;
+    let resultText = `<i>Жаль</i> <b>Вы проиграли 0x</b> ${gameLoseStickers()}\n<b>-${summ.toLocaleString('de-DE')}</b>\n\n<i>Машина бота обогнала вашу машину достигая скорости:</i> <b>${inGameBotCarSpeed} км/ч</b>\n<i>Ваша машина достигла:</i> <b>${inGameUserCarSpeed} км/ч</b>`;
     let winValue = 0;
 
     if (inGameUserCarSpeed >= inGameBotCarSpeed) {
         winValue = Math.floor(summ * 2);
-        resultText = `<i>Поздравляем</i> <b>Вы выиграли 2x ${gameWinStickers()}</b>\n<b>+${winValue}</b>\n\n<i>Скорость вашей машины достигла до:</i> ${inGameUserCarSpeed} км/ч\n${successTxtHelloween}`;
+        resultText = `<i>Поздравляем</i> <b>Вы выиграли 2x ${gameWinStickers()}</b>\n<b>+${winValue.toLocaleString('de-DE')}</b>\n\n<i>Скорость вашей машины достигла до:</i> ${inGameUserCarSpeed} км/ч\n${successTxtHelloween}`;
     }
 
     await collection.updateOne({ id: userId1 }, { $inc: { balance: -summ } })
@@ -588,7 +588,7 @@ ${resultText}
         reply_to_message_id: messageId,
         ...riceKb,
     })
-    await collection.updateOne({ id: userId1 }, { $inc: { balance: winValue, "properties.0.carStatus": -10, "properties.0.carGasoline": -10 } })
+    await collection.updateOne({ id: userId1 }, { $inc: { balance: winValue, "properties.0.carStatus": -7, "properties.0.carGasoline": -7 } })
 
     const achiev = await collectionAchievs.findOne({ id: userId1 })
     const botRacing = achiev.race[0].botRacing
@@ -957,8 +957,8 @@ ${firstUserDonateStatus}, не расстраиваемся повезёт сл�
                 return `${secondUserDonateStatus}`;
             }
         }
-        await collection.updateOne({ id: user2Accepter }, { $inc: { "properties.0.carStatus": -10, "properties.0.carGasoline": -10 } })
-        await collection.updateOne({ id: user1Sender }, { $inc: { "properties.0.carStatus": -10, "properties.0.carGasoline": -10 } })
+        await collection.updateOne({ id: user2Accepter }, { $inc: { "properties.0.carStatus": -10, "properties.0.carGasoline": -7 } })
+        await collection.updateOne({ id: user1Sender }, { $inc: { "properties.0.carStatus": -10, "properties.0.carGasoline": -7 } })
         const riceWinner = await findLargerNumber(user1RandomedSpeed, user2RandomedSpeed)
 
         bot.editMessageText(`
