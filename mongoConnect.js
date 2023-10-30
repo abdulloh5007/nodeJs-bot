@@ -131,6 +131,8 @@ async function addingToDB(collection, userId) {
             procent: 10,
             limit: 50000,
             date: 0,
+            extraLimit: 0,
+            extraProcent: 0,
         }],
         stats: [{
             openCaseHouses: 0,

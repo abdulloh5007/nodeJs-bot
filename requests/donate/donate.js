@@ -296,7 +296,7 @@ ${userStatusName === 'player' ? '' : `
 
     if (data in donateStatusBuy) {
         const { txt, errTxt, name, days, cost, moneyLimit, depLimit, depProcent } = donateStatusBuy[data];
-
+        
         const enoughUC = user.uc >= cost;
         if (enoughUC) {
             const userExtraDepLimit = parseInt(user.depozit[0].extraLimit) + parseInt(depLimit)

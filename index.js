@@ -888,7 +888,7 @@ function start() {
             else if (text.toLowerCase() === 'мой остров') {
                 myIsland(msg, bot, collection)
             }
-            else if (text.toLowerCase() === 'команды острова') {
+            else if (text.toLowerCase() === 'команды острова' || text.toLowerCase() === SIQCCtxts('команды острова')) {
                 islandCommands(msg, bot, collection)
             }
             else if (text.toLowerCase().startsWith(SIQCCtxts('+остров'))) {
@@ -985,7 +985,12 @@ function start() {
                 const collectionAchievs = await mongoConnect('achievs');
                 const user = await collection.find({ _id: ObjectId })
                 const deletedUsers = await user.map((doc) => doc.id).toArray();
+                
                 await deletedUsers.forEach(async (e) => {
+                    const newAdded = await collectionAchievs.findOne({ id: e })
+                    if(newAdded !== null){
+                        return console.log('уже добавлен ' + e);
+                    }
                     await collectionAchievs.insertOne({
                         id: e,
                         race: [{

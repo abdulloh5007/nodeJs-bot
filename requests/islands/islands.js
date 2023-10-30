@@ -276,7 +276,8 @@ ${txtMessage}
     let renderIslands = {
         reply_markup: {
             inline_keyboard: [
-                [{ text: '🔄Обновить', callback_data: `renderIslands_${userId}` }]
+                [{ text: '🔄Обновить', callback_data: `renderIslands_${userId}` }],
+                [{ text: '🚀Команды острова', switch_inline_query_current_chat: 'команды острова' }]
             ]
         }
     }

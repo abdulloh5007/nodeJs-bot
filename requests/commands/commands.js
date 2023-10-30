@@ -418,7 +418,7 @@ ${userDonateStatus}, этот пользователь не найден
     const userName = user.userName
     const userId2 = user.id
     const userBalance = user.balance
-    const userGameId = user.gameId
+    const userGameId = user.id
     const userUc = user.uc
     const userStatusName = user.status[0].statusName
     const userStatusExpire = user.status[0].statusExpireDate
@@ -439,7 +439,7 @@ ${userDonateStatus}, этот пользователь не найден
 ${userDonateStatus}, вот инфо о игроке <a href='tg://user?id=${userId2}'>${userName}</a>
 
 <b>Ник:</b> <i>${userName}</i>
-<b>Игровой айди:</b> <i>${userGameId}</i>
+<b>Айди:</b> <i>${userGameId}</i>
 <b>Баланс:</b> <i>${userBalance.toLocaleString('de-DE')} ${formatNumberInScientificNotation(userBalance)}</i>
 <b>Uc:</b> <i>${userUc.toLocaleString('de-DE')}</i>
 <b>Время регистрации:</b> <i>${userRegTime}</i>

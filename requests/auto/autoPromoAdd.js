@@ -41,7 +41,7 @@ async function autoCreatePromoCodes(bot) {
         promoActivision: parseInt(randomActivation),
         promoMoney: parseInt(Math.floor(randomAmount)),
         promoDonate: false,
-        promoComent: promoComents,
+        promoComent: randomText,
         promoUsedBy: []
     })
 }
@@ -110,7 +110,7 @@ async function manualCreatePromoCodes(msg, bot, collection) {
             promoActivision: parseInt(randomActivation),
             promoMoney: parseInt(randomAmount),
             promoDonate: false,
-            promoComent: promoComents,
+            promoComent: randomText,
             promoUsedBy: []
         })
     }

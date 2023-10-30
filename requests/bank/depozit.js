@@ -85,7 +85,6 @@ ${userDonateStatus}, отправьте сумму для пополнение �
     }
 
     let depMoney = parseInt(parseNumber(parts[glLength]))
-    console.log(depMoney);
     const date = new Date()
     date.setDate(date.getDate() + 1);
 

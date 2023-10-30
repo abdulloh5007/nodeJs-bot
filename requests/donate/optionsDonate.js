@@ -130,7 +130,7 @@ const donateStatusBuy = {
 <b>Спасибо вам огромное что покупали наш товар</b>`,
         errTxt: `У вас не достаточно UC для покупки 
 <i>Статуса</i> <b>PREMIUM ⭐️</b>.`,
-        days: 7,
+        days: 30,
         cost: 300,
         moneyLimit: 1000000,
         depLimit: 400000,
