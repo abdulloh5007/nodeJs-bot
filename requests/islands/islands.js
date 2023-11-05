@@ -865,4 +865,5 @@ module.exports = {
     infoIslandProfit,
     takeOfProfitIsland,
     renderIslandsWithBtn,
+    generateRandomString,
 }

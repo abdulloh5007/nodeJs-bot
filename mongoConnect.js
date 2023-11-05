@@ -73,6 +73,9 @@ async function addingToDB(collection, userId) {
             purchaseDate: 0,
             statusExpireDate: 0,
         }],
+        youtube: [{
+            have: false,
+        }],
         limit: [{
             giveMoneyLimit: 50000,
             givedMoney: 0,

@@ -192,6 +192,7 @@ const { openIsland, myIsland, islandCommands, islandProduct, islandNewName, info
 const { testPayment } = require('./requests/donate/payments');
 const { botName, mongoDbCollectionName, addingToDB, mongoConnect } = require('./mongoConnect');
 const { myAchievements } = require('./requests/achievements/achievements');
+const { openYTAcc, infoMyYTacc, changeNameYT } = require('./requests/properties/accounts/youtube');
 
 client.connect()
     .then(() => {
@@ -932,6 +933,25 @@ function start() {
                 myAchievements(msg, bot, collection)
             }
 
+            if (text.toLowerCase() === SIQCCtxts('открыть ютуб')) {
+                openYTAcc(msg, bot)
+            }
+            else if (text.toLowerCase() === 'открыть ютуб') {
+                openYTAcc(msg, bot)
+            }
+            else if (text.toLowerCase() === 'мой ютуб') {
+                infoMyYTacc(msg, bot)
+            }
+            else if (text.toLowerCase() === SIQCCtxts('мой ютуб')) {
+                infoMyYTacc(msg, bot)
+            }
+            else if (text.toLowerCase().startsWith('+ник ютуб')) {
+                changeNameYT(msg, bot, 2)
+            }
+            else if (text.toLowerCase().startsWith(SIQCCtxts('+ник ютуб'))) {
+                changeNameYT(msg, bot, 3)
+            }
+
             // Обработчик предварительного запроса по оплате.
             bot.on('pre_checkout_query', (query) => {
                 bot.answerPreCheckoutQuery(query.id, true);
@@ -985,10 +1005,10 @@ function start() {
                 const collectionAchievs = await mongoConnect('achievs');
                 const user = await collection.find({ _id: ObjectId })
                 const deletedUsers = await user.map((doc) => doc.id).toArray();
-                
+
                 await deletedUsers.forEach(async (e) => {
                     const newAdded = await collectionAchievs.findOne({ id: e })
-                    if(newAdded !== null){
+                    if (newAdded !== null) {
                         return console.log('уже добавлен ' + e);
                     }
                     await collectionAchievs.insertOne({
